@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { API_BASE_URL } from '../config/constants';
 
 interface User {
@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: () => boolean;
   checkUserApprovalStatus: () => Promise<boolean>;
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     validateToken();
   }, [token]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login/`, {
@@ -81,18 +81,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ username, password })  // Use username instead of email
       });
-
+  
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Login failed');
       }
-
+  
       const data = await response.json();
-      localStorage.setItem('token', data.access);
-      setToken(data.access);
-      setUser(data.user);
+      if (data?.access) {
+        localStorage.setItem('token', data.access);
+        setToken(data.access);
+        setUser(data.user);
+      } else {
+        throw new Error('Failed to receive a valid token.');
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -137,8 +141,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (response.ok) {
         const userData = await response.json();
         return userData.is_approved === true;
+      } else {
+        console.error('Failed to fetch user approval status');
+        return false;
       }
-      return false;
     } catch (error) {
       console.error('Error checking approval status:', error);
       return false;
