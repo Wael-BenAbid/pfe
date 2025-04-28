@@ -36,6 +36,7 @@ router.register(r'job-applications', JobApplicationViewSet)
 def redirect_to_react(request):
     return redirect('http://127.0.0.1:5000/')
 
+
 urlpatterns = [
     path('', redirect_to_react, name='home'),  # This will redirect the root URL
     path('admin/', admin.site.urls),

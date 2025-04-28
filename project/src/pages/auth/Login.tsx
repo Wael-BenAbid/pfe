@@ -10,7 +10,7 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { login } = useAuth();
   
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');  // changed from email to username
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,7 +23,7 @@ const Login: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      await login(email, password);
+      await login(username, password);  // passing username instead of email
       
       // Redirect based on user type
       const userType = localStorage.getItem('user_type');
@@ -40,7 +40,7 @@ const Login: React.FC = () => {
       console.error('Login error:', error);
       if (error instanceof Error) {
         if (error.message.includes('credentials')) {
-          setErrorMessage('Invalid email or password');
+          setErrorMessage('Invalid username or password');
         } else if (error.message.includes('pending')) {
           setErrorMessage('Your account is pending approval');
           navigate('/pending-approval');
@@ -82,12 +82,12 @@ const Login: React.FC = () => {
           
           <form className="space-y-6" onSubmit={handleSubmit}>
             <TextInput
-              label="Email address"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              label="Username"  // changed from Email address to Username
+              type="text"  // changed to text
+              value={username}  // changed from email to username
+              onChange={(e) => setUsername(e.target.value)}  // changed from email to username
               required
-              autoComplete="email"
+              autoComplete="username"  // updated autocomplete
             />
 
             <TextInput
