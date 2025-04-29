@@ -16,11 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import HttpResponse
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from django.shortcuts import redirect
 from rest_framework.routers import DefaultRouter
 from Rh_app.views import (
-    UserViewSet, LeaveViewSet, MissionViewSet, 
+    UserViewSet, LeaveViewSet, MissionViewSet,
     WorkHoursViewSet, InternshipViewSet, JobApplicationViewSet
 )
 
@@ -32,13 +32,13 @@ router.register(r'work-hours', WorkHoursViewSet)
 router.register(r'internships', InternshipViewSet)
 router.register(r'job-applications', JobApplicationViewSet)
 
-
-def redirect_to_react(request):
-    return redirect('http://127.0.0.1:5000/')
-
+def empty_view(request):
+    """Vue vide pour les requêtes non gérées"""
+    return HttpResponse(status=200)
 
 urlpatterns = [
-    path('', redirect_to_react, name='home'),  # This will redirect the root URL
+    path('', empty_view),  # Répond à la racine avec un 200 OK
+    path('favicon.ico', empty_view),  # Répond aux requêtes favicon
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
