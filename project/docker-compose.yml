@@ -19,7 +19,7 @@ services:
 
   backend:
     build: 
-      context: ../back-end/backend
+      context: ../back-end
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -31,6 +31,8 @@ services:
       - DATABASE_PASSWORD=12345
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
+    volumes:
+      - ../back-end:/app  # Montage du code source en temps réel
     depends_on:
       db:
         condition: service_healthy
@@ -38,7 +40,7 @@ services:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "manage.py", "check"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -51,7 +53,7 @@ services:
       - POSTGRES_DB=rh
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=12345
-      - POSTGRES_HOST_AUTH_METHOD=trust
+      # Suppression de POSTGRES_HOST_AUTH_METHOD=trust pour la sécurité
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
