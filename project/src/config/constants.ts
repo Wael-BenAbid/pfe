@@ -24,7 +24,7 @@ export const VALIDATION_MESSAGES = {
   FILE_TYPE_INVALID: 'Please upload a PDF, DOC, or DOCX file'
 };
 
-// Accepted file types for CV upload
+// Accepted file types for CV   upload
 export const ACCEPTED_FILE_TYPES = [
   'application/pdf',
   'application/msword',

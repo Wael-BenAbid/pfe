@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextInput, TextArea, Select, FileInput, RadioGroup } from '../components/ui/FormElements';
+import { TextInput, TextArea, FileInput, RadioGroup } from '../components/ui/FormElements';
 import Button from '../components/ui/Button';
 import { 
   API_BASE_URL, 

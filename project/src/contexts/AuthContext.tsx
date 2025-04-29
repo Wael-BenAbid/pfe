@@ -76,12 +76,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (username: string, password: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+      const response = await fetch(`${API_BASE_URL}/token/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ username, password })  // Use username instead of email
+        body: JSON.stringify({ username, password })
       });
   
       if (!response.ok) {
@@ -93,7 +93,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (data?.access) {
         localStorage.setItem('token', data.access);
         setToken(data.access);
-        setUser(data.user);
+  
+        // 👉 Fetch user info separately
+        const userInfoResponse = await fetch(`${API_BASE_URL}/users/me`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${data.access}`
+          }
+        });
+  
+        if (!userInfoResponse.ok) {
+          throw new Error('Failed to fetch user information.');
+        }
+  
+        const userData = await userInfoResponse.json();
+        localStorage.setItem('user_type', userData.user_type);
+        setUser(userData);
       } else {
         throw new Error('Failed to receive a valid token.');
       }
@@ -104,11 +120,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setLoading(false);
     }
   };
+  
+  
 
   const logout = async () => {
     try {
       if (token) {
-        await fetch(`${API_BASE_URL}/auth/logout/`, {
+        await fetch(`${API_BASE_URL}/logout/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -119,11 +137,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.error('Logout error:', error);
     } finally {
       localStorage.removeItem('token');
+      localStorage.removeItem('user_type');
       setToken(null);
       setUser(null);
     }
   };
-
+  
   const isAuthenticated = () => {
     return !!token && !!user;
   };
@@ -132,7 +151,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (!token) return false;
     
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/get-user-info/`, {
+      const response = await fetch(`${API_BASE_URL}/get-user-info/`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

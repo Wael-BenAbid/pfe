@@ -1,16 +1,17 @@
 from django.shortcuts import render
-
-# Create your views here.
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from datetime import datetime
 import logging
 import json
 from django.core.mail import send_mail
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.conf import settings
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .models import User, Leave, Mission, WorkHours, Internship, JobApplication
 from .serializers import (
@@ -18,18 +19,112 @@ from .serializers import (
     WorkHoursSerializer, InternshipSerializer, JobApplicationSerializer
 )
 
-# Configurer le logger
 logger = logging.getLogger(__name__)
 
+# Authentication Views
+class CustomTokenObtainPairView(TokenObtainPairView):
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = serializer.user
+        response_data = {
+            'refresh': str(serializer.validated_data['refresh']),
+            'access': str(serializer.validated_data['access']),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'user_type': user.user_type
+            }
+        }
+        return Response(response_data)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    try:
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        if not username or not password:
+            return Response({'error': 'Username and password required'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        user = authenticate(username=username, password=password)
+        if not user:
+            return Response({'error': 'Invalid credentials'}, 
+                          status=status.HTTP_401_UNAUTHORIZED)
+        
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'user_type': user.user_type
+            }
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, 
+                      status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def api_logout(request):
+    try:
+        refresh_token = request.data.get('refresh')
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+        return Response({'message': 'Successfully logged out'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def api_signup(request):
+    from .serializers import UserSerializer
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': serializer.data
+        }, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def refresh_token(request):
+    try:
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response({'error': 'Refresh token is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        token = RefreshToken(refresh_token)
+        new_access_token = str(token.access_token)
+        
+        return Response({'access': new_access_token}, status=status.HTTP_200_OK)
+    
+    except Exception as e:
+        logger.error(f"Error refreshing token: {str(e)}")
+        return Response({'error': 'Invalid refresh token or other error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ViewSets
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     
     def get_permissions(self):
         if self.action == 'create':
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+            return [AllowAny()]
+        return [IsAuthenticated()]
     
     @action(detail=False, methods=['get'])
     def me(self, request):
@@ -37,18 +132,10 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
         
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response({
-            'user': UserSerializer(user).data,
-            'message': 'User created successfully'
-        }, status=status.HTTP_201_CREATED)
+        return Response({'detail': 'Use /api/signup/ endpoint for registration'}, 
+                      status=status.HTTP_405_METHOD_NOT_ALLOWED)
     
     def get_queryset(self):
-        """
-        Limiter les résultats en fonction du type d'utilisateur
-        """
         user = self.request.user
         if user.is_superuser or user.user_type == 'admin':
             return User.objects.all()
