@@ -1,20 +1,26 @@
 services:
   frontend:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "5173:5173"
     environment:
       - NODE_ENV=development
     volumes:
-      - type: bind
-        source: ./frontend
-        target: /app
+      - ./:/app
       - /app/node_modules
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
 
   backend:
-    build: ./backend
+    build: 
+      context: ../back-end/backend
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -26,18 +32,40 @@ services:
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   db:
     image: postgres:15-alpine
     ports:
-      - "5433:5432"
+      - "5432:5432"
     environment:
       - POSTGRES_DB=rh
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=12345
+      - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rh"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
