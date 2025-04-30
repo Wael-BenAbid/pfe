@@ -1,14 +1,14 @@
 services:
   frontend:
     build: 
-      context: .
+      context: ./project
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
     environment:
       - NODE_ENV=development
     volumes:
-      - ./:/app
+      - ./project:/app
       - /app/node_modules
     depends_on:
       backend:
@@ -19,7 +19,7 @@ services:
 
   backend:
     build: 
-      context: ../back-end
+      context: ./back-end
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -32,7 +32,7 @@ services:
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
     volumes:
-      - ../back-end:/app  # Montage du code source en temps réel
+      - ./back-end:/app  # Montage du code source en temps réel
     depends_on:
       db:
         condition: service_healthy
