@@ -14,6 +14,7 @@ interface AdminHeaderProps {
   onMenuClick: () => void;
   onLogout: () => void;
   pendingApplicationsCount: number;
+  className?: string;
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({ user, onMenuClick, onLogout, pendingApplicationsCount }) => {

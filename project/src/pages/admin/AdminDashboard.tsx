@@ -76,6 +76,7 @@ const AdminDashboard: React.FC = () => {
         open={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
         pendingApplicationsCount={pendingApplications.length} 
+        className="lg:w-64 md:w-48 w-1/2" // Sidebar responsive width
       />
       
       <div className="flex flex-col flex-1 overflow-hidden">
@@ -86,7 +87,7 @@ const AdminDashboard: React.FC = () => {
           pendingApplicationsCount={pendingApplications.length}
         />
         
-        <main className="flex-1 relative overflow-y-auto focus:outline-none p-6">
+        <main className="flex-1 relative overflow-y-auto focus:outline-none p-6 lg:p-8">
           <Routes>
             <Route path="/" element={<AdminOverview pendingApplicationsCount={pendingApplications.length} />} />
             <Route path="/applications" element={<ApplicationsReview />} />

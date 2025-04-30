@@ -6,6 +6,7 @@ interface AdminSidebarProps {
   open: boolean;
   onClose: () => void;
   pendingApplicationsCount: number;
+  className?: string;
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ open, onClose, pendingApplicationsCount }) => {
