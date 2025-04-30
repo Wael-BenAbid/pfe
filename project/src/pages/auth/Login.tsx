@@ -10,7 +10,7 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { login } = useAuth();
   
-  const [username, setUsername] = useState('');  // changed from email to username
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,9 +23,9 @@ const Login: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      await login(username, password);  // passing username instead of email
+      await login(username, password);
       
-      // Redirect based on user type
+      // Assume the response contains the user type, or you can fetch it after login
       const userType = localStorage.getItem('user_type');
       if (userType === 'admin') {
         navigate('/admin');
@@ -82,12 +82,12 @@ const Login: React.FC = () => {
           
           <form className="space-y-6" onSubmit={handleSubmit}>
             <TextInput
-              label="Username"  // changed from Email address to Username
-              type="text"  // changed to text
-              value={username}  // changed from email to username
-              onChange={(e) => setUsername(e.target.value)}  // changed from email to username
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               required
-              autoComplete="username"  // updated autocomplete
+              autoComplete="username"
             />
 
             <TextInput

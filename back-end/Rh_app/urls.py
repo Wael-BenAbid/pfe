@@ -1,8 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import (
-    TokenRefreshView,
-)
+from rest_framework_simplejwt.views import TokenVerifyView
+
 from .views import (
     CustomTokenObtainPairView,
     UserViewSet,
@@ -12,7 +11,9 @@ from .views import (
     InternshipViewSet,
     JobApplicationViewSet,
     api_logout,
-    api_signup
+    api_signup,
+    login_view,
+    get_user_info,
 )
 
 router = DefaultRouter()
@@ -24,14 +25,18 @@ router.register(r'internships', InternshipViewSet)
 router.register(r'job-applications', JobApplicationViewSet)
 
 urlpatterns = [
-    path('api/', include(router.urls)),
-    
-    # Authentication endpoints
-    path('api/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/logout/', api_logout, name='api_logout'),
-    path('api/signup/', api_signup, name='api_signup'),
-    
+    path('', include(router.urls)),
+    # Custom user management endpoints
+    path('users/request-access/', UserViewSet.as_view({'post': 'request_access'}), name='user-request-access'),
+    path('users/<int:pk>/approve/', UserViewSet.as_view({'post': 'approve_user'}), name='user-approve'),
+    path('users/<int:pk>/reject/', UserViewSet.as_view({'post': 'reject_user'}), name='user-reject'),
     # User endpoints
-    path('api/users/me/', UserViewSet.as_view({'get': 'me'}), name='user-me'),
+    path('users/me/', UserViewSet.as_view({'get': 'me'}), name='user-me'),
+    path('api/get-user-info/', get_user_info, name='get_user_info'),
+    # Authentication endpoints
+    path('auth/signup/', api_signup, name='api_signup'),
+    path('auth/login/', login_view, name='login'),
+    path('auth/logout/', api_logout, name='api_logout'),
+    path('auth/token/obtain/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'), 
+    path('auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
 ]

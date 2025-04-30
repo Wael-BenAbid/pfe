@@ -1,31 +1,36 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import User, Leave, Mission, WorkHours, Internship, JobApplication
 
-# ✅ Custom admin for the User model
-class CustomUserAdmin(UserAdmin):
-    list_display = ('username', 'email', 'user_type', 'get_leave_balance', 'is_staff')
-    search_fields = ('username', 'email', 'user_type', 'leave_balance')  # Ajout d'un champ de recherche
-    
+# ✅ Action personnalisée pour approuver les utilisateurs
+@admin.action(description="Approuver les utilisateurs sélectionnés")
+def approve_users(modeladmin, request, queryset):
+    updated = queryset.update(approved=True)
+    modeladmin.message_user(request, f"{updated} utilisateur(s) approuvé(s).")
+
+# ✅ Custom admin pour le modèle User
+class CustomUserAdmin(BaseUserAdmin):
+    list_display = ('username', 'email', 'user_type', 'get_leave_balance', 'approved', 'is_staff')
+    search_fields = ('username', 'email', 'user_type')  # leave_balance n'est pas un champ textuel, donc retiré ici
+    list_filter = ('user_type', 'is_staff', 'is_superuser', 'approved')
+    actions = [approve_users]  # Ajout de l'action personnalisée
+
     def get_leave_balance(self, obj):
         return obj.leave_balance
     get_leave_balance.short_description = 'Solde congés'
 
-    list_filter = ('user_type', 'is_staff', 'is_superuser')
-
-    fieldsets = list(UserAdmin.fieldsets)
+    fieldsets = list(BaseUserAdmin.fieldsets)
     fieldsets[1] = ('Informations personnelles', {
-        'fields': ('first_name', 'last_name', 'email', 'user_type', 'leave_balance')
+        'fields': ('first_name', 'last_name', 'email', 'user_type', 'leave_balance', 'approved')
     })
 
-    add_fieldsets = UserAdmin.add_fieldsets + (
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
         ('Informations supplémentaires', {
-            'fields': ('user_type', 'leave_balance'),
+            'fields': ('user_type', 'leave_balance', 'approved'),
         }),
     )
 
 admin.site.register(User, CustomUserAdmin)
-
 
 # ✅ Leave model admin
 @admin.register(Leave)

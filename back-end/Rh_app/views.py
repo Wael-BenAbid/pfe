@@ -81,7 +81,8 @@ def api_logout(request):
         token.blacklist()
         return Response({'message': 'Successfully logged out'}, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        logger.error(f"Error refreshing token: {str(e)}")
+        return Response({'error': 'Invalid refresh token or other error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -113,8 +114,17 @@ def refresh_token(request):
     except Exception as e:
         logger.error(f"Error refreshing token: {str(e)}")
         return Response({'error': 'Invalid refresh token or other error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_info(request):
+    user = request.user
+    return Response({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'user_type': user.user_type,
+        'is_approved': user.is_approved,
+    })
 # ViewSets
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -411,3 +421,18 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
             logger.error(f"Email sending failed: {str(e)}")
         
         return Response({'status': 'application rejected'})
+class InternshipViewSet(viewsets.ModelViewSet):
+    queryset = Internship.objects.all()
+    serializer_class = InternshipSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser or user.user_type == 'admin':
+            return Internship.objects.all()
+        return Internship.objects.filter(intern=user) | Internship.objects.filter(supervisor=user)
+
+class JobApplicationViewSet(viewsets.ModelViewSet):
+    queryset = JobApplication.objects.all()
+    serializer_class = JobApplicationSerializer
+    permission_classes = [permissions.AllowAny]  # à adapter selon le besoin
