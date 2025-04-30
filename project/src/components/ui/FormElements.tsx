@@ -181,7 +181,7 @@ export const FileInput: React.FC<FileInputProps> = ({
       <label htmlFor={fileInputId} className="block text-sm font-medium text-gray-700 mb-1">
         {label}
       </label>
-      <div className="relative">
+      <div className={`relative ${className}`}>
         <input
           id={fileInputId}
           type="file"

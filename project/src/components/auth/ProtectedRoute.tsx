@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../ui/LoadingSpinner';
+
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,46 +10,30 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, userType }) => {
-  const { isAuthenticated, user, loading, checkUserApprovalStatus } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const location = useLocation();
-  const [isApproved, setIsApproved] = useState<boolean | null>(null);
-  const [checkingApproval, setCheckingApproval] = useState(true);
 
-  useEffect(() => {
-    const checkApproval = async () => {
-      if (isAuthenticated()) {
-        const approved = await checkUserApprovalStatus();
-        setIsApproved(approved);
-      }
-      setCheckingApproval(false);
-    };
-
-    checkApproval();
-  }, [checkUserApprovalStatus, isAuthenticated]);
-
-  if (loading || checkingApproval) {
+  // Affiche un spinner pendant le chargement
+  if (loading) {
     return <LoadingSpinner fullScreen />;
   }
 
+  // Redirige vers la page de connexion si l'utilisateur n'est pas authentifié
   if (!isAuthenticated()) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (isApproved === false) {
+  // Redirige vers la page d'attente si l'utilisateur n'est pas approuvé
+  if (user && user.is_approved === false) {
     return <Navigate to="/pending-approval" replace />;
   }
 
-  if (userType && user?.user_type !== userType) {
-    // Redirect to the appropriate dashboard based on user type
-    if (user?.user_type === 'admin') {
-      return <Navigate to="/admin" replace />;
-    } else if (user?.user_type === 'employee') {
-      return <Navigate to="/employee" replace />;
-    } else if (user?.user_type === 'intern') {
-      return <Navigate to="/intern" replace />;
-    }
+  // Redirige vers le tableau de bord correspondant si le type d'utilisateur ne correspond pas
+  if (userType && user && user.user_type !== userType) {
+    return <Navigate to={`/${user.user_type}`} replace />;
   }
 
+  // Affiche les enfants si toutes les conditions sont remplies
   return <>{children}</>;
 };
 

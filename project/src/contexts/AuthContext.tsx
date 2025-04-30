@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { API_BASE_URL } from '../config/constants';
 
 interface User {
@@ -22,21 +22,13 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 interface AuthProviderProps {
   children: ReactNode;
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(localStorage.getItem('access_token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,22 +39,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            }
+            },
+            body: JSON.stringify({ token }),
           });
 
           if (response.ok) {
-            const userData = await response.json();
-            setUser(userData);
+            const userInfoResponse = await fetch(`${API_BASE_URL}/users/me/`, {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (userInfoResponse.ok) {
+              const userData = await userInfoResponse.json();
+              console.log('User data:', userData); // Vérifiez les données utilisateur
+              setUser(userData);
+            }
           } else {
-            // Token is invalid or expired
-            localStorage.removeItem('token');
+            localStorage.removeItem('access_token');
             setToken(null);
             setUser(null);
           }
         } catch (error) {
           console.error('Error validating token:', error);
-          localStorage.removeItem('token');
+          localStorage.removeItem('access_token');
           setToken(null);
           setUser(null);
         }
@@ -74,92 +75,71 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [token]);
 
   const login = async (username: string, password: string) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/token/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Login failed');
-      }
-  
+    const response = await fetch(`${API_BASE_URL}/token/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+
+    if (response.ok) {
       const data = await response.json();
-      if (data?.access) {
-        localStorage.setItem('token', data.access);
-        setToken(data.access);
-  
-        // 👉 Fetch user info separately
-        const userInfoResponse = await fetch(`${API_BASE_URL}/users/me`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${data.access}`
-          }
-        });
-  
-        if (!userInfoResponse.ok) {
-          throw new Error('Failed to fetch user information.');
-        }
-  
-        const userData = await userInfoResponse.json();
-        localStorage.setItem('user_type', userData.user_type);
-        setUser(userData);
-      } else {
-        throw new Error('Failed to receive a valid token.');
+      localStorage.setItem('access_token', data.access);
+      localStorage.setItem('refresh_token', data.refresh);
+      setToken(data.access);
+
+      // Fetch user data
+      const userResponse = await fetch(`${API_BASE_URL}/users/me/`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${data.access}`,
+        },
+      });
+
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        setUser(userData); // Assurez-vous que `setUser` met à jour correctement l'état utilisateur
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    } finally {
-      setLoading(false);
+    } else {
+      throw new Error('Invalid credentials');
     }
   };
-  
-  
 
   const logout = async () => {
     try {
       if (token) {
-        await fetch(`${API_BASE_URL}/logout/`, {
+        await fetch(`${API_BASE_URL}/auth/logout/`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
       }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user_type');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
       setToken(null);
       setUser(null);
     }
   };
-  
+
   const isAuthenticated = () => {
     return !!token && !!user;
   };
 
   const checkUserApprovalStatus = async (): Promise<boolean> => {
-    if (!token) return false;
-    
     try {
-      const response = await fetch(`${API_BASE_URL}/get-user-info/`, {
+      const response = await fetch(`${API_BASE_URL}/users/me/`, {
+        method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
       });
-      
+
       if (response.ok) {
         const userData = await response.json();
-        return userData.is_approved === true;
+        return userData.is_approved;
       } else {
         console.error('Failed to fetch user approval status');
         return false;
@@ -177,8 +157,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     login,
     logout,
     isAuthenticated,
-    checkUserApprovalStatus
+    checkUserApprovalStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+// Hook pour utiliser le contexte Auth
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
