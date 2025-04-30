@@ -75,8 +75,7 @@ const AdminDashboard: React.FC = () => {
       <AdminSidebar 
         open={sidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
-        pendingApplicationsCount={pendingApplications.length} 
-        className="lg:w-64 md:w-48 w-1/2" // Sidebar responsive width
+        pendingApplicationsCount={pendingApplications.length}
       />
       
       <div className="flex flex-col flex-1 overflow-hidden">
