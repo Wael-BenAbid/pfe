@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {  useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 import { LogOutIcon, CalendarIcon, BriefcaseIcon, GraduationCapIcon, ClockIcon } from 'lucide-react';
