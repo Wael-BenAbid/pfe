@@ -16,9 +16,13 @@ jobs:
         with:
           node-version: '20'
       - name: Install Dependencies
-        run: npm install
+        run: |
+          cd project  # Aller dans le répertoire du frontend
+          npm install
       - name: Run Tests
-        run: npm test
+        run: |
+          cd project  # Aller dans le répertoire du frontend
+          npm test
 
   test-backend:
     runs-on: ubuntu-latest
@@ -45,11 +49,11 @@ jobs:
           python-version: '3.11'
       - name: Install Dependencies
         run: |
-          cd back-end
+          cd back-end  # Aller dans le répertoire du backend
           pip install -r requirements.txt
       - name: Run Tests
         run: |
-          cd back-end
+          cd back-end  # Aller dans le répertoire du backend
           python manage.py test
 
   deploy:
@@ -68,7 +72,7 @@ jobs:
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./project  
+          context: ./project  # Assurer que le chemin vers le frontend est correct
           dockerfile: Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/rh-frontend:latest
@@ -76,7 +80,7 @@ jobs:
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./back-end  
+          context: ./back-end  # Assurer que le chemin vers le backend est correct
           dockerfile: Dockerfile
           push: true
           tags: ${{ secrets.DOCKER_HUB_USERNAME }}/rh-backend:latest
