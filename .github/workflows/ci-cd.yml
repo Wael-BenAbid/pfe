@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  DOCKER_HUB_USERNAME: waelbenabid  # Remplacez par votre username Docker Hub
+  DOCKER_HUB_USERNAME: waelbenabid
   FRONTEND_IMAGE: rh-frontend
   BACKEND_IMAGE: rh-backend
 
@@ -16,13 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
+          cache-dependency-path: project/package-lock.json
+
       - name: Install Dependencies
         run: |
           if [ -f "package-lock.json" ]; then
@@ -31,7 +32,7 @@ jobs:
             npm install
           fi
         working-directory: ./project
-          
+
       - name: Run Tests
         run: npm test || echo "Tests failed but continuing workflow"
         working-directory: ./project
@@ -55,17 +56,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-          
+
       - name: Install Dependencies
         run: pip install -r requirements.txt
         working-directory: ./back-end
-          
+
       - name: Run Tests
         run: python manage.py test
         working-directory: ./back-end
@@ -76,16 +77,14 @@ jobs:
     needs: [test-frontend, test-backend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - uses: actions/checkout@v4
-      
-      # Authentification Docker Hub améliorée
+
       - name: Login to Docker Hub
         run: |
           echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ env.DOCKER_HUB_USERNAME }}" --password-stdin
-      
-      # Construction et déploiement du frontend
+
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
@@ -94,8 +93,7 @@ jobs:
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-      
-      # Construction et déploiement du backend
+
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
