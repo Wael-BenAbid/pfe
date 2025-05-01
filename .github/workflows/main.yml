@@ -21,16 +21,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'  # Active le caching des dépendances npm
+          cache: 'npm'
           
       - name: Clean Install Dependencies
         run: |
-          rm -rf node_modules/  # Nettoyage préventif
-          rm -f package-lock.json
-          npm ci  # Installation propre et verrouillée des dépendances
+          rm -rf node_modules/
+          npm ci
         working-directory: ./project
         env:
-          CI: true  # Force le mode CI pour npm
+          CI: true
           
       - name: Run Tests
         run: |
@@ -40,7 +39,8 @@ jobs:
             echo "Aucun test configuré (fichier package.json introuvable)"
           fi
         working-directory: ./project
-        continue-on-error: true  # Permet au workflow de continuer même en cas d'échec des tests
+        continue-on-error: true
+
   test-backend:
     runs-on: ubuntu-latest
     services:
@@ -49,9 +49,9 @@ jobs:
         env:
           POSTGRES_DB: rh_v2
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: "12345"  # Utilisez un secret GitHub pour la production
+          POSTGRES_PASSWORD: "12345"
         ports:
-          - "5433:5432"  # Correspond à votre DATABASE_PORT
+          - "5433:5432"
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -76,8 +76,8 @@ jobs:
           echo "DATABASE_NAME=rh_v2" >> $GITHUB_ENV
           echo "DATABASE_USER=postgres" >> $GITHUB_ENV
           echo "DATABASE_PASSWORD=12345" >> $GITHUB_ENV
-          echo "DATABASE_HOST=postgres" >> $GITHUB_ENV  # Utilise le nom du service
-          echo "DATABASE_PORT=5432" >> $GITHUB_ENV      # Port interne du conteneur
+          echo "DATABASE_HOST=postgres" >> $GITHUB_ENV
+          echo "DATABASE_PORT=5432" >> $GITHUB_ENV
         working-directory: ./back-end
       - name: Run Tests
         run: python manage.py test
