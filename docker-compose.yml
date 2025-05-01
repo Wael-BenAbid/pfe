@@ -1,6 +1,8 @@
+version: '3.8'
+
 services:
   frontend:
-    build: 
+    build:
       context: ./project
       dockerfile: Dockerfile
     ports:
@@ -23,7 +25,7 @@ services:
     restart: unless-stopped
 
   backend:
-    build: 
+    build:
       context: ./back-end
       dockerfile: Dockerfile
     ports:
@@ -37,7 +39,7 @@ services:
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
     volumes:
-      - ./back-end:/app  # Montage du code source en temps réel
+      - ./back-end:/app
     depends_on:
       db:
         condition: service_healthy
@@ -59,6 +61,7 @@ services:
       python manage.py shell &&
       python manage.py runserver 0.0.0.0:8000
       "
+
   db:
     image: postgres:15-alpine
     ports:
@@ -67,7 +70,6 @@ services:
       - POSTGRES_DB=rh
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=12345
-      # Suppression de POSTGRES_HOST_AUTH_METHOD=trust pour la sécurité
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
