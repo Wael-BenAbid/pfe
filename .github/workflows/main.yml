@@ -10,6 +10,8 @@ env:
   DOCKER_HUB_REPO: waelbenabid
   FRONTEND_IMAGE: rh-frontend
   BACKEND_IMAGE: rh-backend
+  FRONTEND_DIR: ./project
+  BACKEND_DIR: ./back-end
 
 jobs:
   test-frontend:
@@ -23,22 +25,17 @@ jobs:
           node-version: '20'
           cache: 'npm'
           
-      - name: Generate Lock File (if missing)
-        run: |
-          if [ ! -f "package-lock.json" ]; then
-            npm install
-          fi
-        working-directory: ./project
-      
       - name: Install Dependencies
-        run: npm ci || npm install
-        working-directory: ./project
-        env:
-          CI: true
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm ci --prefer-offline --no-audit
+        shell: bash
           
       - name: Run Tests
-        run: npm test || echo "Tests failed but continuing workflow"
-        working-directory: ./project
+        run: |
+          cd ${{ env.FRONTEND_DIR }}
+          npm run test || echo "Tests failed but continuing workflow"
+
   test-backend:
     runs-on: ubuntu-latest
     services:
@@ -58,42 +55,30 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
+          
       - name: Install Dependencies
         run: pip install -r requirements.txt
-        working-directory: ./back-end
-      - name: Setup Environment
-        run: |
-          echo "SECRET_KEY=django-insecure-4!@e#some$%random^&characters" >> $GITHUB_ENV
-          echo "DEBUG=True" >> $GITHUB_ENV
-          echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> $GITHUB_ENV
-          echo "DATABASE_NAME=rh_v2" >> $GITHUB_ENV
-          echo "DATABASE_USER=postgres" >> $GITHUB_ENV
-          echo "DATABASE_PASSWORD=12345" >> $GITHUB_ENV
-          echo "DATABASE_HOST=postgres" >> $GITHUB_ENV
-          echo "DATABASE_PORT=5432" >> $GITHUB_ENV
-        working-directory: ./back-end
+        working-directory: ${{ env.BACKEND_DIR }}
+        
       - name: Run Tests
         run: python manage.py test
-        working-directory: ./back-end
+        working-directory: ${{ env.BACKEND_DIR }}
         env:
-          SECRET_KEY: ${{ env.SECRET_KEY }}
-          DEBUG: ${{ env.DEBUG }}
-          ALLOWED_HOSTS: ${{ env.ALLOWED_HOSTS }}
-          DATABASE_NAME: ${{ env.DATABASE_NAME }}
-          DATABASE_USER: ${{ env.DATABASE_USER }}
-          DATABASE_PASSWORD: ${{ env.DATABASE_PASSWORD }}
-          DATABASE_HOST: ${{ env.DATABASE_HOST }}
-          DATABASE_PORT: ${{ env.DATABASE_PORT }}
+          DATABASE_URL: postgresql://postgres:12345@postgres:5432/rh_v2
+          SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+          DEBUG: "False"
 
   deploy:
     needs: [test-frontend, test-backend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    
     steps:
       - uses: actions/checkout@v4
       
@@ -106,7 +91,7 @@ jobs:
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./project
+          context: ${{ env.FRONTEND_DIR }}
           push: true
           tags: |
             ${{ env.DOCKER_HUB_REPO }}/${{ env.FRONTEND_IMAGE }}:latest
@@ -115,13 +100,11 @@ jobs:
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./back-end
+          context: ${{ env.BACKEND_DIR }}
           push: true
           tags: |
             ${{ env.DOCKER_HUB_REPO }}/${{ env.BACKEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_REPO }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
           secrets: |
-            "SECRET_KEY=${{ env.SECRET_KEY }}"
-            "DEBUG=${{ env.DEBUG }}"
-            "ALLOWED_HOSTS=${{ env.ALLOWED_HOSTS }}"
-            "DATABASE_URL=postgresql://${{ env.DATABASE_USER }}:${{ env.DATABASE_PASSWORD }}@${{ env.DATABASE_HOST }}:${{ env.DATABASE_PORT }}/${{ env.DATABASE_NAME }}"
+            DATABASE_URL=postgresql://postgres:12345@postgres:5432/rh_v2
+            SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
