@@ -27,8 +27,9 @@ jobs:
           
       - name: Install Dependencies
         run: |
-          cd ${{ env.FRONTEND_DIR }}
-          npm ci --prefer-offline --no-audit
+            cd ${{ env.FRONTEND_DIR }}
+            npm install
+
         shell: bash
           
       - name: Run Tests
