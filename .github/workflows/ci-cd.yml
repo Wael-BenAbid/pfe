@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  DOCKER_HUB_USERNAME: waelbenabid  # À confirmer
+  DOCKER_HUB_USERNAME: waelbenabid
   FRONTEND_IMAGE: rh-frontend
   BACKEND_IMAGE: rh-backend
 
@@ -16,13 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
+          cache-dependency-path: project/package-lock.json
+
       - name: Install Dependencies
         run: |
           if [ -f "package-lock.json" ]; then
@@ -30,11 +31,11 @@ jobs:
           else
             npm install
           fi
-        working-directory: ./project  # Vérifiez ce chemin
-          
+        working-directory: ./project
+
       - name: Run Tests
         run: npm test || echo "Tests failed but continuing workflow"
-        working-directory: ./project  # Même chemin ici
+        working-directory: ./project
 
   test-backend:
     runs-on: ubuntu-latest
@@ -55,20 +56,20 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
-          
+
       - name: Install Dependencies
         run: pip install -r requirements.txt
-        working-directory: ./back-end  # Vérifiez ce chemin
-          
+        working-directory: ./back-end
+
       - name: Run Tests
         run: python manage.py test
-        working-directory: ./back-end  # Même chemin ici
+        working-directory: ./back-end
         env:
           DATABASE_URL: "postgresql://postgres:12345@postgres:5432/rh"
 
@@ -76,28 +77,30 @@ jobs:
     needs: [test-frontend, test-backend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Login to Docker Hub
         run: |
           echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ env.DOCKER_HUB_USERNAME }}" --password-stdin
-      
+
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
-          context: ./project  # Vérifiez ce chemin
+          context: ./project
           push: true
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-      
+
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./back-end  # Vérifiez ce chemin
+          context: ./back-end
           push: true
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          secrets: |
+            "DATABASE_URL=postgresql://postgres:12345@postgres:5432/rh"
