@@ -11,6 +11,7 @@ from .views import (
     InternshipViewSet,
     JobApplicationViewSet,
     UserSessionViewSet,
+    MeetingViewSet,
     api_logout,
     api_signup,
     login_view,
@@ -25,6 +26,7 @@ router.register(r'work-hours', WorkHoursViewSet)
 router.register(r'internships', InternshipViewSet)
 router.register(r'job-applications', JobApplicationViewSet)
 router.register(r'user-sessions', UserSessionViewSet)
+router.register(r'meetings', MeetingViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

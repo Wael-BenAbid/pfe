@@ -188,3 +188,50 @@ class JobApplication(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} - {self.position}"
+
+
+class Meeting(models.Model):
+    LOCATION_CHOICES = (
+        ('online', 'En ligne'),
+        ('office', 'Bureau'),
+        ('external', 'Lieu externe'),
+    )
+
+    STATUS_CHOICES = (
+        ('scheduled', 'Planifié'),
+        ('completed', 'Terminé'),
+        ('cancelled', 'Annulé'),
+    )
+
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    date_time = models.DateTimeField()
+    duration_minutes = models.IntegerField(default=60)
+    location_type = models.CharField(
+        max_length=20,
+        choices=LOCATION_CHOICES,
+        default='office'
+    )
+    location_details = models.CharField(max_length=200, blank=True, null=True)
+    meeting_link = models.URLField(blank=True, null=True)
+
+    # Participants
+    organizer = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='organized_meetings'
+    )
+    participants = models.ManyToManyField(
+        User,
+        related_name='meetings'
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='scheduled'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.date_time.strftime('%Y-%m-%d %H:%M')}"
