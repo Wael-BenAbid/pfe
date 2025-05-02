@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
-import { LogOutIcon, BriefcaseIcon, CalendarIcon, ClockIcon, BellIcon } from 'lucide-react';
+import { LogOutIcon, BriefcaseIcon, CalendarIcon, BellIcon } from 'lucide-react';
 import InternMissions from './InternMissions';
 import InternMeetings from './InternMeetings';
 import InternNotifications from './InternNotifications';

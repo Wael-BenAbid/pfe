@@ -1,6 +1,6 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { XIcon, HomeIcon, UsersIcon, FileTextIcon } from 'lucide-react';
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { XIcon, HomeIcon, UsersIcon, FileTextIcon } from "lucide-react";
 
 interface AdminSidebarProps {
   open: boolean;
@@ -9,16 +9,21 @@ interface AdminSidebarProps {
   className?: string;
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ open, onClose, pendingApplicationsCount }) => {
+const AdminSidebar: React.FC<AdminSidebarProps> = ({
+  open,
+  onClose,
+  pendingApplicationsCount,
+}) => {
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: HomeIcon },
-    { 
-      name: 'Applications', 
-      href: '/admin/applications', 
+    { name: "Dashboard", href: "/admin", icon: HomeIcon },
+    {
+      name: "Applications",
+      href: "/admin/applications",
       icon: FileTextIcon,
-      badge: pendingApplicationsCount > 0 ? pendingApplicationsCount : undefined
+      badge:
+        pendingApplicationsCount > 0 ? pendingApplicationsCount : undefined,
     },
-    { name: 'Employees', href: '/admin/employees', icon: UsersIcon },
+    { name: "Employees", href: "/admin/employees", icon: UsersIcon },
   ];
 
   const renderNavLinks = () => {
@@ -27,7 +32,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ open, onClose, pendingAppli
         key={item.name}
         to={item.href}
         className={({ isActive }) => `
-          ${isActive ? 'bg-blue-800 text-white' : 'text-blue-100 hover:bg-blue-700'}
+          ${
+            isActive
+              ? "bg-blue-800 text-white"
+              : "text-blue-100 hover:bg-blue-700"
+          }
           group flex items-center px-2 py-2 text-base font-medium rounded-md
         `}
         end
@@ -47,7 +56,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ open, onClose, pendingAppli
     <>
       {/* Mobile sidebar */}
       <div
-        className={`fixed inset-0 flex z-40 lg:hidden ${open ? 'block' : 'hidden'}`}
+        className={`fixed inset-0 flex z-40 lg:hidden ${
+          open ? "block" : "hidden"
+        }`}
         role="dialog"
         aria-modal="true"
       >
@@ -56,7 +67,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ open, onClose, pendingAppli
           aria-hidden="true"
           onClick={onClose}
         />
-        
+
         <div className="relative flex-1 flex flex-col max-w-xs w-full bg-blue-900 transition-all transform">
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
@@ -73,13 +84,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ open, onClose, pendingAppli
             <div className="flex-shrink-0 flex items-center px-4">
               <h1 className="text-xl font-bold text-white">HR Admin</h1>
             </div>
-            <nav className="mt-5 px-2 space-y-1">
-              {renderNavLinks()}
-            </nav>
+            <nav className="mt-5 px-2 space-y-1">{renderNavLinks()}</nav>
           </div>
         </div>
       </div>
-      
+
       {/* Desktop sidebar */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">
         <div className="flex-1 flex flex-col min-h-0 bg-blue-900">
@@ -87,9 +96,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ open, onClose, pendingAppli
             <div className="flex items-center flex-shrink-0 px-4">
               <h1 className="text-xl font-bold text-white">HR Admin</h1>
             </div>
-            <nav className="mt-5 flex-1 px-2 space-y-1">
-              {renderNavLinks()}
-            </nav>
+            <nav className="mt-5 flex-1 px-2 space-y-1">{renderNavLinks()}</nav>
           </div>
         </div>
       </div>
