@@ -130,6 +130,19 @@ const InternManagement: React.FC = () => {
     if (!selectedIntern) return;
 
     try {
+      // Afficher les données qui seront envoyées pour le débogage
+      const meetingData = {
+        title: newMeeting.title,
+        description: newMeeting.description,
+        date_time: newMeeting.date_time,
+        duration_minutes: newMeeting.duration_minutes,
+        location_type: newMeeting.location_type,
+        location_details: newMeeting.location_details || '',
+        meeting_link: newMeeting.meeting_link || ''
+      };
+
+      console.log('Sending meeting data:', meetingData);
+
       // Créer la réunion
       const response = await fetch(`${API_BASE_URL}/meetings/`, {
         method: 'POST',
@@ -137,58 +150,83 @@ const InternManagement: React.FC = () => {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          title: newMeeting.title,
-          description: newMeeting.description,
-          date_time: newMeeting.date_time,
-          duration_minutes: newMeeting.duration_minutes,
-          location_type: newMeeting.location_type,
-          location_details: newMeeting.location_details,
-          meeting_link: newMeeting.meeting_link
-        })
+        body: JSON.stringify(meetingData)
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
+      // Vérifier si la réponse est OK
       if (response.ok) {
-        const meetingData = await response.json();
+        let meetingResponse;
+        try {
+          meetingResponse = await response.json();
+          console.log('Meeting created successfully:', meetingResponse);
 
-        // Ajouter le stagiaire comme participant
-        const addParticipantResponse = await fetch(`${API_BASE_URL}/meetings/${meetingData.id}/add_participant/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            participant_id: selectedIntern.intern
-          })
-        });
-
-        if (addParticipantResponse.ok) {
-          // Réinitialiser le formulaire
-          setNewMeeting({
-            title: '',
-            description: '',
-            date_time: '',
-            duration_minutes: 60,
-            location_type: 'office',
-            location_details: '',
-            meeting_link: '',
-            participant_id: 0
+          // Ajouter le stagiaire comme participant
+          const addParticipantResponse = await fetch(`${API_BASE_URL}/meetings/${meetingResponse.id}/add_participant/`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              participant_id: selectedIntern.intern
+            })
           });
-          setShowMeetingForm(false);
-          alert('Rendez-vous créé avec succès !');
-        } else {
-          console.error('Failed to add participant:', await addParticipantResponse.json());
-          alert('Échec de l\'ajout du participant au rendez-vous');
+
+          console.log('Add participant response status:', addParticipantResponse.status);
+
+          if (addParticipantResponse.ok) {
+            // Réinitialiser le formulaire
+            setNewMeeting({
+              title: '',
+              description: '',
+              date_time: '',
+              duration_minutes: 60,
+              location_type: 'office',
+              location_details: '',
+              meeting_link: '',
+              participant_id: 0
+            });
+            setShowMeetingForm(false);
+            alert('Rendez-vous créé avec succès !');
+          } else {
+            let errorText = '';
+            try {
+              const errorData = await addParticipantResponse.json();
+              errorText = JSON.stringify(errorData);
+            } catch {
+              // Si la réponse n'est pas du JSON valide, récupérer le texte brut
+              errorText = await addParticipantResponse.text();
+            }
+            console.error('Failed to add participant:', errorText);
+            alert(`Échec de l'ajout du participant au rendez-vous: ${errorText}`);
+          }
+        } catch (parseError) {
+          console.error('Error parsing meeting response:', parseError);
+          const responseText = await response.text();
+          console.log('Raw response:', responseText);
+          alert('Erreur lors de la création du rendez-vous: Réponse invalide du serveur');
         }
       } else {
-        const errorData = await response.json();
-        console.error('Failed to create meeting:', errorData);
-        alert(`Échec de la création du rendez-vous: ${JSON.stringify(errorData)}`);
+        // Gérer les erreurs de réponse
+        let errorMessage = `Erreur ${response.status}: `;
+        try {
+          const errorData = await response.json();
+          errorMessage += JSON.stringify(errorData);
+          console.error('Failed to create meeting:', errorData);
+        } catch {
+          // Si la réponse n'est pas du JSON valide, récupérer le texte brut
+          const responseText = await response.text();
+          errorMessage += responseText;
+          console.error('Failed to create meeting, raw response:', responseText);
+        }
+        alert(`Échec de la création du rendez-vous: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error creating meeting:', error);
-      alert('Erreur lors de la création du rendez-vous');
+      alert(`Erreur lors de la création du rendez-vous: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
