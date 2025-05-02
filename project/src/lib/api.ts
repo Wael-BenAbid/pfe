@@ -15,7 +15,7 @@ import {
   UpdateMissionRequest,
   UpdateInternshipRequest,
   UpdateJobApplicationRequest
-} from '../../types';
+} from '../types';
 
 const API_URL = '/api';
 

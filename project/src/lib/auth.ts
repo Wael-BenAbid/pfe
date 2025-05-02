@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { User } from '../../types';
+import { User } from '../types';
 
 const API_URL = '/api';
 
