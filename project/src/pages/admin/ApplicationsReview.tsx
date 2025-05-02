@@ -28,30 +28,30 @@ const ApplicationsReview: React.FC = () => {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [filter, setFilter] = useState('all');
   const [processingId, setProcessingId] = useState<number | null>(null);
-  
+
   useEffect(() => {
     fetchApplications();
   }, [token, filter]);
-  
+
   const fetchApplications = async () => {
     if (!token) return;
-    
+
     try {
       let url = `${API_BASE_URL}/job-applications/`;
       if (filter !== 'all') {
         url += `?status=${filter}`;
       }
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch applications');
       }
-      
+
       const data = await response.json();
       setApplications(data);
     } catch (error) {
@@ -60,33 +60,40 @@ const ApplicationsReview: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
   const updateApplicationStatus = async (id: number, status: string) => {
     if (!token) return;
-    
+
     setProcessingId(id);
-    
+
     try {
-      const response = await fetch(`${API_BASE_URL}/job-applications/${id}/`, {
-        method: 'PATCH',
+      // Use the appropriate endpoint based on the status
+      const endpoint = status === APPLICATION_STATUSES.APPROVED
+        ? `${API_BASE_URL}/job-applications/${id}/approve/`
+        : `${API_BASE_URL}/job-applications/${id}/reject/`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status })
+        }
       });
-      
+
       if (!response.ok) {
-        throw new Error('Failed to update application status');
+        throw new Error(`Failed to ${status === APPLICATION_STATUSES.APPROVED ? 'approve' : 'reject'} application`);
       }
-      
+
       // Refresh the applications list
       fetchApplications();
-      
+
       // If the updated application is the selected one, update it
       if (selectedApplication && selectedApplication.id === id) {
         setSelectedApplication(prev => prev ? { ...prev, status } : null);
       }
+
+      // Show success message
+      alert(`Application ${status === APPLICATION_STATUSES.APPROVED ? 'approved' : 'rejected'} successfully.`);
     } catch (error) {
       console.error('Error updating application status:', error);
       alert('Failed to update application status. Please try again.');
@@ -94,7 +101,7 @@ const ApplicationsReview: React.FC = () => {
       setProcessingId(null);
     }
   };
-  
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('en-US', {
@@ -105,7 +112,7 @@ const ApplicationsReview: React.FC = () => {
       minute: '2-digit'
     }).format(date);
   };
-  
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case APPLICATION_STATUSES.PENDING:
@@ -130,7 +137,7 @@ const ApplicationsReview: React.FC = () => {
         return null;
     }
   };
-  
+
   const getApplicationTypeBadge = (type: string) => {
     switch (type) {
       case 'employee':
@@ -149,15 +156,15 @@ const ApplicationsReview: React.FC = () => {
         return null;
     }
   };
-  
+
   if (loading) {
     return <LoadingSpinner fullScreen message="Loading applications..." />;
   }
-  
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">Applications Review</h1>
-      
+
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -165,30 +172,30 @@ const ApplicationsReview: React.FC = () => {
               All Applications
             </h2>
             <div className="flex space-x-2">
-              <Button 
-                variant={filter === 'all' ? 'primary' : 'outline'} 
-                size="sm" 
+              <Button
+                variant={filter === 'all' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setFilter('all')}
               >
                 All
               </Button>
-              <Button 
-                variant={filter === 'pending' ? 'primary' : 'outline'} 
-                size="sm" 
+              <Button
+                variant={filter === 'pending' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setFilter('pending')}
               >
                 Pending
               </Button>
-              <Button 
-                variant={filter === 'approved' ? 'primary' : 'outline'} 
-                size="sm" 
+              <Button
+                variant={filter === 'approved' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setFilter('approved')}
               >
                 Approved
               </Button>
-              <Button 
-                variant={filter === 'rejected' ? 'primary' : 'outline'} 
-                size="sm" 
+              <Button
+                variant={filter === 'rejected' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setFilter('rejected')}
               >
                 Rejected
@@ -196,14 +203,14 @@ const ApplicationsReview: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         {applications.length === 0 ? (
           <div className="p-6 text-center">
             <FileTextIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No applications found</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {filter === 'all' 
-                ? 'There are no applications in the system yet.' 
+              {filter === 'all'
+                ? 'There are no applications in the system yet.'
                 : `No ${filter} applications found.`}
             </p>
           </div>
@@ -307,18 +314,18 @@ const ApplicationsReview: React.FC = () => {
           </div>
         )}
       </div>
-      
+
       {/* Application Detail Modal */}
       {selectedApplication && (
         <div className="fixed inset-0 overflow-y-auto z-50">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div 
-              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+            <div
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
               onClick={() => setSelectedApplication(null)}
             ></div>
-            
+
             <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            
+
             <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <div className="sm:flex sm:items-start">
@@ -334,7 +341,7 @@ const ApplicationsReview: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="mt-4 border-t border-gray-200 pt-4">
                       <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                         <div>
@@ -382,9 +389,9 @@ const ApplicationsReview: React.FC = () => {
                         <div className="sm:col-span-2">
                           <dt className="text-sm font-medium text-gray-500">Resume/CV</dt>
                           <dd className="mt-1 text-sm text-gray-900">
-                            <a 
-                              href={selectedApplication.cv_file} 
-                              target="_blank" 
+                            <a
+                              href={selectedApplication.cv_file}
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-600 hover:text-blue-800"
                             >

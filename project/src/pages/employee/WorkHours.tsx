@@ -8,9 +8,10 @@ import { ClockIcon, PlusIcon } from 'lucide-react';
 interface WorkHour {
   id: number;
   date: string;
-  hours: number;
-  description: string;
+  hours_worked: number;
+  description?: string;
   created_at: string;
+  user: number;
 }
 
 const WorkHours: React.FC = () => {
@@ -20,7 +21,7 @@ const WorkHours: React.FC = () => {
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
   const [newEntry, setNewEntry] = useState({
     date: '',
-    hours: 0, // Use a number here instead of a string
+    hours_worked: 0, // Use a number here instead of a string
     description: ''
   });
 
@@ -59,14 +60,14 @@ const WorkHours: React.FC = () => {
         },
         body: JSON.stringify({
           ...newEntry,
-          hours: newEntry.hours // No need for parseFloat here since it's already a number
+          hours_worked: newEntry.hours_worked // No need for parseFloat here since it's already a number
         })
       });
 
       if (response.ok) {
         fetchWorkHours();
         setShowNewEntryForm(false);
-        setNewEntry({ date: '', hours: 0, description: '' }); // Reset state
+        setNewEntry({ date: '', hours_worked: 0, description: '' }); // Reset state
       }
     } catch (error) {
       console.error('Error submitting work hours:', error);
@@ -103,8 +104,8 @@ const WorkHours: React.FC = () => {
               <TextInput
                 type="number"
                 label="Hours"
-                value={newEntry.hours}
-                onChange={(e) => setNewEntry({ ...newEntry, hours: parseFloat(e.target.value) })} // Parse as number
+                value={newEntry.hours_worked}
+                onChange={(e) => setNewEntry({ ...newEntry, hours_worked: parseFloat(e.target.value) })} // Parse as number
                 required
                 min="0"
                 step="0.5"
@@ -157,7 +158,7 @@ const WorkHours: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-sm font-medium text-gray-900">
-                    {entry.hours} hours
+                    {entry.hours_worked} hours
                   </div>
                 </div>
               </li>
