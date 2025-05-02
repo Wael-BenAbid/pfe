@@ -78,12 +78,12 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
       }
 
       const data = await response.json();
-      
+
       // Filter missions for this intern
       const internMissions = data.filter(
         (mission: Mission) => mission.assigned_to === internId
       );
-      
+
       setMissions(internMissions);
     } catch (error) {
       console.error("Error fetching missions:", error);
@@ -165,6 +165,23 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
     if (!token || !editingMission) return;
 
     try {
+      // Récupérer d'abord les détails complets de la mission pour obtenir le supervisor_id
+      const getResponse = await fetch(
+        `${API_BASE_URL}/missions/${editingMission.id}/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!getResponse.ok) {
+        throw new Error("Failed to get mission details");
+      }
+
+      const missionDetails = await getResponse.json();
+
+      // Maintenant, mettre à jour la mission avec tous les champs requis
       const response = await fetch(
         `${API_BASE_URL}/missions/${editingMission.id}/`,
         {
@@ -178,13 +195,16 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
             description: editingMission.description,
             deadline: editingMission.deadline,
             assigned_to: internId,
+            supervisor: missionDetails.supervisor, // Utiliser le supervisor existant
             completed: editingMission.completed,
           }),
         }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to update mission");
+        const errorData = await response.json();
+        console.error("Server error response:", errorData);
+        throw new Error(`Failed to update mission: ${JSON.stringify(errorData)}`);
       }
 
       // Add notification for the intern

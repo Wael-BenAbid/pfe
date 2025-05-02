@@ -36,13 +36,26 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   }, [notifications]);
 
   const addNotification = (notification: Omit<Notification, 'id' | 'date' | 'read'>) => {
+    // Check if a similar notification already exists (same title and message)
+    const existingSimilarNotification = notifications.find(
+      n => n.title === notification.title && n.message === notification.message && !n.read
+    );
+
+    // If a similar unread notification exists, don't add a new one
+    if (existingSimilarNotification) {
+      return;
+    }
+
+    // Create a unique ID with timestamp and random number to avoid duplicates
+    const uniqueId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+
     const newNotification: Notification = {
       ...notification,
-      id: Date.now(),
+      id: uniqueId,
       date: new Date().toISOString(),
       read: false,
     };
-    
+
     setNotifications(prev => [newNotification, ...prev]);
   };
 
