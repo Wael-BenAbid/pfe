@@ -83,25 +83,83 @@ const LeaveRequests: React.FC = () => {
 
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Vérifier que les dates sont valides
+    if (new Date(newRequest.start_date) > new Date(newRequest.end_date)) {
+      alert("La date de début doit être antérieure à la date de fin");
+      return;
+    }
+
+    // Vérifier que les dates ne sont pas dans le passé
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Réinitialiser l'heure pour comparer uniquement les dates
+
+    if (new Date(newRequest.start_date) < today) {
+      alert("La date de début ne peut pas être dans le passé");
+      return;
+    }
+
+    // Préparer les données à envoyer
+    const leaveData = {
+      ...newRequest,
+      // Le champ user sera automatiquement rempli par le backend
+    };
+
+    console.log("Submitting leave request:", leaveData);
+
     try {
+      // Utiliser une requête avec des options plus détaillées
       const response = await fetch(`${API_BASE_URL}/leaves/`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json",
+          "Accept": "application/json"
         },
-        body: JSON.stringify(newRequest),
+        body: JSON.stringify(leaveData),
+        credentials: "include" // Inclure les cookies si nécessaire
       });
+
+      // Log de la réponse pour le débogage
+      console.log("Response status:", response.status);
+      console.log("Response headers:", response.headers);
+
+      let responseData = {};
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        responseData = await response.json().catch(() => ({}));
+      } else {
+        const text = await response.text().catch(() => "");
+        console.log("Response text:", text);
+      }
+
+      console.log("Response data:", responseData);
 
       if (response.ok) {
         await fetchLeaveRequests();
         setShowNewRequestForm(false);
         setNewRequest({ start_date: "", end_date: "", reason: "" });
+        alert("Demande de congé soumise avec succès!");
       } else {
-        console.warn("Failed to submit request");
+        console.warn("Failed to submit request:", responseData);
+
+        // Message d'erreur plus détaillé
+        let errorMessage = "Échec de la soumission de la demande de congé.";
+        if (typeof responseData === 'object' && responseData !== null) {
+          const errors = Object.entries(responseData)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join('\n');
+
+          if (errors) {
+            errorMessage += `\n\nDétails:\n${errors}`;
+          }
+        }
+
+        alert(errorMessage);
       }
     } catch (error) {
       console.error("Error submitting leave request:", error);
+      alert("Erreur lors de la soumission de la demande de congé: " + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -192,7 +250,7 @@ const LeaveRequests: React.FC = () => {
                 required
               />
               <TextInput
-                name="End_date"
+                name="end_date"
                 type="date"
                 label="End Date"
                 value={newRequest.end_date}

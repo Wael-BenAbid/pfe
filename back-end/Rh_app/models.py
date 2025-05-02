@@ -120,11 +120,13 @@ class UserSession(models.Model):
 class Internship(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
-        ('active', 'Active'),
+        ('ongoing', 'Ongoing'),
         ('completed', 'Completed'),
-        ('terminated', 'Terminated'),
+        ('cancelled', 'Cancelled'),
     )
 
+    title = models.CharField(max_length=200, default="Internship")
+    description = models.TextField(blank=True, null=True)
     intern = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -140,12 +142,12 @@ class Internship(models.Model):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default='pending'
+        default='ongoing'
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.intern.username} - {self.start_date} to {self.end_date}"
+        return f"{self.title} - {self.intern.username} - {self.start_date} to {self.end_date}"
 
 
 class JobApplication(models.Model):
