@@ -2,6 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied
 from datetime import datetime
 import logging
 import json
@@ -302,8 +303,10 @@ class MissionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if self.request.user.user_type == 'intern':
-            return Response({'error': 'Intern cannot create missions'}, status=status.HTTP_403_FORBIDDEN)
-        serializer.save()
+            raise PermissionDenied('Intern cannot create missions')
+
+        # Si l'utilisateur est un employé ou un admin, il est le superviseur par défaut
+        serializer.save(supervisor=self.request.user)
 
     @action(detail=True, methods=['post'])
     def complete_mission(self, request, pk=None):
@@ -593,7 +596,7 @@ class MeetingViewSet(viewsets.ModelViewSet):
         """
         user = self.request.user
         if user.user_type == 'intern':
-            return Response({'error': 'Interns cannot create meetings'}, status=status.HTTP_403_FORBIDDEN)
+            raise PermissionDenied('Interns cannot create meetings')
 
         serializer.save(organizer=user)
 
