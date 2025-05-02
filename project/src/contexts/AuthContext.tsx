@@ -14,6 +14,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  sessionId: number | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: () => boolean;
@@ -29,6 +30,9 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('access_token'));
+  const [sessionId, setSessionId] = useState<number | null>(
+    localStorage.getItem('session_id') ? parseInt(localStorage.getItem('session_id') || '0') : null
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,7 +79,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [token]);
 
   const login = async (username: string, password: string) => {
-    const response = await fetch(`${API_BASE_URL}/token/`, {
+    const response = await fetch(`${API_BASE_URL}/auth/login/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
@@ -85,6 +89,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const data = await response.json();
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
+
+      // Store the session ID
+      if (data.session_id) {
+        localStorage.setItem('session_id', data.session_id.toString());
+        setSessionId(data.session_id);
+      }
+
       setToken(data.access);
 
       // Fetch user data
@@ -97,7 +108,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (userResponse.ok) {
         const userData = await userResponse.json();
-        setUser(userData); // Assurez-vous que `setUser` met à jour correctement l'état utilisateur
+        setUser(userData);
       }
     } else {
       throw new Error('Invalid credentials');
@@ -107,11 +118,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = async () => {
     try {
       if (token) {
+        // Send the session ID when logging out
         await fetch(`${API_BASE_URL}/auth/logout/`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           },
+          body: JSON.stringify({
+            refresh: localStorage.getItem('refresh_token'),
+            session_id: sessionId
+          })
         });
       }
     } catch (error) {
@@ -119,8 +136,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } finally {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
+      localStorage.removeItem('session_id');
       setToken(null);
       setUser(null);
+      setSessionId(null);
     }
   };
 
@@ -154,6 +173,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     token,
     loading,
+    sessionId,
     login,
     logout,
     isAuthenticated,

@@ -20,8 +20,9 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.shortcuts import redirect
 from rest_framework.routers import DefaultRouter
 from Rh_app.views import (
-    UserViewSet, LeaveViewSet, MissionViewSet, 
-    WorkHoursViewSet, InternshipViewSet, JobApplicationViewSet
+    UserViewSet, LeaveViewSet, MissionViewSet,
+    WorkHoursViewSet, InternshipViewSet, JobApplicationViewSet,
+    UserSessionViewSet
 )
 from rest_framework_simplejwt.views import TokenVerifyView
 router = DefaultRouter()
@@ -31,6 +32,7 @@ router.register(r'missions', MissionViewSet)
 router.register(r'work-hours', WorkHoursViewSet)
 router.register(r'internships', InternshipViewSet)
 router.register(r'job-applications', JobApplicationViewSet)
+router.register(r'user-sessions', UserSessionViewSet)
 
 
 def redirect_to_react(request):

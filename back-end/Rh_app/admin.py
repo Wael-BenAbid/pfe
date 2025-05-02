@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession
 
 # ✅ Action personnalisée pour approuver les utilisateurs
 @admin.action(description="Approuver les utilisateurs sélectionnés")
@@ -71,3 +71,15 @@ class JobApplicationAdmin(admin.ModelAdmin):
     list_filter = ('status', 'application_type')
     search_fields = ('first_name', 'last_name', 'email', 'position')
     date_hierarchy = 'created_at'
+
+# ✅ UserSession model admin
+@admin.register(UserSession)
+class UserSessionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'login_time', 'logout_time', 'is_active', 'get_duration')
+    list_filter = ('is_active', 'user__user_type')
+    search_fields = ('user__username',)
+    date_hierarchy = 'login_time'
+
+    def get_duration(self, obj):
+        return f"{obj.calculate_duration()} hours" if obj.logout_time else "Active"
+    get_duration.short_description = 'Duration'

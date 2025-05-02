@@ -13,10 +13,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession
 from .serializers import (
     UserSerializer, LeaveSerializer, MissionSerializer,
-    WorkHoursSerializer, InternshipSerializer, JobApplicationSerializer
+    WorkHoursSerializer, InternshipSerializer, JobApplicationSerializer,
+    UserSessionSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -58,6 +59,10 @@ def login_view(request):
             return Response({'error': 'Invalid credentials'},
                           status=status.HTTP_401_UNAUTHORIZED)
 
+        # Create a new user session
+        from .models import UserSession
+        user_session = UserSession.objects.create(user=user)
+
         refresh = RefreshToken.for_user(user)
         return Response({
             'refresh': str(refresh),
@@ -67,7 +72,8 @@ def login_view(request):
                 'username': user.username,
                 'email': user.email,
                 'user_type': user.user_type
-            }
+            },
+            'session_id': user_session.id
         })
     except Exception as e:
         return Response({'error': str(e)},
@@ -76,13 +82,63 @@ def login_view(request):
 @permission_classes([IsAuthenticated])
 def api_logout(request):
     try:
+        # Get the session ID from the request
+        session_id = request.data.get('session_id')
+
+        # Close the user session and record work hours
+        from .models import UserSession, WorkHours
+        from datetime import datetime, date
+        import pytz
+
+        # Get the user's active session
+        if session_id:
+            # If session_id is provided, get that specific session
+            user_session = UserSession.objects.filter(id=session_id, is_active=True).first()
+        else:
+            # Otherwise, get the most recent active session for the user
+            user_session = UserSession.objects.filter(user=request.user, is_active=True).order_by('-login_time').first()
+
+        if user_session:
+            # Set the logout time and mark session as inactive
+            user_session.logout_time = datetime.now(pytz.UTC)
+            user_session.is_active = False
+            user_session.save()
+
+            # Calculate hours worked
+            hours_worked = user_session.calculate_duration()
+
+            # Create a work hours record for today
+            today = date.today()
+
+            # Check if there's already a record for today
+            existing_record = WorkHours.objects.filter(user=request.user, date=today).first()
+
+            if existing_record:
+                # Update existing record
+                existing_record.hours_worked += hours_worked
+                existing_record.save()
+            else:
+                # Create new record
+                WorkHours.objects.create(
+                    user=request.user,
+                    date=today,
+                    hours_worked=hours_worked,
+                    description=f"Automatic time tracking: {hours_worked} hours"
+                )
+
+        # Blacklist the refresh token
         refresh_token = request.data.get('refresh')
-        token = RefreshToken(refresh_token)
-        token.blacklist()
-        return Response({'message': 'Successfully logged out'}, status=status.HTTP_200_OK)
+        if refresh_token:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+
+        return Response({
+            'message': 'Successfully logged out',
+            'hours_worked': hours_worked if user_session else 0
+        }, status=status.HTTP_200_OK)
     except Exception as e:
-        logger.error(f"Error refreshing token: {str(e)}")
-        return Response({'error': 'Invalid refresh token or other error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.error(f"Error during logout: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -274,6 +330,32 @@ class WorkHoursViewSet(viewsets.ModelViewSet):
             if self.request.user.user_type != 'admin' and not self.request.user.is_superuser:
                 return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
             serializer.save()
+
+
+class UserSessionViewSet(viewsets.ModelViewSet):
+    queryset = UserSession.objects.all()
+    serializer_class = UserSessionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Limiter les résultats en fonction du type d'utilisateur
+        """
+        user = self.request.user
+        if user.is_superuser or user.user_type == 'admin':
+            return UserSession.objects.all()
+        return UserSession.objects.filter(user=user)
+
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """
+        Récupérer la session active de l'utilisateur
+        """
+        active_session = UserSession.objects.filter(user=request.user, is_active=True).order_by('-login_time').first()
+        if active_session:
+            serializer = self.get_serializer(active_session)
+            return Response(serializer.data)
+        return Response({'detail': 'No active session found'}, status=status.HTTP_404_NOT_FOUND)
 
 class InternshipViewSet(viewsets.ModelViewSet):
     queryset = Internship.objects.all()
