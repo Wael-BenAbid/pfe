@@ -204,13 +204,27 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser or user.user_type == 'admin':
-            return User.objects.all()
+            # Apply filter if provided in query params
+            queryset = User.objects.all()
+            user_type = self.request.query_params.get('user_type', None)
+            if user_type and user_type != 'all':
+                queryset = queryset.filter(user_type=user_type)
+            return queryset
         return User.objects.filter(id=user.id)
 
     def update(self, request, *args, **kwargs):
         user = self.get_object()
         if request.user.is_superuser or request.user.user_type == 'admin':
             return super().update(request, *args, **kwargs)
+        return Response({'detail': 'Not authorized'}, status=403)
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        if request.user.is_superuser or request.user.user_type == 'admin':
+            # Don't allow deleting yourself
+            if user.id == request.user.id:
+                return Response({'detail': 'Cannot delete your own account'}, status=status.HTTP_400_BAD_REQUEST)
+            return super().destroy(request, *args, **kwargs)
         return Response({'detail': 'Not authorized'}, status=403)
 
 class LeaveViewSet(viewsets.ModelViewSet):

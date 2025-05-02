@@ -20,30 +20,30 @@ const EmployeeManagement: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
-  
+
   useEffect(() => {
     fetchUsers();
   }, [token, filterType]);
-  
+
   const fetchUsers = async () => {
     if (!token) return;
-    
+
     try {
       let url = `${API_BASE_URL}/users/`;
       if (filterType !== 'all') {
         url += `?user_type=${filterType}`;
       }
-      
+
       const response = await fetch(url, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch users');
       }
-      
+
       const data = await response.json();
       setUsers(data);
     } catch (error) {
@@ -52,7 +52,7 @@ const EmployeeManagement: React.FC = () => {
       setLoading(false);
     }
   };
-  
+
   const getUserTypeBadge = (userType: string) => {
     switch (userType) {
       case 'admin':
@@ -77,15 +77,15 @@ const EmployeeManagement: React.FC = () => {
         return null;
     }
   };
-  
+
   if (loading) {
     return <LoadingSpinner fullScreen message="Loading users..." />;
   }
-  
+
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">Employee Management</h1>
-      
+
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
@@ -93,30 +93,30 @@ const EmployeeManagement: React.FC = () => {
               All Users
             </h2>
             <div className="flex space-x-2">
-              <Button 
-                variant={filterType === 'all' ? 'primary' : 'outline'} 
-                size="sm" 
+              <Button
+                variant={filterType === 'all' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setFilterType('all')}
               >
                 All
               </Button>
-              <Button 
-                variant={filterType === 'employee' ? 'primary' : 'outline'} 
-                size="sm" 
+              <Button
+                variant={filterType === 'employee' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setFilterType('employee')}
               >
                 Employees
               </Button>
-              <Button 
-                variant={filterType === 'intern' ? 'primary' : 'outline'} 
-                size="sm" 
+              <Button
+                variant={filterType === 'intern' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setFilterType('intern')}
               >
                 Interns
               </Button>
-              <Button 
-                variant={filterType === 'admin' ? 'primary' : 'outline'} 
-                size="sm" 
+              <Button
+                variant={filterType === 'admin' ? 'primary' : 'outline'}
+                size="sm"
                 onClick={() => setFilterType('admin')}
               >
                 Admins
@@ -124,14 +124,14 @@ const EmployeeManagement: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         {users.length === 0 ? (
           <div className="p-6 text-center">
             <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {filterType === 'all' 
-                ? 'There are no users in the system yet.' 
+              {filterType === 'all'
+                ? 'There are no users in the system yet.'
                 : `No ${filterType}s found.`}
             </p>
           </div>
@@ -167,8 +167,8 @@ const EmployeeManagement: React.FC = () => {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {user.first_name && user.last_name 
-                              ? `${user.first_name} ${user.last_name}` 
+                            {user.first_name && user.last_name
+                              ? `${user.first_name} ${user.last_name}`
                               : user.username}
                           </div>
                           <div className="text-sm text-gray-500">
@@ -184,13 +184,23 @@ const EmployeeManagement: React.FC = () => {
                       {user.leave_balance} days
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        icon={<UserIcon className="h-4 w-4" />}
-                      >
-                        View Profile
-                      </Button>
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          icon={<UserIcon className="h-4 w-4" />}
+                          onClick={() => window.open(`/admin/user/${user.id}`, '_blank')}
+                        >
+                          View Profile
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => window.open(`/admin/user/${user.id}/work-hours`, '_blank')}
+                        >
+                          Work Hours
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

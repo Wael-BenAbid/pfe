@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
-import { TextInput } from '../../components/ui/FormElements';
-import { CalendarIcon, PlusIcon } from 'lucide-react';
+import TextInput from '../../components/ui/TextInput';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import { CalendarIcon, PlusIcon, ClockIcon } from 'lucide-react';
 
 interface LeaveRequest {
   id: number;
@@ -21,7 +22,7 @@ interface NewLeaveRequest {
 }
 
 const LeaveRequests: React.FC = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewRequestForm, setShowNewRequestForm] = useState(false);
@@ -30,9 +31,13 @@ const LeaveRequests: React.FC = () => {
     end_date: '',
     reason: ''
   });
+  const [leaveBalance, setLeaveBalance] = useState<number>(0);
 
   useEffect(() => {
-    if (token) fetchLeaveRequests();
+    if (token) {
+      fetchLeaveRequests();
+      fetchUserDetails();
+    }
   }, [token]);
 
   const fetchLeaveRequests = async () => {
