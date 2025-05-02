@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNotifications } from "../../contexts/NotificationContext";
 import Button from "../../components/ui/Button";
+import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import {
   LogOutIcon,
   BriefcaseIcon,
@@ -73,12 +75,11 @@ const InternDashboard: React.FC = () => {
             </h1>
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <BellIcon className="h-6 w-6 text-gray-400 hover:text-gray-500 cursor-pointer" />
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {unreadNotifications}
-                  </span>
-                )}
+                <NotificationDropdown
+                  notifications={useNotifications().notifications}
+                  onMarkAsRead={useNotifications().markAsRead}
+                  onMarkAllAsRead={useNotifications().markAllAsRead}
+                />
               </div>
               <div className="flex items-center">
                 <div className="mr-4">

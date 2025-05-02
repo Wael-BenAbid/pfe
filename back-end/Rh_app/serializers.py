@@ -78,6 +78,17 @@ class MeetingSerializer(serializers.ModelSerializer):
     organizer_full_name = serializers.SerializerMethodField()
     participants_details = serializers.SerializerMethodField()
 
+    # Rendre les champs organizer et participants optionnels
+    organizer = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        required=False
+    )
+    participants = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        many=True,
+        required=False
+    )
+
     class Meta:
         model = Meeting
         fields = '__all__'

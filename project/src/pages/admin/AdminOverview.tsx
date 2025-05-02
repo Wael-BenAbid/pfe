@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   UsersIcon,
@@ -6,6 +6,8 @@ import {
   GraduationCapIcon,
   AlertCircleIcon,
 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
+import { API_BASE_URL } from "../../config/constants";
 
 interface AdminOverviewProps {
   pendingApplicationsCount: number;
@@ -14,6 +16,46 @@ interface AdminOverviewProps {
 const AdminOverview: React.FC<AdminOverviewProps> = ({
   pendingApplicationsCount,
 }) => {
+  const { token } = useAuth();
+  const [employeeCount, setEmployeeCount] = useState(0);
+  const [internCount, setInternCount] = useState(0);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      if (!token) return;
+
+      try {
+        // Fetch employees count
+        const employeeResponse = await fetch(`${API_BASE_URL}/users/?user_type=employee`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (employeeResponse.ok) {
+          const employeeData = await employeeResponse.json();
+          setEmployeeCount(employeeData.length);
+        }
+
+        // Fetch interns count
+        const internResponse = await fetch(`${API_BASE_URL}/users/?user_type=intern`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (internResponse.ok) {
+          const internData = await internResponse.json();
+          setInternCount(internData.length);
+        }
+      } catch (error) {
+        console.error("Error fetching user counts:", error);
+      }
+    };
+
+    fetchCounts();
+  }, [token]);
+
   return (
     <div>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">
@@ -55,7 +97,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </Link>
 
         {/* Active Employees */}
-        <Link to="/admin/employees" className="group">
+        <Link to="/admin/employees?filter=employee" className="group">
           <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02]">
             <div className="p-5">
               <div className="flex items-center">
@@ -69,7 +111,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                     </dt>
                     <dd>
                       <div className="text-lg font-semibold text-gray-900">
-                        0
+                        {employeeCount}
                       </div>
                     </dd>
                   </dl>
@@ -88,7 +130,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </Link>
 
         {/* Active Interns */}
-        <Link to="/admin/employees" className="group">
+        <Link to="/admin/employees?filter=intern" className="group">
           <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02]">
             <div className="p-5">
               <div className="flex items-center">
@@ -102,7 +144,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
                     </dt>
                     <dd>
                       <div className="text-lg font-semibold text-gray-900">
-                        0
+                        {internCount}
                       </div>
                     </dd>
                   </dl>

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route  } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Home from './pages/Home';
 import ApplicationForm from './pages/ApplicationForm';
@@ -15,49 +16,51 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <AuthProvider>
-        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <Routes>
+        <NotificationProvider>
+          <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Routes>
             {/* Public routes */}
             <Route path="/" element={<Home />} />
             <Route path="/apply" element={<ApplicationForm />} />
             <Route path="/login" element={<Login />} />
             <Route path="/application-success" element={<ApplicationSuccess />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
-            
+
             {/* Protected routes - Admin only */}
-            <Route 
-              path="/admin/*" 
+            <Route
+              path="/admin/*"
               element={
                 <ProtectedRoute userType="admin">
                   <AdminDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
+
             {/* Protected routes - Employee only */}
-            <Route 
-              path="/employee/*" 
+            <Route
+              path="/employee/*"
               element={
                 <ProtectedRoute userType="employee">
                   <EmployeeDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
+
             {/* Protected routes - Intern only */}
-            <Route 
-              path="/intern/*" 
+            <Route
+              path="/intern/*"
               element={
                 <ProtectedRoute userType="intern">
                   <InternDashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
+
             {/* 404 page */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Router>
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </div>
   );

@@ -42,11 +42,22 @@ const InternMissions: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Dynamic import to avoid React Hook error
-        const { useMissions: getMissions } = await import("../../lib/queries");
-        const missionsData = await getMissions(user.id, "assignee");
+        // Appeler directement l'API pour récupérer les missions
+        const response = await fetch(`${API_BASE_URL}/missions/`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-        setMissions(missionsData || []);
+        if (response.ok) {
+          const missionsData = await response.json();
+          console.log('Missions récupérées:', missionsData);
+          setMissions(missionsData || []);
+        } else {
+          throw new Error('Failed to fetch missions');
+        }
       } catch (error) {
         console.error("Error fetching missions:", error);
         setError("Failed to load missions. Please try again later.");
@@ -57,7 +68,7 @@ const InternMissions: React.FC = () => {
     };
 
     fetchMissions();
-  }, [user?.id]);
+  }, [user?.id, token]);
 
   // Filter missions based on selected filter
   const filteredMissions = missions.filter((mission) => {

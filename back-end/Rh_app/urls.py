@@ -16,6 +16,7 @@ from .views import (
     api_signup,
     login_view,
     get_user_info,
+    refresh_token,
 )
 
 router = DefaultRouter()
@@ -43,4 +44,5 @@ urlpatterns = [
     path('auth/logout/', api_logout, name='api_logout'),
     path('auth/token/obtain/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
+    path('auth/refresh-token/', refresh_token, name='token_refresh'),
 ]

@@ -39,37 +39,78 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const validateToken = async () => {
       if (token) {
         try {
-          const response = await fetch(`${API_BASE_URL}/auth/verify-token/`, {
-            method: 'POST',
+          // Essayer d'obtenir les informations de l'utilisateur avec le token actuel
+          const userInfoResponse = await fetch(`${API_BASE_URL}/users/me/`, {
+            method: 'GET',
             headers: {
-              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ token }),
           });
 
-          if (response.ok) {
-            const userInfoResponse = await fetch(`${API_BASE_URL}/users/me/`, {
-              method: 'GET',
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
+          if (userInfoResponse.ok) {
+            // Le token est valide, récupérer les données utilisateur
+            const userData = await userInfoResponse.json();
+            console.log('User data:', userData);
+            setUser(userData);
+          } else if (userInfoResponse.status === 401) {
+            // Le token a expiré, essayer de le rafraîchir
+            const refreshToken = localStorage.getItem('refresh_token');
+            if (refreshToken) {
+              try {
+                const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh-token/`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ refresh: refreshToken }),
+                });
 
-            if (userInfoResponse.ok) {
-              const userData = await userInfoResponse.json();
-              console.log('User data:', userData); // Vérifiez les données utilisateur
-              setUser(userData);
+                if (refreshResponse.ok) {
+                  // Token rafraîchi avec succès
+                  const refreshData = await refreshResponse.json();
+                  localStorage.setItem('access_token', refreshData.access);
+                  setToken(refreshData.access);
+
+                  // Récupérer les informations utilisateur avec le nouveau token
+                  const newUserInfoResponse = await fetch(`${API_BASE_URL}/users/me/`, {
+                    method: 'GET',
+                    headers: {
+                      Authorization: `Bearer ${refreshData.access}`,
+                    },
+                  });
+
+                  if (newUserInfoResponse.ok) {
+                    const userData = await newUserInfoResponse.json();
+                    setUser(userData);
+                  }
+                } else {
+                  // Échec du rafraîchissement, déconnecter l'utilisateur
+                  console.error('Failed to refresh token');
+                  localStorage.removeItem('access_token');
+                  localStorage.removeItem('refresh_token');
+                  localStorage.removeItem('session_id');
+                  setToken(null);
+                  setUser(null);
+                  setSessionId(null);
+                }
+              } catch (refreshError) {
+                console.error('Error refreshing token:', refreshError);
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('refresh_token');
+                localStorage.removeItem('session_id');
+                setToken(null);
+                setUser(null);
+                setSessionId(null);
+              }
+            } else {
+              // Pas de token de rafraîchissement, déconnecter l'utilisateur
+              localStorage.removeItem('access_token');
+              setToken(null);
+              setUser(null);
             }
-          } else {
-            localStorage.removeItem('access_token');
-            setToken(null);
-            setUser(null);
           }
         } catch (error) {
           console.error('Error validating token:', error);
-          localStorage.removeItem('access_token');
-          setToken(null);
-          setUser(null);
         }
       }
       setLoading(false);

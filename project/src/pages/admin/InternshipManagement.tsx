@@ -41,6 +41,7 @@ const InternshipManagement: React.FC = () => {
   const [employees, setEmployees] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewInternshipForm, setShowNewInternshipForm] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("active"); // Default to active internships
   const [newInternship, setNewInternship] = useState({
     title: "",
     description: "",
@@ -54,12 +55,13 @@ const InternshipManagement: React.FC = () => {
     fetchInternships();
     fetchInterns();
     fetchEmployees();
-  }, [token]);
+  }, [token, statusFilter]);
 
   const fetchInternships = async () => {
     if (!token) return;
 
     try {
+      // Fetch all internships first
       const response = await fetch(`${API_BASE_URL}/internships/`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -72,9 +74,23 @@ const InternshipManagement: React.FC = () => {
 
       const data = await response.json();
 
+      // Filter internships based on status
+      let filteredData = data;
+      if (statusFilter === "active") {
+        // Show only ongoing and pending internships
+        filteredData = data.filter((internship: Internship) =>
+          internship.status === "ongoing" || internship.status === "pending"
+        );
+      } else if (statusFilter !== "all") {
+        // Filter by specific status
+        filteredData = data.filter((internship: Internship) =>
+          internship.status === statusFilter
+        );
+      }
+
       // Fetch user details for each internship
       const internshipsWithUserDetails = await Promise.all(
-        data.map(async (internship: Internship) => {
+        filteredData.map(async (internship: Internship) => {
           try {
             // Fetch intern details
             const internResponse = await fetch(
@@ -332,8 +348,40 @@ const InternshipManagement: React.FC = () => {
       </h1>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-          <h2 className="text-lg font-medium text-gray-900">All Internships</h2>
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <h2 className="text-lg font-medium text-gray-900">Internships</h2>
+            <div className="flex space-x-2">
+              <Button
+                variant={statusFilter === "active" ? "primary" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("active")}
+              >
+                Active & Pending
+              </Button>
+              <Button
+                variant={statusFilter === "ongoing" ? "primary" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("ongoing")}
+              >
+                Ongoing
+              </Button>
+              <Button
+                variant={statusFilter === "pending" ? "primary" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("pending")}
+              >
+                Pending
+              </Button>
+              <Button
+                variant={statusFilter === "all" ? "primary" : "outline"}
+                size="sm"
+                onClick={() => setStatusFilter("all")}
+              >
+                All
+              </Button>
+            </div>
+          </div>
           <Button
             variant="primary"
             size="sm"

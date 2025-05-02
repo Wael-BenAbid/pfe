@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { MenuIcon, BellIcon, LogOutIcon } from "lucide-react";
+import { MenuIcon, LogOutIcon } from "lucide-react";
+import NotificationDropdown from "../../components/ui/NotificationDropdown";
+import { useNotifications } from "../../contexts/NotificationContext";
 
 interface User {
   id: number;
@@ -15,6 +17,27 @@ interface AdminHeaderProps {
   onLogout: () => void;
   pendingApplicationsCount: number;
 }
+
+// Wrapper component for NotificationDropdown
+const NotificationDropdownWrapper: React.FC<{ pendingCount: number }> = ({ pendingCount }) => {
+  const { notifications, markAsRead, markAllAsRead } = useNotifications();
+
+  // Add a notification for pending applications if there are any
+  React.useEffect(() => {
+    if (pendingCount > 0) {
+      // This is just for demonstration purposes
+      // In a real app, you would fetch notifications from the server
+    }
+  }, [pendingCount]);
+
+  return (
+    <NotificationDropdown
+      notifications={notifications}
+      onMarkAsRead={markAsRead}
+      onMarkAllAsRead={markAllAsRead}
+    />
+  );
+};
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({
   user,
@@ -43,18 +66,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
           </div>
           <div className="flex items-center">
             <div className="flex-shrink-0 relative">
-              <button
-                type="button"
-                className="p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <span className="sr-only">View notifications</span>
-                <BellIcon className="h-6 w-6" aria-hidden="true" />
-                {pendingApplicationsCount > 0 && (
-                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                    {pendingApplicationsCount}
-                  </span>
-                )}
-              </button>
+              <NotificationDropdownWrapper pendingCount={pendingApplicationsCount} />
             </div>
 
             <div className="ml-3 relative">
@@ -75,6 +87,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
             <div className="ml-3">
               <button
+                type="button"
                 onClick={onLogout}
                 className="flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >

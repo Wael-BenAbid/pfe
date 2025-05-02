@@ -22,6 +22,13 @@ const EmployeeManagement: React.FC = () => {
   const [filterType, setFilterType] = useState("all");
 
   useEffect(() => {
+    // Check if there's a filter parameter in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const filterParam = urlParams.get('filter');
+    if (filterParam && ['employee', 'intern', 'admin'].includes(filterParam)) {
+      setFilterType(filterParam);
+    }
+
     fetchUsers();
   }, [token, filterType]);
 
