@@ -40,10 +40,16 @@ const LeaveRequests: React.FC = () => {
     }
   }, [token]);
 
+  // Log l'utilisateur pour le débogage
+  useEffect(() => {
+    console.log("Current user:", user);
+  }, [user]);
+
   const fetchUserDetails = async () => {
-    if (!token || !user) return;
+    if (!token) return;
 
     try {
+      // Utiliser l'endpoint /users/me/ pour obtenir les détails de l'utilisateur connecté
       const response = await fetch(`${API_BASE_URL}/users/me/`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -52,7 +58,19 @@ const LeaveRequests: React.FC = () => {
 
       if (response.ok) {
         const userData = await response.json();
+        console.log("User details fetched:", userData);
         setLeaveBalance(userData.leave_balance);
+      } else {
+        console.error("Failed to fetch user details:", response.status);
+
+        // Essayer de récupérer les détails de l'erreur
+        try {
+          const errorData = await response.json();
+          console.error("Error details:", errorData);
+        } catch {
+          // Omettre complètement le paramètre d'erreur puisqu'il n'est pas utilisé
+          console.error("Could not parse error response");
+        }
       }
     } catch (error) {
       console.error("Error fetching user details:", error);
@@ -99,11 +117,46 @@ const LeaveRequests: React.FC = () => {
       return;
     }
 
-    // Préparer les données à envoyer
+    // Récupérer l'ID de l'utilisateur actuel
+    let userId = user?.id;
+
+    // Si l'ID n'est pas disponible, essayer de le récupérer directement
+    if (!userId) {
+      try {
+        const userResponse = await fetch(`${API_BASE_URL}/users/me/`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          console.log("Retrieved user data:", userData);
+          userId = userData.id;
+        } else {
+          console.error("Failed to fetch user data:", userResponse.status);
+          alert("Erreur: Impossible de récupérer votre identifiant utilisateur. Veuillez vous reconnecter.");
+          return;
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        alert("Erreur: Impossible de récupérer votre identifiant utilisateur. Veuillez vous reconnecter.");
+        return;
+      }
+    }
+
+    // Préparer les données à envoyer avec l'ID de l'utilisateur
     const leaveData = {
       ...newRequest,
-      // Le champ user sera automatiquement rempli par le backend
+      user: userId // Ajouter explicitement l'ID de l'utilisateur
     };
+
+    // Vérifier que l'ID de l'utilisateur est disponible
+    if (!userId) {
+      console.error("User ID is not available");
+      alert("Erreur: Impossible de récupérer votre identifiant utilisateur. Veuillez vous reconnecter.");
+      return;
+    }
 
     console.log("Submitting leave request:", leaveData);
 
