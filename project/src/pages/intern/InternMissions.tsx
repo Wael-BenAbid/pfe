@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNotifications } from "../../contexts/NotificationContext";
 import Button from "../../components/ui/Button";
 import { API_BASE_URL } from "../../config/constants";
 import {
@@ -26,47 +27,62 @@ interface Mission {
 
 const InternMissions: React.FC = () => {
   const { user, token } = useAuth();
+  const { notifications } = useNotifications();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
 
-  useEffect(() => {
-    const fetchMissions = async () => {
-      if (!user?.id) {
-        setLoading(false);
-        return;
-      }
+  // Function to fetch missions
+  const fetchMissions = async () => {
+    if (!user?.id || !token) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
-        // Appeler directement l'API pour récupérer les missions
-        const response = await fetch(`${API_BASE_URL}/missions/`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const missionsData = await response.json();
-          console.log('Missions récupérées:', missionsData);
-          setMissions(missionsData || []);
-        } else {
-          throw new Error('Failed to fetch missions');
+      // Appeler directement l'API pour récupérer les missions
+      const response = await fetch(`${API_BASE_URL}/missions/`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      } catch (error) {
-        console.error("Error fetching missions:", error);
-        setError("Failed to load missions. Please try again later.");
-        setMissions([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+      });
 
+      if (response.ok) {
+        const missionsData = await response.json();
+        console.log('Missions récupérées:', missionsData);
+        setMissions(missionsData || []);
+      } else {
+        throw new Error('Failed to fetch missions');
+      }
+    } catch (error) {
+      console.error("Error fetching missions:", error);
+      setError("Failed to load missions. Please try again later.");
+      setMissions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Check for mission-related notifications
+  useEffect(() => {
+    const missionNotifications = notifications.filter(
+      n => n.title.includes("Mission") && !n.read
+    );
+
+    if (missionNotifications.length > 0) {
+      // Refresh missions when there are new mission notifications
+      fetchMissions();
+    }
+  }, [notifications, token, user?.id]);
+
+  // Initial fetch of missions
+  useEffect(() => {
     fetchMissions();
   }, [user?.id, token]);
 

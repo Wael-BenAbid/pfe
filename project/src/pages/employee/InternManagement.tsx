@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 import TextInput from '../../components/ui/TextInput';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import InternMissionManagement from './InternMissionManagement';
 import { CalendarIcon, BriefcaseIcon, GraduationCapIcon, XIcon } from 'lucide-react';
 
 interface Internship {
@@ -28,17 +29,7 @@ const InternManagement: React.FC = () => {
   const [selectedIntern, setSelectedIntern] = useState<Internship | null>(null);
 
   // États pour les formulaires
-  const [showMissionForm, setShowMissionForm] = useState(false);
   const [showMeetingForm, setShowMeetingForm] = useState(false);
-
-  // États pour les nouvelles missions et réunions
-  const [newMission, setNewMission] = useState({
-    title: '',
-    description: '',
-    deadline: '',
-    assigned_to: 0,
-    supervisor: user?.id || 0
-  });
 
   const [newMeeting, setNewMeeting] = useState({
     title: '',
@@ -84,45 +75,7 @@ const InternManagement: React.FC = () => {
     }
   };
 
-  const handleCreateMission = async (e: React.FormEvent) => {
-    e.preventDefault();
 
-    if (!selectedIntern) return;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/missions/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ...newMission,
-          assigned_to: selectedIntern.intern
-        })
-      });
-
-      if (response.ok) {
-        // Réinitialiser le formulaire
-        setNewMission({
-          title: '',
-          description: '',
-          deadline: '',
-          assigned_to: 0,
-          supervisor: user?.id || 0
-        });
-        setShowMissionForm(false);
-        alert('Mission créée avec succès !');
-      } else {
-        const errorData = await response.json();
-        console.error('Failed to create mission:', errorData);
-        alert(`Échec de la création de la mission: ${JSON.stringify(errorData)}`);
-      }
-    } catch (error) {
-      console.error('Error creating mission:', error);
-      alert('Erreur lors de la création de la mission');
-    }
-  };
 
   const handleCreateMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -268,8 +221,8 @@ const InternManagement: React.FC = () => {
             </div>
             <ul className="divide-y divide-gray-200">
               {interns.map((intern) => (
-                <li key={intern.id} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
+                <li key={intern.id} className="p-4">
+                  <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
                         <span className="text-blue-800 font-semibold">
@@ -295,17 +248,6 @@ const InternManagement: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        icon={<BriefcaseIcon className="h-4 w-4" />}
-                        onClick={() => {
-                          setSelectedIntern(intern);
-                          setShowMissionForm(true);
-                        }}
-                      >
-                        Assigner Mission
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
                         icon={<CalendarIcon className="h-4 w-4" />}
                         onClick={() => {
                           setSelectedIntern(intern);
@@ -316,84 +258,20 @@ const InternManagement: React.FC = () => {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Gestion des missions pour ce stagiaire */}
+                  <InternMissionManagement
+                    internId={intern.intern}
+                    internName={intern.intern_details
+                      ? `${intern.intern_details.first_name} ${intern.intern_details.last_name}`
+                      : `Stagiaire #${intern.intern}`}
+                  />
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Formulaire de création de mission */}
-          {showMissionForm && selectedIntern && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Nouvelle Mission pour {selectedIntern.intern_details?.first_name} {selectedIntern.intern_details?.last_name}
-                  </h3>
-                  <button
-                    type="button"
-                    className="text-gray-400 hover:text-gray-500"
-                    onClick={() => setShowMissionForm(false)}
-                    title="Fermer le formulaire"
-                  >
-                    <XIcon className="h-6 w-6" />
-                  </button>
-                </div>
 
-                <form onSubmit={handleCreateMission} className="space-y-4">
-                  <TextInput
-                    label="Titre"
-                    name="title"
-                    value={newMission.title}
-                    onChange={(e) => setNewMission({ ...newMission, title: e.target.value })}
-                    required
-                  />
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description
-                    </label>
-                    <textarea
-                      name="description"
-                      value={newMission.description}
-                      onChange={(e) => setNewMission({ ...newMission, description: e.target.value })}
-                      rows={3}
-                      className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                      placeholder="Entrez une description"
-                      required
-                    />
-                  </div>
-
-                  <TextInput
-                    label="Date limite"
-                    name="deadline"
-                    type="date"
-                    value={newMission.deadline}
-                    onChange={(e) => setNewMission({ ...newMission, deadline: e.target.value })}
-                    required
-                  />
-
-                  <div className="mt-5 sm:mt-6 flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="md"
-                      className="w-full"
-                      onClick={() => setShowMissionForm(false)}
-                    >
-                      Annuler
-                    </Button>
-                    <Button
-                      variant="primary"
-                      size="md"
-                      className="w-full"
-                      type="submit"
-                    >
-                      Créer Mission
-                    </Button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          )}
 
           {/* Formulaire de création de rendez-vous */}
           {showMeetingForm && selectedIntern && (

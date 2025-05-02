@@ -27,6 +27,9 @@ const EmployeeManagement: React.FC = () => {
     const filterParam = urlParams.get('filter');
     if (filterParam && ['employee', 'intern', 'admin'].includes(filterParam)) {
       setFilterType(filterParam);
+    } else {
+      // Par défaut, afficher uniquement les employés
+      setFilterType('employee');
     }
 
     fetchUsers();
@@ -92,14 +95,26 @@ const EmployeeManagement: React.FC = () => {
   return (
     <div className="container mx-auto py-6">
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-        Employee Management
+        {filterType === "employee"
+          ? "Employee Management"
+          : filterType === "intern"
+            ? "Intern Management"
+            : filterType === "admin"
+              ? "Admin Management"
+              : "User Management"}
       </h1>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <h2 className="text-lg font-medium text-gray-900 mb-2 sm:mb-0">
-              All Users
+              {filterType === "all"
+                ? "All Users"
+                : filterType === "employee"
+                  ? "Employees"
+                  : filterType === "intern"
+                    ? "Interns"
+                    : "Admins"}
             </h2>
             <div className="flex space-x-2">
               <Button
