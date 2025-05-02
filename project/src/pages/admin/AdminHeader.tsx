@@ -25,8 +25,9 @@ const NotificationDropdownWrapper: React.FC<{ pendingCount: number }> = ({ pendi
   const { notifications, markAsRead, markAllAsRead, addNotification } = useNotifications();
   const { token } = useAuth();
   const [pendingLeaves, setPendingLeaves] = useState<number>(0);
+  const [notificationsInitialized, setNotificationsInitialized] = useState<boolean>(false);
 
-  // Fetch pending leave requests
+  // Fetch pending leave requests - only once on component mount
   React.useEffect(() => {
     const fetchPendingLeaves = async () => {
       if (!token) return;
@@ -42,8 +43,8 @@ const NotificationDropdownWrapper: React.FC<{ pendingCount: number }> = ({ pendi
           const data = await response.json();
           setPendingLeaves(data.length);
 
-          // Add notification for pending leaves
-          if (data.length > 0) {
+          // Add notification for pending leaves only if we have some
+          if (data.length > 0 && !notificationsInitialized) {
             addNotification({
               title: 'Demandes de congé en attente',
               message: `Vous avez ${data.length} demande(s) de congé en attente d'approbation`,
@@ -56,19 +57,26 @@ const NotificationDropdownWrapper: React.FC<{ pendingCount: number }> = ({ pendi
       }
     };
 
-    fetchPendingLeaves();
-  }, [token, addNotification]);
+    if (!notificationsInitialized) {
+      fetchPendingLeaves();
+    }
+  }, [token, notificationsInitialized, addNotification]);
 
-  // Add a notification for pending applications if there are any
+  // Add a notification for pending applications - only once on component mount
   React.useEffect(() => {
-    if (pendingCount > 0) {
+    if (pendingCount > 0 && !notificationsInitialized) {
       addNotification({
         title: 'Candidatures en attente',
         message: `Vous avez ${pendingCount} candidature(s) en attente d'examen`,
         type: 'warning'
       });
+
+      // Mark notifications as initialized to prevent infinite loop
+      setNotificationsInitialized(true);
+    } else if (!notificationsInitialized) {
+      setNotificationsInitialized(true);
     }
-  }, [pendingCount, addNotification]);
+  }, [pendingCount, notificationsInitialized, addNotification]);
 
   return (
     <NotificationDropdown
