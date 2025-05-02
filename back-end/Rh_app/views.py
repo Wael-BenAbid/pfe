@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
@@ -14,11 +14,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification
 from .serializers import (
     UserSerializer, LeaveSerializer, MissionSerializer,
     WorkHoursSerializer, InternshipSerializer, JobApplicationSerializer,
-    UserSessionSerializer, MeetingSerializer
+    UserSessionSerializer, MeetingSerializer, NotificationSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -574,6 +574,59 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
             logger.error(f"Email sending failed: {str(e)}")
 
         return Response({'status': 'application rejected'})
+
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Limiter les résultats aux notifications de l'utilisateur connecté
+        """
+        user = self.request.user
+        if user.is_superuser or user.user_type == 'admin':
+            return Notification.objects.all()
+        return Notification.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        """
+        Associer la notification à l'utilisateur spécifié ou à l'utilisateur connecté
+        """
+        user_id = self.request.data.get('user')
+        if user_id and (self.request.user.is_superuser or self.request.user.user_type == 'admin'):
+            # Si un ID utilisateur est fourni et que l'utilisateur connecté est admin
+            try:
+                user = User.objects.get(id=user_id)
+                serializer.save(user=user)
+            except User.DoesNotExist:
+                raise serializers.ValidationError({'user': 'User does not exist'})
+        else:
+            # Sinon, associer la notification à l'utilisateur connecté
+            serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['post'])
+    def mark_all_as_read(self, request):
+        """
+        Marquer toutes les notifications de l'utilisateur comme lues
+        """
+        notifications = Notification.objects.filter(user=request.user, read=False)
+        notifications.update(read=True)
+        return Response({'status': 'all notifications marked as read'})
+
+    @action(detail=True, methods=['post'])
+    def mark_as_read(self, request, pk=None):
+        """
+        Marquer une notification comme lue
+        """
+        notification = self.get_object()
+        if notification.user != request.user and not request.user.is_superuser and request.user.user_type != 'admin':
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        notification.read = True
+        notification.save()
+        return Response({'status': 'notification marked as read'})
 
 
 class MeetingViewSet(viewsets.ModelViewSet):

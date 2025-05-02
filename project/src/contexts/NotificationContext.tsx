@@ -1,5 +1,7 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Notification } from '../components/ui/NotificationDropdown';
+import { API_BASE_URL } from '../config/constants';
+import { useAuth } from './AuthContext';
 
 interface NotificationContextType {
   notifications: Notification[];
@@ -17,25 +19,44 @@ interface NotificationProviderProps {
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { token, user } = useAuth();
 
-  // Load notifications from localStorage on mount
+  // Fetch notifications from API on mount and when user or token changes
   useEffect(() => {
-    const savedNotifications = localStorage.getItem('notifications');
-    if (savedNotifications) {
+    const fetchNotifications = async () => {
+      if (!token || !user) return;
+
       try {
-        setNotifications(JSON.parse(savedNotifications));
+        const response = await fetch(`${API_BASE_URL}/notifications/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Convert API notifications to our Notification format
+          const formattedNotifications: Notification[] = data.map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            message: n.message,
+            type: n.type,
+            read: n.read,
+            date: n.created_at,
+          }));
+          setNotifications(formattedNotifications);
+        }
       } catch (error) {
-        console.error('Failed to parse notifications from localStorage:', error);
+        console.error('Failed to fetch notifications:', error);
       }
-    }
-  }, []);
+    };
 
-  // Save notifications to localStorage when they change
-  useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-  }, [notifications]);
+    fetchNotifications();
+  }, [token, user]);
 
-  const addNotification = (notification: Omit<Notification, 'id' | 'date' | 'read'>) => {
+  const addNotification = async (notification: Omit<Notification, 'id' | 'date' | 'read'>) => {
+    if (!token || !user) return;
+
     // Check if a similar notification already exists (same title and message)
     const existingSimilarNotification = notifications.find(
       n => n.title === notification.title && n.message === notification.message && !n.read
@@ -46,35 +67,130 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       return;
     }
 
-    // Create a unique ID with timestamp and random number to avoid duplicates
-    const uniqueId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: notification.title,
+          message: notification.message,
+          type: notification.type || 'info',
+        }),
+      });
 
-    const newNotification: Notification = {
-      ...notification,
-      id: uniqueId,
-      date: new Date().toISOString(),
-      read: false,
-    };
+      if (response.ok) {
+        const newNotification = await response.json();
+        // Convert API notification to our Notification format
+        const formattedNotification: Notification = {
+          id: newNotification.id,
+          title: newNotification.title,
+          message: newNotification.message,
+          type: newNotification.type,
+          read: newNotification.read,
+          date: newNotification.created_at,
+        };
 
-    setNotifications(prev => [newNotification, ...prev]);
+        setNotifications(prev => [formattedNotification, ...prev]);
+      }
+    } catch (error) {
+      console.error('Failed to create notification:', error);
+
+      // Fallback to local notification if API call fails
+      const uniqueId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
+      const fallbackNotification: Notification = {
+        ...notification,
+        id: uniqueId,
+        date: new Date().toISOString(),
+        read: false,
+      };
+      setNotifications(prev => [fallbackNotification, ...prev]);
+    }
   };
 
-  const markAsRead = (id: number) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+  const markAsRead = async (id: number) => {
+    if (!token || !user) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications/${id}/mark_as_read/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // Update local state
+        setNotifications(prev =>
+          prev.map(notification =>
+            notification.id === id ? { ...notification, read: true } : notification
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+
+      // Fallback to local update if API call fails
+      setNotifications(prev =>
+        prev.map(notification =>
+          notification.id === id ? { ...notification, read: true } : notification
+        )
+      );
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
-    );
+  const markAllAsRead = async () => {
+    if (!token || !user) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications/mark_all_as_read/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // Update local state
+        setNotifications(prev =>
+          prev.map(notification => ({ ...notification, read: true }))
+        );
+      }
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+
+      // Fallback to local update if API call fails
+      setNotifications(prev =>
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+    }
   };
 
-  const removeNotification = (id: number) => {
-    setNotifications(prev => prev.filter(notification => notification.id !== id));
+  const removeNotification = async (id: number) => {
+    if (!token || !user) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications/${id}/`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        // Update local state
+        setNotifications(prev => prev.filter(notification => notification.id !== id));
+      }
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+
+      // Fallback to local update if API call fails
+      setNotifications(prev => prev.filter(notification => notification.id !== id));
+    }
   };
 
   return (
