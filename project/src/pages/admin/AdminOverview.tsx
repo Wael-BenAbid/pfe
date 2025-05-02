@@ -11,7 +11,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ pendingApplicationsCount 
     <div>
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">Admin Dashboard</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Pending Applications */}
         <Link to="/admin/applications" className="group">
           <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02]">
