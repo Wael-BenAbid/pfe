@@ -5,6 +5,7 @@ import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import ApplicationsReview from "./ApplicationsReview";
 import EmployeeManagement from "./EmployeeManagement";
+import InternManagementAdmin from "./InternManagementAdmin";
 import AdminOverview from "./AdminOverview";
 import UserProfile from "./UserProfile";
 import UserWorkHours from "./UserWorkHours";
@@ -109,6 +110,7 @@ const AdminDashboard: React.FC = () => {
               />
               <Route path="applications" element={<ApplicationsReview />} />
               <Route path="employees" element={<EmployeeManagement />} />
+              <Route path="interns" element={<InternManagementAdmin />} />
               <Route path="missions" element={<MissionManagement />} />
               <Route path="internships" element={<InternshipManagement />} />
               <Route path="leaves" element={<LeaveManagement />} />

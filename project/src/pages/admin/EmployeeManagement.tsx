@@ -19,7 +19,7 @@ const EmployeeManagement: React.FC = () => {
   const { token } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState("all");
+  const [filterType, setFilterType] = useState("employee");
 
   useEffect(() => {
     // Check if there's a filter parameter in the URL
@@ -118,13 +118,6 @@ const EmployeeManagement: React.FC = () => {
             </h2>
             <div className="flex space-x-2">
               <Button
-                variant={filterType === "all" ? "primary" : "outline"}
-                size="sm"
-                onClick={() => setFilterType("all")}
-              >
-                All
-              </Button>
-              <Button
                 variant={filterType === "employee" ? "primary" : "outline"}
                 size="sm"
                 onClick={() => setFilterType("employee")}
@@ -156,9 +149,7 @@ const EmployeeManagement: React.FC = () => {
               No users found
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {filterType === "all"
-                ? "There are no users in the system yet."
-                : `No ${filterType}s found.`}
+              {`No ${filterType}s found.`}
             </p>
           </div>
         ) : (

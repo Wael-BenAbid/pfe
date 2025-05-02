@@ -181,6 +181,10 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
 
       const missionDetails = await getResponse.json();
 
+      // Si la mission est modifiée, elle doit revenir à l'état "en cours"
+      // sauf si elle n'était pas complétée auparavant
+      const wasCompleted = missionDetails.completed;
+
       // Maintenant, mettre à jour la mission avec tous les champs requis
       const response = await fetch(
         `${API_BASE_URL}/missions/${editingMission.id}/`,
@@ -196,7 +200,7 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
             deadline: editingMission.deadline,
             assigned_to: internId,
             supervisor: missionDetails.supervisor, // Utiliser le supervisor existant
-            completed: editingMission.completed,
+            completed: false, // Remettre la mission en cours après modification
           }),
         }
       );
@@ -210,13 +214,21 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
       // Add notification for the intern
       addNotification({
         title: "Mission Updated",
-        message: `Your mission "${editingMission.title}" has been updated`,
+        message: wasCompleted
+          ? `Your mission "${editingMission.title}" has been updated and is now back in progress`
+          : `Your mission "${editingMission.title}" has been updated`,
         type: "warning",
       });
 
       resetForm();
       fetchMissions();
-      alert("Mission updated successfully!");
+
+      // Afficher un message différent selon que la mission était complétée ou non
+      if (wasCompleted) {
+        alert("Mission updated successfully! The mission has been set back to 'in progress' status.");
+      } else {
+        alert("Mission updated successfully!");
+      }
     } catch (error) {
       console.error("Error updating mission:", error);
       alert("Failed to update mission. Please try again.");

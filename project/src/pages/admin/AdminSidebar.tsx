@@ -32,6 +32,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         pendingApplicationsCount > 0 ? pendingApplicationsCount : undefined,
     },
     { name: "Employees", href: "/admin/employees", icon: UsersIcon },
+    { name: "Interns", href: "/admin/interns", icon: UsersIcon },
     { name: "Missions", href: "/admin/missions", icon: BriefcaseIcon },
     {
       name: "Internships",
