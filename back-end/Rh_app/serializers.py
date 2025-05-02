@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -106,3 +106,11 @@ class MeetingSerializer(serializers.ModelSerializer):
             }
             for user in obj.participants.all()
         ]
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    user_name = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = Notification
+        fields = ['id', 'user', 'user_name', 'title', 'message', 'type', 'read', 'created_at']

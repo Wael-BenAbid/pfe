@@ -12,6 +12,7 @@ from .views import (
     JobApplicationViewSet,
     UserSessionViewSet,
     MeetingViewSet,
+    NotificationViewSet,
     api_logout,
     api_signup,
     login_view,
@@ -28,6 +29,7 @@ router.register(r'internships', InternshipViewSet)
 router.register(r'job-applications', JobApplicationViewSet)
 router.register(r'user-sessions', UserSessionViewSet)
 router.register(r'meetings', MeetingViewSet)
+router.register(r'notifications', NotificationViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
