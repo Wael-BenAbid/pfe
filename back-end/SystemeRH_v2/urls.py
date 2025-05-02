@@ -22,7 +22,7 @@ from rest_framework.routers import DefaultRouter
 from Rh_app.views import (
     UserViewSet, LeaveViewSet, MissionViewSet,
     WorkHoursViewSet, InternshipViewSet, JobApplicationViewSet,
-    UserSessionViewSet
+    UserSessionViewSet, login_view, api_logout
 )
 from rest_framework_simplejwt.views import TokenVerifyView
 router = DefaultRouter()
@@ -44,4 +44,6 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
+    path('api/auth/login/', login_view, name='api_login'),
+    path('api/auth/logout/', api_logout, name='api_logout'),
 ]
