@@ -130,6 +130,17 @@ const InternManagement: React.FC = () => {
     if (!selectedIntern) return;
 
     try {
+      // Vérifier que les champs obligatoires sont remplis
+      if (newMeeting.location_type === 'online' && !newMeeting.meeting_link) {
+        alert('Veuillez fournir un lien de réunion pour les réunions en ligne.');
+        return;
+      }
+
+      if ((newMeeting.location_type === 'office' || newMeeting.location_type === 'external') && !newMeeting.location_details) {
+        alert('Veuillez fournir les détails du lieu pour les réunions en présentiel.');
+        return;
+      }
+
       // Afficher les données qui seront envoyées pour le débogage
       const meetingData = {
         title: newMeeting.title,

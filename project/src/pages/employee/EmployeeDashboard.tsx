@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNotifications } from "../../contexts/NotificationContext";
 import Button from "../../components/ui/Button";
+import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import {
   LogOutIcon,
   CalendarIcon,
@@ -38,19 +40,28 @@ const EmployeeDashboard: React.FC = () => {
               Employee Dashboard
             </h1>
             <div className="flex items-center">
-              <div className="mr-4">
-                <p className="text-sm text-gray-600">
-                  Welcome, {user?.username}
-                </p>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <NotificationDropdown
+                    notifications={useNotifications().notifications}
+                    onMarkAsRead={useNotifications().markAsRead}
+                    onMarkAllAsRead={useNotifications().markAllAsRead}
+                  />
+                </div>
+                <div className="mr-4">
+                  <p className="text-sm text-gray-600">
+                    Welcome, {user?.username}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<LogOutIcon className="h-4 w-4" />}
+                  onClick={handleLogout}
+                >
+                  Sign out
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                icon={<LogOutIcon className="h-4 w-4" />}
-                onClick={handleLogout}
-              >
-                Sign out
-              </Button>
             </div>
           </div>
         </div>
@@ -72,6 +83,7 @@ const EmployeeDashboard: React.FC = () => {
               { id: "hours", label: "Work Hours", icon: ClockIcon },
             ].map((tab) => (
               <button
+                type="button"
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`${

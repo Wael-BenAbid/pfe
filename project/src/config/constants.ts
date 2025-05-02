@@ -33,3 +33,39 @@ export const ACCEPTED_FILE_TYPES = [
 
 // Maximum file size for CV upload (5MB)
 export const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+// Notification types
+export const NOTIFICATION_TYPES = {
+  INFO: 'info',
+  WARNING: 'warning',
+  SUCCESS: 'success',
+  ERROR: 'error'
+};
+
+// Sample notifications for testing
+export const SAMPLE_NOTIFICATIONS = [
+  {
+    id: 1,
+    title: 'New application',
+    message: 'A new job application has been submitted',
+    date: new Date().toISOString(),
+    read: false,
+    type: 'info'
+  },
+  {
+    id: 2,
+    title: 'Leave request approved',
+    message: 'Your leave request has been approved',
+    date: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    read: true,
+    type: 'success'
+  },
+  {
+    id: 3,
+    title: 'System maintenance',
+    message: 'The system will be down for maintenance on Sunday',
+    date: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+    read: false,
+    type: 'warning'
+  }
+];

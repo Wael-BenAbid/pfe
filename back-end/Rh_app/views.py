@@ -299,7 +299,13 @@ class MissionViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.is_superuser or user.user_type == 'admin':
             return Mission.objects.all()
-        return Mission.objects.filter(assigned_to=user) | Mission.objects.filter(supervisor=user)
+
+        # Les employés peuvent voir les missions qu'ils supervisent et celles qui leur sont assignées
+        if user.user_type == 'employee':
+            return Mission.objects.filter(assigned_to=user) | Mission.objects.filter(supervisor=user)
+
+        # Les stagiaires peuvent voir uniquement les missions qui leur sont assignées
+        return Mission.objects.filter(assigned_to=user)
 
     def perform_create(self, serializer):
         if self.request.user.user_type == 'intern':
