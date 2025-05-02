@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../../components/ui/Button";
+import { API_BASE_URL } from "../../config/constants";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -24,7 +25,7 @@ interface Mission {
 }
 
 const InternMissions: React.FC = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,23 +79,38 @@ const InternMissions: React.FC = () => {
   };
 
   // Handle mission completion
-  const handleCompleteMission = (missionId: number) => {
+  const handleCompleteMission = async (missionId: number) => {
     try {
-      // Update local state
+      // Update local state optimistically
       setMissions((prev) =>
         prev.map((m) => (m.id === missionId ? { ...m, completed: true } : m))
       );
 
-      // In a real app, this would call the API to update the mission
+      // Call the API to update the mission
       console.log(`Marking mission ${missionId} as complete`);
 
-      // Here you would typically make an API call:
-      // const response = await api.completeMission(missionId);
-      // if (!response.ok) throw new Error('Failed to update mission');
+      const response = await fetch(`${API_BASE_URL}/missions/${missionId}/complete_mission/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        // Revert the state change if the API call fails
+        setMissions((prev) =>
+          prev.map((m) => (m.id === missionId ? { ...m, completed: false } : m))
+        );
+        throw new Error('Failed to update mission');
+      }
+
+      // Show success message
+      alert('Mission marked as complete!');
+
     } catch (error) {
       console.error("Error completing mission:", error);
-      // Revert the state change if the API call fails
-      // setMissions(prev => [...prev]);
+      alert('Failed to mark mission as complete. Please try again.');
     }
   };
 

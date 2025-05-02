@@ -138,7 +138,9 @@ const InternManagement: React.FC = () => {
         duration_minutes: newMeeting.duration_minutes,
         location_type: newMeeting.location_type,
         location_details: newMeeting.location_details || '',
-        meeting_link: newMeeting.meeting_link || ''
+        meeting_link: newMeeting.meeting_link || '',
+        // Nous n'avons pas besoin d'envoyer l'organisateur car il sera défini côté serveur
+        // Nous n'avons pas besoin d'envoyer les participants car ils seront ajoutés après la création
       };
 
       console.log('Sending meeting data:', meetingData);
