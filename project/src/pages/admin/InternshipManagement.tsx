@@ -188,17 +188,43 @@ const InternshipManagement: React.FC = () => {
     >
   ) => {
     const { name, value } = e.target;
-    setNewInternship({
-      ...newInternship,
-      [name]:
-        name === "intern" || name === "supervisor" ? parseInt(value) : value,
-    });
+
+    // Pour les champs intern et supervisor, vérifier que la valeur n'est pas vide
+    if ((name === "intern" || name === "supervisor") && value === "") {
+      setNewInternship({
+        ...newInternship,
+        [name]: 0, // Valeur par défaut
+      });
+    } else {
+      setNewInternship({
+        ...newInternship,
+        [name]:
+          name === "intern" || name === "supervisor" ? parseInt(value) : value,
+      });
+    }
+
+    // Log pour le débogage
+    console.log(`Field ${name} changed to:`, value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!token) return;
+
+    // Vérifier que les champs obligatoires sont remplis
+    if (!newInternship.title || !newInternship.start_date || !newInternship.end_date ||
+        !newInternship.intern || !newInternship.supervisor) {
+      console.error("Missing required fields:", newInternship);
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    // Log des données avant envoi
+    console.log("Submitting internship data:", {
+      ...newInternship,
+      status: "ongoing",
+    });
 
     try {
       const response = await fetch(`${API_BASE_URL}/internships/`, {
@@ -213,8 +239,13 @@ const InternshipManagement: React.FC = () => {
         }),
       });
 
+      // Log de la réponse
+      console.log("Response status:", response.status);
+      const responseData = await response.json().catch(() => ({}));
+      console.log("Response data:", responseData);
+
       if (!response.ok) {
-        throw new Error("Failed to create internship");
+        throw new Error(`Failed to create internship: ${JSON.stringify(responseData)}`);
       }
 
       // Reset form and fetch updated internships
@@ -228,6 +259,9 @@ const InternshipManagement: React.FC = () => {
       });
       setShowNewInternshipForm(false);
       fetchInternships();
+
+      // Afficher un message de succès
+      alert("Internship created successfully!");
     } catch (error) {
       console.error("Error creating internship:", error);
       alert("Failed to create internship. Please try again.");
