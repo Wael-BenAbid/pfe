@@ -1,16 +1,25 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { UsersIcon, BriefcaseIcon, GraduationCapIcon, AlertCircleIcon } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  UsersIcon,
+  BriefcaseIcon,
+  GraduationCapIcon,
+  AlertCircleIcon,
+} from "lucide-react";
 
 interface AdminOverviewProps {
   pendingApplicationsCount: number;
 }
 
-const AdminOverview: React.FC<AdminOverviewProps> = ({ pendingApplicationsCount }) => {
+const AdminOverview: React.FC<AdminOverviewProps> = ({
+  pendingApplicationsCount,
+}) => {
   return (
     <div>
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">Admin Dashboard</h1>
-      
+      <h1 className="text-2xl font-semibold text-gray-900 mb-6">
+        Admin Dashboard
+      </h1>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Pending Applications */}
         <Link to="/admin/applications" className="group">
@@ -44,7 +53,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ pendingApplicationsCount 
             </div>
           </div>
         </Link>
-        
+
         {/* Active Employees */}
         <Link to="/admin/employees" className="group">
           <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02]">
@@ -77,7 +86,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ pendingApplicationsCount 
             </div>
           </div>
         </Link>
-        
+
         {/* Active Interns */}
         <Link to="/admin/employees" className="group">
           <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02]">
@@ -111,7 +120,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ pendingApplicationsCount 
           </div>
         </Link>
       </div>
-      
+
       {/* Quick actions */}
       <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
       <div className="bg-white shadow overflow-hidden sm:rounded-md mb-8">
@@ -124,8 +133,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ pendingApplicationsCount 
                     <AlertCircleIcon className="h-5 w-5 text-orange-500" />
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900">Review pending applications</p>
-                    <p className="text-sm text-gray-500">Review and approve job and internship applications</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      Review pending applications
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Review and approve job and internship applications
+                    </p>
                   </div>
                 </div>
               </div>
@@ -139,8 +152,12 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ pendingApplicationsCount 
                     <UsersIcon className="h-5 w-5 text-blue-500" />
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm font-medium text-gray-900">Manage users</p>
-                    <p className="text-sm text-gray-500">View and manage all employees and interns</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      Manage users
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      View and manage all employees and interns
+                    </p>
                   </div>
                 </div>
               </div>

@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../../config/constants';
-import { useAuth } from '../../contexts/AuthContext';
-import Button from '../../components/ui/Button';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import { UsersIcon, UserIcon } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/constants";
+import { useAuth } from "../../contexts/AuthContext";
+import Button from "../../components/ui/Button";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import { UsersIcon, UserIcon } from "lucide-react";
 
 interface User {
   id: number;
@@ -19,7 +19,7 @@ const EmployeeManagement: React.FC = () => {
   const { token } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState('all');
+  const [filterType, setFilterType] = useState("all");
 
   useEffect(() => {
     fetchUsers();
@@ -30,24 +30,24 @@ const EmployeeManagement: React.FC = () => {
 
     try {
       let url = `${API_BASE_URL}/users/`;
-      if (filterType !== 'all') {
+      if (filterType !== "all") {
         url += `?user_type=${filterType}`;
       }
 
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        throw new Error("Failed to fetch users");
       }
 
       const data = await response.json();
       setUsers(data);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
     }
@@ -55,19 +55,19 @@ const EmployeeManagement: React.FC = () => {
 
   const getUserTypeBadge = (userType: string) => {
     switch (userType) {
-      case 'admin':
+      case "admin":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
             Admin
           </span>
         );
-      case 'employee':
+      case "employee":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             Employee
           </span>
         );
-      case 'intern':
+      case "intern":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
             Intern
@@ -84,7 +84,9 @@ const EmployeeManagement: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">Employee Management</h1>
+      <h1 className="text-2xl font-semibold text-gray-900 mb-6">
+        Employee Management
+      </h1>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
         <div className="p-4 border-b border-gray-200 bg-gray-50">
@@ -94,30 +96,30 @@ const EmployeeManagement: React.FC = () => {
             </h2>
             <div className="flex space-x-2">
               <Button
-                variant={filterType === 'all' ? 'primary' : 'outline'}
+                variant={filterType === "all" ? "primary" : "outline"}
                 size="sm"
-                onClick={() => setFilterType('all')}
+                onClick={() => setFilterType("all")}
               >
                 All
               </Button>
               <Button
-                variant={filterType === 'employee' ? 'primary' : 'outline'}
+                variant={filterType === "employee" ? "primary" : "outline"}
                 size="sm"
-                onClick={() => setFilterType('employee')}
+                onClick={() => setFilterType("employee")}
               >
                 Employees
               </Button>
               <Button
-                variant={filterType === 'intern' ? 'primary' : 'outline'}
+                variant={filterType === "intern" ? "primary" : "outline"}
                 size="sm"
-                onClick={() => setFilterType('intern')}
+                onClick={() => setFilterType("intern")}
               >
                 Interns
               </Button>
               <Button
-                variant={filterType === 'admin' ? 'primary' : 'outline'}
+                variant={filterType === "admin" ? "primary" : "outline"}
                 size="sm"
-                onClick={() => setFilterType('admin')}
+                onClick={() => setFilterType("admin")}
               >
                 Admins
               </Button>
@@ -128,10 +130,12 @@ const EmployeeManagement: React.FC = () => {
         {users.length === 0 ? (
           <div className="p-6 text-center">
             <UsersIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No users found
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {filterType === 'all'
-                ? 'There are no users in the system yet.'
+              {filterType === "all"
+                ? "There are no users in the system yet."
                 : `No ${filterType}s found.`}
             </p>
           </div>
@@ -140,16 +144,28 @@ const EmployeeManagement: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     User
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Type
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Leave Balance
                   </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Actions
                   </th>
                 </tr>
@@ -161,8 +177,10 @@ const EmployeeManagement: React.FC = () => {
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
                           <span className="text-blue-800 font-semibold">
-                            {user.first_name ? user.first_name.charAt(0) : user.username.charAt(0)}
-                            {user.last_name ? user.last_name.charAt(0) : ''}
+                            {user.first_name
+                              ? user.first_name.charAt(0)
+                              : user.username.charAt(0)}
+                            {user.last_name ? user.last_name.charAt(0) : ""}
                           </span>
                         </div>
                         <div className="ml-4">
@@ -189,14 +207,21 @@ const EmployeeManagement: React.FC = () => {
                           variant="outline"
                           size="sm"
                           icon={<UserIcon className="h-4 w-4" />}
-                          onClick={() => window.open(`/admin/user/${user.id}`, '_blank')}
+                          onClick={() =>
+                            window.open(`/admin/user/${user.id}`, "_blank")
+                          }
                         >
                           View Profile
                         </Button>
                         <Button
                           variant="primary"
                           size="sm"
-                          onClick={() => window.open(`/admin/user/${user.id}/work-hours`, '_blank')}
+                          onClick={() =>
+                            window.open(
+                              `/admin/user/${user.id}/work-hours`,
+                              "_blank"
+                            )
+                          }
                         >
                           Work Hours
                         </Button>

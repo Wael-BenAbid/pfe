@@ -1,60 +1,60 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { TextInput } from '../../components/ui/FormElements';
-import Button from '../../components/ui/Button';
-import { useAuth } from '../../contexts/AuthContext';
-import { UserIcon } from 'lucide-react';
+import React, { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { TextInput } from "../../components/ui/FormElements";
+import Button from "../../components/ui/Button";
+import { useAuth } from "../../contexts/AuthContext";
+import { UserIcon } from "lucide-react";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
-  
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  const from = location.state?.from?.pathname || '/';
-  
+
+  const from = location.state?.from?.pathname || "/";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
+    setErrorMessage("");
     setIsSubmitting(true);
-    
+
     try {
       await login(username, password);
-      
+
       // Assume the response contains the user type, or you can fetch it after login
-      const userType = localStorage.getItem('user_type');
-      if (userType === 'admin') {
-        navigate('/admin');
-      } else if (userType === 'employee') {
-        navigate('/employee');
-      } else if (userType === 'intern') {
-        navigate('/intern');
+      const userType = localStorage.getItem("user_type");
+      if (userType === "admin") {
+        navigate("/admin");
+      } else if (userType === "employee") {
+        navigate("/employee");
+      } else if (userType === "intern") {
+        navigate("/intern");
       } else {
         navigate(from);
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       if (error instanceof Error) {
-        if (error.message.includes('credentials')) {
-          setErrorMessage('Invalid username or password');
-        } else if (error.message.includes('pending')) {
-          setErrorMessage('Your account is pending approval');
-          navigate('/pending-approval');
+        if (error.message.includes("credentials")) {
+          setErrorMessage("Invalid username or password");
+        } else if (error.message.includes("pending")) {
+          setErrorMessage("Your account is pending approval");
+          navigate("/pending-approval");
         } else {
-          setErrorMessage('An error occurred. Please try again.');
+          setErrorMessage("An error occurred. Please try again.");
         }
       } else {
-        setErrorMessage('An error occurred. Please try again.');
+        setErrorMessage("An error occurred. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -65,8 +65,11 @@ const Login: React.FC = () => {
           Sign in to your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link to="/apply" className="font-medium text-blue-600 hover:text-blue-500">
+          Or{" "}
+          <Link
+            to="/apply"
+            className="font-medium text-blue-600 hover:text-blue-500"
+          >
             submit a new application
           </Link>
         </p>
@@ -79,7 +82,7 @@ const Login: React.FC = () => {
               {errorMessage}
             </div>
           )}
-          
+
           <form className="space-y-6" onSubmit={handleSubmit}>
             <TextInput
               label="Username"
@@ -107,13 +110,19 @@ const Login: React.FC = () => {
                   type="checkbox"
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="remember_me" className="ml-2 block text-sm text-gray-900">
+                <label
+                  htmlFor="remember_me"
+                  className="ml-2 block text-sm text-gray-900"
+                >
                   Remember me
                 </label>
               </div>
 
               <div className="text-sm">
-                <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                <a
+                  href="#"
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
                   Forgot your password?
                 </a>
               </div>

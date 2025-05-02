@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { API_BASE_URL } from '../../config/constants';
-import { useAuth } from '../../contexts/AuthContext';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
-import Button from '../../components/ui/Button';
-import { ArrowLeftIcon, ClockIcon } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { API_BASE_URL } from "../../config/constants";
+import { useAuth } from "../../contexts/AuthContext";
+import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import Button from "../../components/ui/Button";
+import { ArrowLeftIcon, ClockIcon } from "lucide-react";
 
 interface WorkHour {
   id: number;
@@ -43,43 +43,50 @@ const UserWorkHours: React.FC = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch user details');
+        throw new Error("Failed to fetch user details");
       }
 
       const userData = await response.json();
       setUser(userData);
     } catch (error) {
-      console.error('Error fetching user details:', error);
+      console.error("Error fetching user details:", error);
     }
   };
 
   const fetchWorkHours = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/work-hours/?user=${userId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      const response = await fetch(
+        `${API_BASE_URL}/work-hours/?user=${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
-      });
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch work hours');
+        throw new Error("Failed to fetch work hours");
       }
 
       const data = await response.json();
       setWorkHours(data);
-      
+
       // Calculate total hours
-      const total = data.reduce((sum: number, entry: WorkHour) => sum + parseFloat(entry.hours_worked.toString()), 0);
+      const total = data.reduce(
+        (sum: number, entry: WorkHour) =>
+          sum + parseFloat(entry.hours_worked.toString()),
+        0
+      );
       setTotalHours(total);
-      
+
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching work hours:', error);
+      console.error("Error fetching work hours:", error);
       setLoading(false);
     }
   };
@@ -115,14 +122,17 @@ const UserWorkHours: React.FC = () => {
             Work Hours History
           </h2>
           <div className="text-sm font-medium text-gray-900">
-            Total Hours: <span className="text-blue-600">{totalHours.toFixed(2)}</span>
+            Total Hours:{" "}
+            <span className="text-blue-600">{totalHours.toFixed(2)}</span>
           </div>
         </div>
 
         {workHours.length === 0 ? (
           <div className="p-6 text-center">
             <ClockIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No work hours recorded</h3>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No work hours recorded
+            </h3>
             <p className="mt-1 text-sm text-gray-500">
               This user has not logged any work hours yet.
             </p>
@@ -132,16 +142,28 @@ const UserWorkHours: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Date
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Hours
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Description
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
                     Type
                   </th>
                 </tr>
@@ -156,10 +178,11 @@ const UserWorkHours: React.FC = () => {
                       {entry.hours_worked} hours
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {entry.description || 'No description'}
+                      {entry.description || "No description"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {entry.description && entry.description.includes('Automatic time tracking') ? (
+                      {entry.description &&
+                      entry.description.includes("Automatic time tracking") ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                           Automatic
                         </span>

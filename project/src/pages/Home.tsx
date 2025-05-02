@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { UserPlus, LogIn, BriefcaseIcon } from 'lucide-react';
-import Button from '../components/ui/Button';
+import React from "react";
+import { Link } from "react-router-dom";
+import { UserPlus, LogIn, BriefcaseIcon } from "lucide-react";
+import Button from "../components/ui/Button";
 
 const Home: React.FC = () => {
   return (
@@ -12,16 +12,26 @@ const Home: React.FC = () => {
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
               <BriefcaseIcon className="h-8 w-8 text-blue-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">HR System</span>
+              <span className="ml-2 text-xl font-bold text-gray-900">
+                HR System
+              </span>
             </div>
             <div className="flex items-center space-x-4">
               <Link to="/login">
-                <Button variant="outline" size="sm" icon={<LogIn className="h-4 w-4" />}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<LogIn className="h-4 w-4" />}
+                >
                   Login
                 </Button>
               </Link>
               <Link to="/apply">
-                <Button variant="primary" size="sm" icon={<UserPlus className="h-4 w-4" />}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<UserPlus className="h-4 w-4" />}
+                >
                   Apply Now
                 </Button>
               </Link>
@@ -38,16 +48,17 @@ const Home: React.FC = () => {
               Welcome to Our <span className="text-blue-600">HR System</span>
             </h1>
             <p className="mt-6 text-xl text-gray-500 max-w-3xl mx-auto">
-              Join our team and be part of something great. We offer exciting opportunities for both full-time positions and internships.
+              Join our team and be part of something great. We offer exciting
+              opportunities for both full-time positions and internships.
             </p>
           </div>
 
           <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4 animate-fade-in-up-delay">
             <Link to="/apply" className="w-full sm:w-auto">
-              <Button 
-                variant="primary" 
-                size="lg" 
-                fullWidth 
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
                 icon={<UserPlus className="h-5 w-5" />}
                 className="transform transition-all hover:scale-105"
               >
@@ -55,9 +66,9 @@ const Home: React.FC = () => {
               </Button>
             </Link>
             <Link to="/login" className="w-full sm:w-auto">
-              <Button 
-                variant="outline" 
-                size="lg" 
+              <Button
+                variant="outline"
+                size="lg"
                 fullWidth
                 icon={<LogIn className="h-5 w-5" />}
                 className="transform transition-all hover:scale-105"
@@ -73,22 +84,34 @@ const Home: React.FC = () => {
               <div className="h-12 w-12 mx-auto bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center">
                 <BriefcaseIcon className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">Career Growth</h3>
-              <p className="mt-2 text-gray-500">Opportunities for professional development and advancement</p>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                Career Growth
+              </h3>
+              <p className="mt-2 text-gray-500">
+                Opportunities for professional development and advancement
+              </p>
             </div>
             <div className="bg-white/60 backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-all">
               <div className="h-12 w-12 mx-auto bg-green-100 text-green-600 rounded-lg flex items-center justify-center">
                 <UserPlus className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">Easy Application</h3>
-              <p className="mt-2 text-gray-500">Simple and streamlined application process</p>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                Easy Application
+              </h3>
+              <p className="mt-2 text-gray-500">
+                Simple and streamlined application process
+              </p>
             </div>
             <div className="bg-white/60 backdrop-blur-sm p-6 rounded-xl shadow-sm hover:shadow-md transition-all">
               <div className="h-12 w-12 mx-auto bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center">
                 <LogIn className="h-6 w-6" />
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-gray-900">Employee Portal</h3>
-              <p className="mt-2 text-gray-500">Secure access to employee resources and tools</p>
+              <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                Employee Portal
+              </h3>
+              <p className="mt-2 text-gray-500">
+                Secure access to employee resources and tools
+              </p>
             </div>
           </div>
         </div>

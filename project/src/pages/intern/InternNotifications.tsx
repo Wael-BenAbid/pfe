@@ -1,49 +1,50 @@
-import React, { useState } from 'react';
-import { BellIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import React, { useState } from "react";
+import { BellIcon } from "lucide-react";
+import { format } from "date-fns";
 
 // Mock data for notifications - In a real app, this would come from the API
 const mockNotifications = [
   {
     id: 1,
-    type: 'mission',
-    title: 'New Mission Assigned',
-    message: 'You have been assigned a new mission: Frontend Development Task',
-    date: new Date('2024-03-19T09:00:00'),
-    read: false
+    type: "mission",
+    title: "New Mission Assigned",
+    message: "You have been assigned a new mission: Frontend Development Task",
+    date: new Date("2024-03-19T09:00:00"),
+    read: false,
   },
   {
     id: 2,
-    type: 'meeting',
-    title: 'Meeting Scheduled',
-    message: 'Weekly progress review meeting scheduled for tomorrow at 10:00 AM',
-    date: new Date('2024-03-19T11:30:00'),
-    read: false
+    type: "meeting",
+    title: "Meeting Scheduled",
+    message:
+      "Weekly progress review meeting scheduled for tomorrow at 10:00 AM",
+    date: new Date("2024-03-19T11:30:00"),
+    read: false,
   },
   {
     id: 3,
-    type: 'deadline',
-    title: 'Deadline Reminder',
-    message: 'The UI Design mission is due in 2 days',
-    date: new Date('2024-03-18T15:00:00'),
-    read: true
-  }
+    type: "deadline",
+    title: "Deadline Reminder",
+    message: "The UI Design mission is due in 2 days",
+    date: new Date("2024-03-18T15:00:00"),
+    read: true,
+  },
 ];
 
 const InternNotifications = () => {
   const [notifications, setNotifications] = useState(mockNotifications);
 
   const markAsRead = (id: number) => {
-    setNotifications(prev =>
-      prev.map(notification =>
+    setNotifications((prev) =>
+      prev.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification
       )
     );
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
+    setNotifications((prev) =>
+      prev.map((notification) => ({ ...notification, read: true }))
     );
   };
   return (
@@ -64,14 +65,16 @@ const InternNotifications = () => {
           <div
             key={notification.id}
             className={`bg-white border rounded-lg p-4 hover:shadow-md transition-shadow ${
-              !notification.read ? 'border-blue-200 bg-blue-50' : ''
+              !notification.read ? "border-blue-200 bg-blue-50" : ""
             }`}
           >
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <BellIcon className={`h-6 w-6 ${
-                  notification.read ? 'text-gray-400' : 'text-blue-500'
-                }`} />
+                <BellIcon
+                  className={`h-6 w-6 ${
+                    notification.read ? "text-gray-400" : "text-blue-500"
+                  }`}
+                />
               </div>
               <div className="ml-3 flex-1">
                 <div className="flex items-center justify-between">
@@ -80,7 +83,7 @@ const InternNotifications = () => {
                   </p>
                   <div className="ml-2 flex-shrink-0 flex">
                     <p className="text-sm text-gray-500">
-                      {format(notification.date, 'PP')}
+                      {format(notification.date, "PP")}
                     </p>
                   </div>
                 </div>

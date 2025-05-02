@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../../config/constants';
-import { useAuth } from '../../contexts/AuthContext';
-import Button from '../../components/ui/Button';
-import { TextArea } from '../../components/ui/FormElements';
-import { GraduationCapIcon } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../config/constants";
+import { useAuth } from "../../contexts/AuthContext";
+import Button from "../../components/ui/Button";
+import { TextArea } from "../../components/ui/FormElements";
+import { GraduationCapIcon } from "lucide-react";
 
 interface Intern {
   id: number;
@@ -21,7 +21,7 @@ const SupervisedInterns: React.FC = () => {
   const [loading, setLoading] = useState(true); // Etat de chargement
   const [selectedIntern, setSelectedIntern] = useState<Intern | null>(null);
   const [showEvaluationForm, setShowEvaluationForm] = useState(false);
-  const [evaluation, setEvaluation] = useState('');
+  const [evaluation, setEvaluation] = useState("");
 
   useEffect(() => {
     fetchInterns();
@@ -32,8 +32,8 @@ const SupervisedInterns: React.FC = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/internships/`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
@@ -41,7 +41,7 @@ const SupervisedInterns: React.FC = () => {
         setInterns(data);
       }
     } catch (error) {
-      console.error('Error fetching interns:', error);
+      console.error("Error fetching interns:", error);
     } finally {
       setLoading(false); // Fin du chargement
     }
@@ -50,34 +50,34 @@ const SupervisedInterns: React.FC = () => {
   const handleSubmitEvaluation = async (internId: number) => {
     try {
       const response = await fetch(`${API_BASE_URL}/internships/${internId}/`, {
-        method: 'PATCH',
+        method: "PATCH",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ evaluation })
+        body: JSON.stringify({ evaluation }),
       });
 
       if (response.ok) {
         fetchInterns();
         setShowEvaluationForm(false);
         setSelectedIntern(null);
-        setEvaluation('');
+        setEvaluation("");
       }
     } catch (error) {
-      console.error('Error submitting evaluation:', error);
+      console.error("Error submitting evaluation:", error);
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
             Completed
           </span>
         );
-      case 'active':
+      case "active":
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             Active
@@ -94,7 +94,9 @@ const SupervisedInterns: React.FC = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-lg font-medium text-gray-900 mb-6">Supervised Interns</h2>
+      <h2 className="text-lg font-medium text-gray-900 mb-6">
+        Supervised Interns
+      </h2>
 
       {/* Affichage pendant le chargement */}
       {loading ? (
@@ -117,7 +119,8 @@ const SupervisedInterns: React.FC = () => {
                         Project: {intern.project}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {new Date(intern.start_date).toLocaleDateString()} - {new Date(intern.end_date).toLocaleDateString()}
+                        {new Date(intern.start_date).toLocaleDateString()} -{" "}
+                        {new Date(intern.end_date).toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -129,7 +132,7 @@ const SupervisedInterns: React.FC = () => {
                       onClick={() => {
                         setSelectedIntern(intern);
                         setShowEvaluationForm(true);
-                        setEvaluation(intern.evaluation || '');
+                        setEvaluation(intern.evaluation || "");
                       }}
                     >
                       Evaluate
@@ -161,7 +164,7 @@ const SupervisedInterns: React.FC = () => {
                 onClick={() => {
                   setShowEvaluationForm(false);
                   setSelectedIntern(null);
-                  setEvaluation('');
+                  setEvaluation("");
                 }}
               >
                 Cancel
