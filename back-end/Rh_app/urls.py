@@ -10,6 +10,7 @@ from .views import (
     WorkHoursViewSet,
     InternshipViewSet,
     JobApplicationViewSet,
+    UserSessionViewSet,
     api_logout,
     api_signup,
     login_view,
@@ -23,6 +24,7 @@ router.register(r'missions', MissionViewSet)
 router.register(r'work-hours', WorkHoursViewSet)
 router.register(r'internships', InternshipViewSet)
 router.register(r'job-applications', JobApplicationViewSet)
+router.register(r'user-sessions', UserSessionViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -37,6 +39,6 @@ urlpatterns = [
     path('auth/signup/', api_signup, name='api_signup'),
     path('auth/login/', login_view, name='login'),
     path('auth/logout/', api_logout, name='api_logout'),
-    path('auth/token/obtain/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'), 
+    path('auth/token/obtain/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
 ]

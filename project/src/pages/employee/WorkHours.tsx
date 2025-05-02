@@ -77,14 +77,17 @@ const WorkHours: React.FC = () => {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-lg font-medium text-gray-900">Work Hours</h2>
+        <div>
+          <h2 className="text-lg font-medium text-gray-900">Work Hours</h2>
+          <p className="text-sm text-gray-500">Your work hours are automatically tracked from login to logout</p>
+        </div>
         <Button
           variant="primary"
           size="sm"
           icon={<PlusIcon className="h-4 w-4" />}
           onClick={() => setShowNewEntryForm(true)}
         >
-          New Entry
+          Add Manual Entry
         </Button>
       </div>
 
@@ -154,7 +157,14 @@ const WorkHours: React.FC = () => {
                       <div className="text-sm font-medium text-gray-900">
                         {new Date(entry.date).toLocaleDateString()}
                       </div>
-                      <div className="text-sm text-gray-500">{entry.description}</div>
+                      <div className="text-sm text-gray-500">
+                        {entry.description ? entry.description : 'No description'}
+                        {entry.description && entry.description.includes('Automatic time tracking') && (
+                          <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            Auto
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="text-sm font-medium text-gray-900">

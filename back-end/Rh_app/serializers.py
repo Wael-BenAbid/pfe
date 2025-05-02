@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'username', 'email', 'password', 'user_type', 'leave_balance', 'first_name', 'last_name','approved')
         extra_kwargs = {'password': {'write_only': True}}
-        
+
     def create(self, validated_data):
         user = User.objects.create_user(
             username=validated_data['username'],
@@ -23,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class LeaveSerializer(serializers.ModelSerializer):
     user_name = serializers.ReadOnlyField(source='user.username')
-    
+
     class Meta:
         model = Leave
         fields = '__all__'
@@ -31,14 +31,14 @@ class LeaveSerializer(serializers.ModelSerializer):
 class MissionSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.ReadOnlyField(source='assigned_to.username')
     supervisor_name = serializers.ReadOnlyField(source='supervisor.username')
-    
+
     class Meta:
         model = Mission
         fields = '__all__'
 
 class WorkHoursSerializer(serializers.ModelSerializer):
     user_name = serializers.ReadOnlyField(source='user.username')
-    
+
     class Meta:
         model = WorkHours
         fields = '__all__'
@@ -46,7 +46,7 @@ class WorkHoursSerializer(serializers.ModelSerializer):
 class InternshipSerializer(serializers.ModelSerializer):
     intern_name = serializers.ReadOnlyField(source='intern.username')
     supervisor_name = serializers.ReadOnlyField(source='supervisor.username')
-    
+
     class Meta:
         model = Internship
         fields = '__all__'
@@ -59,3 +59,15 @@ class JobApplicationSerializer(serializers.ModelSerializer):
             'email', 'phone', 'education', 'experience', 'motivation', 'cv_file',
             'status', 'created_at', 'user'
         ]
+
+class UserSessionSerializer(serializers.ModelSerializer):
+    duration_hours = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserSession
+        fields = ['id', 'user', 'login_time', 'logout_time', 'is_active', 'duration_hours']
+
+    def get_duration_hours(self, obj):
+        if obj.logout_time:
+            return obj.calculate_duration()
+        return None
