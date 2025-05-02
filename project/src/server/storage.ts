@@ -1,6 +1,6 @@
 
-import { 
-  type User, 
+import {
+  type User,
   type InsertUser,
   type Leave,
   type InsertLeave,
@@ -12,7 +12,7 @@ import {
   type InsertInternship,
   type JobApplication,
   type InsertJobApplication
-} from "../../shared/schema";
+} from "../shared/schema";
 
 // Define a comprehensive storage interface for all HR operations
 export interface IStorage {
@@ -21,7 +21,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
-  
+
   // Leave operations
   getLeave(id: number): Promise<Leave | undefined>;
   getLeavesByUser(userId: number): Promise<Leave[]>;
@@ -30,7 +30,7 @@ export interface IStorage {
   updateLeave(id: number, leaveData: Partial<Leave>): Promise<Leave | undefined>;
   approveLeave(id: number): Promise<Leave | undefined>;
   rejectLeave(id: number): Promise<Leave | undefined>;
-  
+
   // Mission operations
   getMission(id: number): Promise<Mission | undefined>;
   getMissionsByAssignee(userId: number): Promise<Mission[]>;
@@ -39,12 +39,12 @@ export interface IStorage {
   createMission(mission: InsertMission): Promise<Mission>;
   updateMission(id: number, missionData: Partial<Mission>): Promise<Mission | undefined>;
   completeMission(id: number): Promise<Mission | undefined>;
-  
+
   // Work Hours operations
   getWorkHoursByUser(userId: number): Promise<WorkHours[]>;
   getAllWorkHours(): Promise<WorkHours[]>;
   createWorkHours(workHours: InsertWorkHours): Promise<WorkHours>;
-  
+
   // Internship operations
   getInternship(id: number): Promise<Internship | undefined>;
   getInternshipsByIntern(userId: number): Promise<Internship[]>;
@@ -53,7 +53,7 @@ export interface IStorage {
   createInternship(internship: InsertInternship): Promise<Internship>;
   updateInternship(id: number, internshipData: Partial<Internship>): Promise<Internship | undefined>;
   changeInternshipStatus(id: number, status: string): Promise<Internship | undefined>;
-  
+
   // Job Application operations
   getJobApplication(id: number): Promise<JobApplication | undefined>;
   getJobApplicationsByUser(userId: number): Promise<JobApplication[]>;
@@ -72,7 +72,7 @@ export class MemStorage implements IStorage {
   private workHours: Map<number, WorkHours>;
   private internships: Map<number, Internship>;
   private jobApplications: Map<number, JobApplication>;
-  
+
   private userIdCounter: number;
   private leaveIdCounter: number;
   private missionIdCounter: number;
@@ -87,7 +87,7 @@ export class MemStorage implements IStorage {
     this.workHours = new Map();
     this.internships = new Map();
     this.jobApplications = new Map();
-    
+
     this.userIdCounter = 1;
     this.leaveIdCounter = 1;
     this.missionIdCounter = 1;
@@ -109,8 +109,8 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const user: User = { 
-      ...insertUser, 
+    const user: User = {
+      ...insertUser,
       id,
       leave_balance: insertUser.leave_balance || '30',
       user_type: insertUser.user_type || 'employee'
@@ -122,7 +122,7 @@ export class MemStorage implements IStorage {
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
-    
+
     const updatedUser = { ...user, ...userData };
     this.users.set(id, updatedUser);
     return updatedUser;
@@ -146,12 +146,20 @@ export class MemStorage implements IStorage {
   async createLeave(insertLeave: InsertLeave): Promise<Leave> {
     const id = this.leaveIdCounter++;
     const now = new Date().toISOString();
-    const leave: Leave = { 
-      ...insertLeave, 
-      id, 
+
+    // Get user name from users map
+    let userName = 'User Name';
+    const user = this.users.get(insertLeave.user_id);
+    if (user) {
+      userName = `${user.first_name} ${user.last_name}`.trim();
+    }
+
+    const leave: Leave = {
+      ...insertLeave,
+      id,
       created_at: new Date(now),
       status: 'pending',
-      user_name: 'User Name' // Would be populated from user data in real implementation
+      user_name: userName
     };
     this.leaves.set(id, leave);
     return leave;
@@ -160,7 +168,7 @@ export class MemStorage implements IStorage {
   async updateLeave(id: number, leaveData: Partial<Leave>): Promise<Leave | undefined> {
     const leave = this.leaves.get(id);
     if (!leave) return undefined;
-    
+
     const updatedLeave = { ...leave, ...leaveData };
     this.leaves.set(id, updatedLeave);
     return updatedLeave;
@@ -169,31 +177,31 @@ export class MemStorage implements IStorage {
   async approveLeave(id: number): Promise<Leave | undefined> {
     const leave = this.leaves.get(id);
     if (!leave) return undefined;
-    
+
     const updatedLeave = { ...leave, status: 'approved' };
     this.leaves.set(id, updatedLeave);
-    
+
     // Update user leave balance
     const user = this.users.get(leave.user_id);
     if (user) {
       const startDate = new Date(leave.start_date);
       const endDate = new Date(leave.end_date);
       const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      
-      const updatedUser = { 
-        ...user, 
-        leave_balance: Math.max(0, Number(user.leave_balance) - daysDiff).toString() 
+
+      const updatedUser = {
+        ...user,
+        leave_balance: Math.max(0, Number(user.leave_balance) - daysDiff).toString()
       };
       this.users.set(user.id, updatedUser);
     }
-    
+
     return updatedLeave;
   }
 
   async rejectLeave(id: number): Promise<Leave | undefined> {
     const leave = this.leaves.get(id);
     if (!leave) return undefined;
-    
+
     const updatedLeave = { ...leave, status: 'rejected' };
     this.leaves.set(id, updatedLeave);
     return updatedLeave;
@@ -223,13 +231,28 @@ export class MemStorage implements IStorage {
   async createMission(insertMission: InsertMission): Promise<Mission> {
     const id = this.missionIdCounter++;
     const now = new Date().toISOString();
-    const mission: Mission = { 
-      ...insertMission, 
-      id, 
+
+    // Get assignee name from users map
+    let assigneeName = 'Assignee Name';
+    const assignee = this.users.get(insertMission.assigned_to_id);
+    if (assignee) {
+      assigneeName = `${assignee.first_name} ${assignee.last_name}`.trim();
+    }
+
+    // Get supervisor name from users map
+    let supervisorName = 'Supervisor Name';
+    const supervisor = this.users.get(insertMission.supervisor_id);
+    if (supervisor) {
+      supervisorName = `${supervisor.first_name} ${supervisor.last_name}`.trim();
+    }
+
+    const mission: Mission = {
+      ...insertMission,
+      id,
       created_at: new Date(now),
       completed: false,
-      assigned_to_name: 'Assignee Name', // Would be populated from user data in real implementation
-      supervisor_name: 'Supervisor Name' // Would be populated from user data in real implementation
+      assigned_to_name: assigneeName,
+      supervisor_name: supervisorName
     };
     this.missions.set(id, mission);
     return mission;
@@ -238,7 +261,7 @@ export class MemStorage implements IStorage {
   async updateMission(id: number, missionData: Partial<Mission>): Promise<Mission | undefined> {
     const mission = this.missions.get(id);
     if (!mission) return undefined;
-    
+
     const updatedMission = { ...mission, ...missionData };
     this.missions.set(id, updatedMission);
     return updatedMission;
@@ -247,7 +270,7 @@ export class MemStorage implements IStorage {
   async completeMission(id: number): Promise<Mission | undefined> {
     const mission = this.missions.get(id);
     if (!mission) return undefined;
-    
+
     const updatedMission = { ...mission, completed: true };
     this.missions.set(id, updatedMission);
     return updatedMission;
@@ -267,11 +290,19 @@ export class MemStorage implements IStorage {
   async createWorkHours(insertWorkHours: InsertWorkHours): Promise<WorkHours> {
     const id = this.workHoursIdCounter++;
     const now = new Date().toISOString();
-    const workHours: WorkHours = { 
-      ...insertWorkHours, 
-      id, 
+
+    // Get user name from users map
+    let userName = 'User Name';
+    const user = this.users.get(insertWorkHours.user_id);
+    if (user) {
+      userName = `${user.first_name} ${user.last_name}`.trim();
+    }
+
+    const workHours: WorkHours = {
+      ...insertWorkHours,
+      id,
       created_at: new Date(now),
-      user_name: 'User Name' // Would be populated from user data in real implementation
+      user_name: userName
     };
     this.workHours.set(id, workHours);
     return workHours;
@@ -301,13 +332,28 @@ export class MemStorage implements IStorage {
   async createInternship(insertInternship: InsertInternship): Promise<Internship> {
     const id = this.internshipIdCounter++;
     const now = new Date().toISOString();
-    const internship: Internship = { 
-      ...insertInternship, 
-      id, 
+
+    // Get intern name from users map
+    let internName = 'Intern Name';
+    const intern = this.users.get(insertInternship.intern_id);
+    if (intern) {
+      internName = `${intern.first_name} ${intern.last_name}`.trim();
+    }
+
+    // Get supervisor name from users map
+    let supervisorName = 'Supervisor Name';
+    const supervisor = this.users.get(insertInternship.supervisor_id);
+    if (supervisor) {
+      supervisorName = `${supervisor.first_name} ${supervisor.last_name}`.trim();
+    }
+
+    const internship: Internship = {
+      ...insertInternship,
+      id,
       created_at: new Date(now),
       status: 'pending',
-      intern_name: 'Intern Name', // Would be populated from user data in real implementation
-      supervisor_name: 'Supervisor Name' // Would be populated from user data in real implementation
+      intern_name: internName,
+      supervisor_name: supervisorName
     };
     this.internships.set(id, internship);
     return internship;
@@ -316,7 +362,7 @@ export class MemStorage implements IStorage {
   async updateInternship(id: number, internshipData: Partial<Internship>): Promise<Internship | undefined> {
     const internship = this.internships.get(id);
     if (!internship) return undefined;
-    
+
     const updatedInternship = { ...internship, ...internshipData };
     this.internships.set(id, updatedInternship);
     return updatedInternship;
@@ -325,7 +371,7 @@ export class MemStorage implements IStorage {
   async changeInternshipStatus(id: number, status: string): Promise<Internship | undefined> {
     const internship = this.internships.get(id);
     if (!internship) return undefined;
-    
+
     const updatedInternship = { ...internship, status };
     this.internships.set(id, updatedInternship);
     return updatedInternship;
@@ -349,9 +395,9 @@ export class MemStorage implements IStorage {
   async createJobApplication(insertApplication: InsertJobApplication): Promise<JobApplication> {
     const id = this.jobApplicationIdCounter++;
     const now = new Date().toISOString();
-    const application: JobApplication = { 
-      ...insertApplication, 
-      id, 
+    const application: JobApplication = {
+      ...insertApplication,
+      id,
       created_at: new Date(now),
       status: 'pending',
       user_id: insertApplication.user_id ?? null
@@ -363,7 +409,7 @@ export class MemStorage implements IStorage {
   async updateJobApplication(id: number, applicationData: Partial<JobApplication>): Promise<JobApplication | undefined> {
     const application = this.jobApplications.get(id);
     if (!application) return undefined;
-    
+
     const updatedApplication = { ...application, ...applicationData };
     this.jobApplications.set(id, updatedApplication);
     return updatedApplication;
@@ -372,7 +418,7 @@ export class MemStorage implements IStorage {
   async approveJobApplication(id: number): Promise<JobApplication | undefined> {
     const application = this.jobApplications.get(id);
     if (!application) return undefined;
-    
+
     const updatedApplication = { ...application, status: 'approved' };
     this.jobApplications.set(id, updatedApplication);
     return updatedApplication;
@@ -381,7 +427,7 @@ export class MemStorage implements IStorage {
   async rejectJobApplication(id: number): Promise<JobApplication | undefined> {
     const application = this.jobApplications.get(id);
     if (!application) return undefined;
-    
+
     const updatedApplication = { ...application, status: 'rejected' };
     this.jobApplications.set(id, updatedApplication);
     return updatedApplication;
