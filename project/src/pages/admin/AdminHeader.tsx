@@ -1,6 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { MenuIcon, BellIcon, LogOutIcon } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { MenuIcon, BellIcon, LogOutIcon } from "lucide-react";
 
 interface User {
   id: number;
@@ -14,10 +14,14 @@ interface AdminHeaderProps {
   onMenuClick: () => void;
   onLogout: () => void;
   pendingApplicationsCount: number;
-  
 }
 
-const AdminHeader: React.FC<AdminHeaderProps> = ({ user, onMenuClick, onLogout, pendingApplicationsCount }) => {
+const AdminHeader: React.FC<AdminHeaderProps> = ({
+  user,
+  onMenuClick,
+  onLogout,
+  pendingApplicationsCount,
+}) => {
   return (
     <header className="bg-white shadow">
       <div className="px-4 sm:px-6 lg:px-8">
@@ -52,7 +56,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ user, onMenuClick, onLogout, 
                 )}
               </button>
             </div>
-            
+
             <div className="ml-3 relative">
               <div className="flex items-center">
                 <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -61,12 +65,14 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ user, onMenuClick, onLogout, 
                   </span>
                 </div>
                 <div className="ml-3 hidden md:block">
-                  <div className="text-sm font-medium text-gray-700">{user.username}</div>
+                  <div className="text-sm font-medium text-gray-700">
+                    {user.username}
+                  </div>
                   <div className="text-xs text-gray-500">{user.email}</div>
                 </div>
               </div>
             </div>
-            
+
             <div className="ml-3">
               <button
                 onClick={onLogout}

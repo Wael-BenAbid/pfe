@@ -1,33 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import Button from '../../components/ui/Button';
-import { LogOutIcon, BriefcaseIcon, CalendarIcon, BellIcon } from 'lucide-react';
-import InternMissions from './InternMissions';
-import InternMeetings from './InternMeetings';
-import InternNotifications from './InternNotifications';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import Button from "../../components/ui/Button";
+import {
+  LogOutIcon,
+  BriefcaseIcon,
+  CalendarIcon,
+  BellIcon,
+} from "lucide-react";
+import InternMissions from "./InternMissions";
+import InternMeetings from "./InternMeetings";
+import InternNotifications from "./InternNotifications";
 
 const InternDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('missions');
-  const [missions, setMissions] = useState<Array<{
-    id: number;
-    title: string;
-    description: string;
-    deadline: string;
-    completed: boolean;
-    assigned_to_id: number;
-    assigned_to_name: string;
-    supervisor_id: number;
-    supervisor_name: string;
-    created_at: Date;
-  }>>([]);
+  const [activeTab, setActiveTab] = useState("missions");
+  const [missions, setMissions] = useState<
+    Array<{
+      id: number;
+      title: string;
+      description: string;
+      deadline: string;
+      completed: boolean;
+      assigned_to_id: number;
+      assigned_to_name: string;
+      supervisor_id: number;
+      supervisor_name: string;
+      created_at: Date;
+    }>
+  >([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   useEffect(() => {
@@ -35,11 +42,13 @@ const InternDashboard: React.FC = () => {
       if (user?.id) {
         try {
           // Importation dynamique pour éviter l'erreur de hook
-          const { useMissions: getMissions } = await import('../../lib/queries');
-          const missionsData = await getMissions(user.id, 'assignee');
+          const { useMissions: getMissions } = await import(
+            "../../lib/queries"
+          );
+          const missionsData = await getMissions(user.id, "assignee");
           setMissions(missionsData || []);
         } catch (error) {
-          console.error('Error fetching missions:', error);
+          console.error("Error fetching missions:", error);
           setMissions([]);
         }
       }
@@ -50,7 +59,7 @@ const InternDashboard: React.FC = () => {
 
   useEffect(() => {
     // Count unread notifications (pending missions and upcoming meetings)
-    const pendingMissions = missions.filter(m => !m.completed).length;
+    const pendingMissions = missions.filter((m) => !m.completed).length;
     setUnreadNotifications(pendingMissions);
   }, [missions]);
 
@@ -59,7 +68,9 @@ const InternDashboard: React.FC = () => {
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Intern Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Intern Dashboard
+            </h1>
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <BellIcon className="h-6 w-6 text-gray-400 hover:text-gray-500 cursor-pointer" />
@@ -71,7 +82,9 @@ const InternDashboard: React.FC = () => {
               </div>
               <div className="flex items-center">
                 <div className="mr-4">
-                  <p className="text-sm text-gray-600">Welcome, {user?.username}</p>
+                  <p className="text-sm text-gray-600">
+                    Welcome, {user?.username}
+                  </p>
                 </div>
                 <Button
                   variant="outline"
@@ -93,11 +106,11 @@ const InternDashboard: React.FC = () => {
           <nav className="-mb-px flex space-x-8">
             <button
               type="button"
-              onClick={() => setActiveTab('missions')}
+              onClick={() => setActiveTab("missions")}
               className={`${
-                activeTab === 'missions'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === "missions"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
             >
               <BriefcaseIcon className="h-4 w-4 mr-2" />
@@ -105,11 +118,11 @@ const InternDashboard: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('meetings')}
+              onClick={() => setActiveTab("meetings")}
               className={`${
-                activeTab === 'meetings'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === "meetings"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
             >
               <CalendarIcon className="h-4 w-4 mr-2" />
@@ -117,11 +130,11 @@ const InternDashboard: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('notifications')}
+              onClick={() => setActiveTab("notifications")}
               className={`${
-                activeTab === 'notifications'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                activeTab === "notifications"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
             >
               <BellIcon className="h-4 w-4 mr-2" />
@@ -137,9 +150,9 @@ const InternDashboard: React.FC = () => {
 
         {/* Content */}
         <div className="bg-white shadow rounded-lg p-6">
-          {activeTab === 'missions' && <InternMissions />}
-          {activeTab === 'meetings' && <InternMeetings />}
-          {activeTab === 'notifications' && <InternNotifications />}
+          {activeTab === "missions" && <InternMissions />}
+          {activeTab === "meetings" && <InternMeetings />}
+          {activeTab === "notifications" && <InternNotifications />}
         </div>
       </main>
     </div>

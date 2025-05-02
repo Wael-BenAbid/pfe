@@ -113,7 +113,10 @@ const AdminDashboard: React.FC = () => {
               <Route path="internships" element={<InternshipManagement />} />
               <Route path="leaves" element={<LeaveManagement />} />
               <Route path="user/:userId" element={<UserProfile />} />
-              <Route path="user/:userId/work-hours" element={<UserWorkHours />} />
+              <Route
+                path="user/:userId/work-hours"
+                element={<UserWorkHours />}
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>

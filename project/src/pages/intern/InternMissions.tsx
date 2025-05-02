@@ -1,8 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import Button from '../../components/ui/Button';
-import { CheckCircleIcon, ClockIcon, AlertCircleIcon, Loader2Icon } from 'lucide-react';
-import { format, isPast, isToday } from 'date-fns';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import Button from "../../components/ui/Button";
+import {
+  CheckCircleIcon,
+  ClockIcon,
+  AlertCircleIcon,
+  Loader2Icon,
+} from "lucide-react";
+import { format, isPast, isToday } from "date-fns";
 
 // Define Mission type to improve code readability
 interface Mission {
@@ -23,7 +28,7 @@ const InternMissions: React.FC = () => {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
 
   useEffect(() => {
     const fetchMissions = async () => {
@@ -35,15 +40,15 @@ const InternMissions: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        
+
         // Dynamic import to avoid React Hook error
-        const { useMissions: getMissions } = await import('../../lib/queries');
-        const missionsData = await getMissions(user.id, 'assignee');
-        
+        const { useMissions: getMissions } = await import("../../lib/queries");
+        const missionsData = await getMissions(user.id, "assignee");
+
         setMissions(missionsData || []);
       } catch (error) {
-        console.error('Error fetching missions:', error);
-        setError('Failed to load missions. Please try again later.');
+        console.error("Error fetching missions:", error);
+        setError("Failed to load missions. Please try again later.");
         setMissions([]);
       } finally {
         setLoading(false);
@@ -54,9 +59,9 @@ const InternMissions: React.FC = () => {
   }, [user?.id]);
 
   // Filter missions based on selected filter
-  const filteredMissions = missions.filter(mission => {
-    if (filter === 'pending') return !mission.completed;
-    if (filter === 'completed') return mission.completed;
+  const filteredMissions = missions.filter((mission) => {
+    if (filter === "pending") return !mission.completed;
+    if (filter === "completed") return mission.completed;
     return true;
   });
 
@@ -76,18 +81,18 @@ const InternMissions: React.FC = () => {
   const handleCompleteMission = (missionId: number) => {
     try {
       // Update local state
-      setMissions(prev =>
-        prev.map(m => m.id === missionId ? { ...m, completed: true } : m)
+      setMissions((prev) =>
+        prev.map((m) => (m.id === missionId ? { ...m, completed: true } : m))
       );
 
       // In a real app, this would call the API to update the mission
       console.log(`Marking mission ${missionId} as complete`);
-      
+
       // Here you would typically make an API call:
       // const response = await api.completeMission(missionId);
       // if (!response.ok) throw new Error('Failed to update mission');
     } catch (error) {
-      console.error('Error completing mission:', error);
+      console.error("Error completing mission:", error);
       // Revert the state change if the API call fails
       // setMissions(prev => [...prev]);
     }
@@ -110,7 +115,7 @@ const InternMissions: React.FC = () => {
         <AlertCircleIcon className="mx-auto h-12 w-12 text-red-500" />
         <h3 className="mt-2 text-lg font-medium text-gray-900">Error</h3>
         <p className="mt-1 text-sm text-gray-500">{error}</p>
-        <button 
+        <button
           type="button"
           className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           onClick={() => window.location.reload()}
@@ -127,23 +132,23 @@ const InternMissions: React.FC = () => {
         <h2 className="text-lg font-medium text-gray-900">My Missions</h2>
         <div className="flex space-x-2">
           <Button
-            variant={filter === 'all' ? 'primary' : 'outline'}
+            variant={filter === "all" ? "primary" : "outline"}
             size="sm"
-            onClick={() => setFilter('all')}
+            onClick={() => setFilter("all")}
           >
             All
           </Button>
           <Button
-            variant={filter === 'pending' ? 'primary' : 'outline'}
+            variant={filter === "pending" ? "primary" : "outline"}
             size="sm"
-            onClick={() => setFilter('pending')}
+            onClick={() => setFilter("pending")}
           >
             Pending
           </Button>
           <Button
-            variant={filter === 'completed' ? 'primary' : 'outline'}
+            variant={filter === "completed" ? "primary" : "outline"}
             size="sm"
-            onClick={() => setFilter('completed')}
+            onClick={() => setFilter("completed")}
           >
             Completed
           </Button>
@@ -153,11 +158,13 @@ const InternMissions: React.FC = () => {
       {filteredMissions.length === 0 ? (
         <div className="text-center py-12">
           <AlertCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No missions found</h3>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            No missions found
+          </h3>
           <p className="mt-1 text-sm text-gray-500">
-            {filter === 'all'
+            {filter === "all"
               ? "You don't have any missions assigned yet."
-              : filter === 'pending'
+              : filter === "pending"
               ? "You don't have any pending missions."
               : "You haven't completed any missions yet."}
           </p>
@@ -171,11 +178,15 @@ const InternMissions: React.FC = () => {
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">{mission.title}</h3>
-                  <p className="mt-1 text-sm text-gray-500">{mission.description}</p>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {mission.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {mission.description}
+                  </p>
                   <div className="mt-2 flex items-center text-sm text-gray-500">
                     <ClockIcon className="h-4 w-4 mr-1" />
-                    Deadline: {format(new Date(mission.deadline), 'PPP')}
+                    Deadline: {format(new Date(mission.deadline), "PPP")}
                     <span className="mx-2">•</span>
                     {getDeadlineStatus(mission.deadline)}
                   </div>
