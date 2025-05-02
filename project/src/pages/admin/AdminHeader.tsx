@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { MenuIcon, LogOutIcon } from "lucide-react";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import { useNotifications } from "../../contexts/NotificationContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { API_BASE_URL } from "../../config/constants";
 
 interface User {
   id: number;
@@ -20,15 +22,53 @@ interface AdminHeaderProps {
 
 // Wrapper component for NotificationDropdown
 const NotificationDropdownWrapper: React.FC<{ pendingCount: number }> = ({ pendingCount }) => {
-  const { notifications, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, addNotification } = useNotifications();
+  const { token } = useAuth();
+  const [pendingLeaves, setPendingLeaves] = useState<number>(0);
+
+  // Fetch pending leave requests
+  React.useEffect(() => {
+    const fetchPendingLeaves = async () => {
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/leaves/?status=pending`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setPendingLeaves(data.length);
+
+          // Add notification for pending leaves
+          if (data.length > 0) {
+            addNotification({
+              title: 'Demandes de congé en attente',
+              message: `Vous avez ${data.length} demande(s) de congé en attente d'approbation`,
+              type: 'info'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching pending leaves:', error);
+      }
+    };
+
+    fetchPendingLeaves();
+  }, [token, addNotification]);
 
   // Add a notification for pending applications if there are any
   React.useEffect(() => {
     if (pendingCount > 0) {
-      // This is just for demonstration purposes
-      // In a real app, you would fetch notifications from the server
+      addNotification({
+        title: 'Candidatures en attente',
+        message: `Vous avez ${pendingCount} candidature(s) en attente d'examen`,
+        type: 'warning'
+      });
     }
-  }, [pendingCount]);
+  }, [pendingCount, addNotification]);
 
   return (
     <NotificationDropdown
