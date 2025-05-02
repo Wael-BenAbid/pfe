@@ -79,38 +79,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [token]);
 
   const login = async (username: string, password: string) => {
-    const response = await fetch(`${API_BASE_URL}/auth/login/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      localStorage.setItem('access_token', data.access);
-      localStorage.setItem('refresh_token', data.refresh);
-
-      // Store the session ID
-      if (data.session_id) {
-        localStorage.setItem('session_id', data.session_id.toString());
-        setSessionId(data.session_id);
-      }
-
-      setToken(data.access);
-
-      // Fetch user data
-      const userResponse = await fetch(`${API_BASE_URL}/users/me/`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${data.access}`,
-        },
+    try {
+      // Try the login endpoint
+      const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
       });
 
-      if (userResponse.ok) {
-        const userData = await userResponse.json();
-        setUser(userData);
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('access_token', data.access);
+        localStorage.setItem('refresh_token', data.refresh);
+
+        // Store the session ID
+        if (data.session_id) {
+          localStorage.setItem('session_id', data.session_id.toString());
+          setSessionId(data.session_id);
+        }
+
+        setToken(data.access);
+
+        // Fetch user data
+        const userResponse = await fetch(`${API_BASE_URL}/users/me/`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${data.access}`,
+          },
+        });
+
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setUser(userData);
+        }
+      } else {
+        throw new Error('Invalid credentials');
       }
-    } else {
+    } catch (error) {
+      console.error('Login error:', error);
       throw new Error('Invalid credentials');
     }
   };
