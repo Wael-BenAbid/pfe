@@ -13,11 +13,11 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting
 from .serializers import (
     UserSerializer, LeaveSerializer, MissionSerializer,
     WorkHoursSerializer, InternshipSerializer, JobApplicationSerializer,
-    UserSessionSerializer
+    UserSessionSerializer, MeetingSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -566,3 +566,102 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
 
         return Response({'status': 'application rejected'})
 
+
+class MeetingViewSet(viewsets.ModelViewSet):
+    queryset = Meeting.objects.all()
+    serializer_class = MeetingSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Limiter les résultats en fonction du type d'utilisateur
+        """
+        user = self.request.user
+        if user.is_superuser or user.user_type == 'admin':
+            return Meeting.objects.all()
+
+        # Pour les employés, retourner les réunions qu'ils organisent ou auxquelles ils participent
+        if user.user_type == 'employee':
+            return Meeting.objects.filter(organizer=user) | Meeting.objects.filter(participants=user)
+
+        # Pour les stagiaires, retourner uniquement les réunions auxquelles ils participent
+        return Meeting.objects.filter(participants=user)
+
+    def perform_create(self, serializer):
+        """
+        Seuls les administrateurs et les employés peuvent créer des réunions
+        """
+        user = self.request.user
+        if user.user_type == 'intern':
+            return Response({'error': 'Interns cannot create meetings'}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer.save(organizer=user)
+
+    @action(detail=True, methods=['post'])
+    def add_participant(self, request, pk=None):
+        """
+        Ajouter un participant à une réunion
+        """
+        meeting = self.get_object()
+
+        # Vérifier que l'utilisateur est l'organisateur ou un administrateur
+        if request.user != meeting.organizer and request.user.user_type != 'admin':
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Récupérer l'ID du participant à ajouter
+        participant_id = request.data.get('participant_id')
+        if not participant_id:
+            return Response({'error': 'Participant ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            participant = User.objects.get(id=participant_id)
+            meeting.participants.add(participant)
+            return Response({'status': 'participant added'})
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'])
+    def remove_participant(self, request, pk=None):
+        """
+        Retirer un participant d'une réunion
+        """
+        meeting = self.get_object()
+
+        # Vérifier que l'utilisateur est l'organisateur ou un administrateur
+        if request.user != meeting.organizer and request.user.user_type != 'admin':
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Récupérer l'ID du participant à retirer
+        participant_id = request.data.get('participant_id')
+        if not participant_id:
+            return Response({'error': 'Participant ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            participant = User.objects.get(id=participant_id)
+            meeting.participants.remove(participant)
+            return Response({'status': 'participant removed'})
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'])
+    def change_status(self, request, pk=None):
+        """
+        Changer le statut d'une réunion
+        """
+        meeting = self.get_object()
+
+        # Vérifier que l'utilisateur est l'organisateur ou un administrateur
+        if request.user != meeting.organizer and request.user.user_type != 'admin':
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Récupérer le nouveau statut
+        status_value = request.data.get('status')
+        if not status_value:
+            return Response({'error': 'Status is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if status_value not in ['scheduled', 'completed', 'cancelled']:
+            return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+
+        meeting.status = status_value
+        meeting.save()
+        return Response({'status': f'meeting status changed to {status_value}'})

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -71,3 +71,27 @@ class UserSessionSerializer(serializers.ModelSerializer):
         if obj.logout_time:
             return obj.calculate_duration()
         return None
+
+
+class MeetingSerializer(serializers.ModelSerializer):
+    organizer_name = serializers.ReadOnlyField(source='organizer.username')
+    organizer_full_name = serializers.SerializerMethodField()
+    participants_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Meeting
+        fields = '__all__'
+
+    def get_organizer_full_name(self, obj):
+        return f"{obj.organizer.first_name} {obj.organizer.last_name}"
+
+    def get_participants_details(self, obj):
+        return [
+            {
+                'id': user.id,
+                'username': user.username,
+                'full_name': f"{user.first_name} {user.last_name}",
+                'user_type': user.user_type
+            }
+            for user in obj.participants.all()
+        ]
