@@ -480,6 +480,23 @@ class MissionViewSet(viewsets.ModelViewSet):
 
         mission.completed = True
         mission.save()
+
+        # Si c'est le stagiaire qui a marqué la mission comme complétée, envoyer un email au superviseur
+        if request.user == mission.assigned_to and mission.supervisor and mission.supervisor.email:
+            from .utils import send_email_notification
+
+            subject = f"Mission complétée : {mission.title}"
+            message = (
+                f"Bonjour {mission.supervisor.first_name} {mission.supervisor.last_name},\n\n"
+                f"{mission.assigned_to.first_name} {mission.assigned_to.last_name} a marqué la mission suivante comme complétée :\n\n"
+                f"Titre : {mission.title}\n"
+                f"Description : {mission.description}\n"
+                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
+                f"Connectez-vous au système pour vérifier cette mission et la valider si nécessaire."
+            )
+
+            send_email_notification(subject, message, [mission.supervisor.email])
+
         return Response({'status': 'mission completed'})
 
 class WorkHoursViewSet(viewsets.ModelViewSet):
@@ -556,6 +573,51 @@ class InternshipViewSet(viewsets.ModelViewSet):
             return Internship.objects.filter(intern=user)
         return Internship.objects.filter(supervisor=user)
 
+    def perform_create(self, serializer):
+        """
+        Envoyer des notifications par email lors de la création d'un stage
+        """
+        # Sauvegarder le stage
+        internship = serializer.save()
+
+        # Envoyer un email au stagiaire et au superviseur
+        from .utils import send_email_notification
+
+        # Email au stagiaire
+        if internship.intern and internship.intern.email:
+            intern_subject = f"Votre stage : {internship.title}"
+            intern_message = (
+                f"Bonjour {internship.intern.first_name} {internship.intern.last_name},\n\n"
+                f"Vous avez été assigné(e) à un nouveau stage :\n\n"
+                f"Titre : {internship.title}\n"
+                f"Description : {internship.description or 'Aucune description fournie'}\n"
+                f"Date de début : {internship.start_date.strftime('%d/%m/%Y')}\n"
+                f"Date de fin : {internship.end_date.strftime('%d/%m/%Y')}\n"
+                f"Statut : {internship.get_status_display()}\n\n"
+                f"Superviseur : {internship.supervisor.first_name} {internship.supervisor.last_name}\n"
+                f"Email du superviseur : {internship.supervisor.email}\n\n"
+                f"Connectez-vous au système pour plus de détails.\n\n"
+                f"Nous vous souhaitons un excellent stage !"
+            )
+            send_email_notification(intern_subject, intern_message, [internship.intern.email])
+
+        # Email au superviseur
+        if internship.supervisor and internship.supervisor.email:
+            supervisor_subject = f"Nouveau stagiaire assigné : {internship.title}"
+            supervisor_message = (
+                f"Bonjour {internship.supervisor.first_name} {internship.supervisor.last_name},\n\n"
+                f"Un nouveau stagiaire a été assigné sous votre supervision :\n\n"
+                f"Titre du stage : {internship.title}\n"
+                f"Description : {internship.description or 'Aucune description fournie'}\n"
+                f"Date de début : {internship.start_date.strftime('%d/%m/%Y')}\n"
+                f"Date de fin : {internship.end_date.strftime('%d/%m/%Y')}\n"
+                f"Statut : {internship.get_status_display()}\n\n"
+                f"Stagiaire : {internship.intern.first_name} {internship.intern.last_name}\n"
+                f"Email du stagiaire : {internship.intern.email}\n\n"
+                f"Connectez-vous au système pour gérer ce stage et assigner des missions au stagiaire."
+            )
+            send_email_notification(supervisor_subject, supervisor_message, [internship.supervisor.email])
+
     @action(detail=True, methods=['post'])
     def change_status(self, request, pk=None):
         """
@@ -566,9 +628,54 @@ class InternshipViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
         status_value = request.data.get('status')
-        if status_value in ['pending', 'active', 'completed', 'terminated']:
+        if status_value in ['pending', 'ongoing', 'completed', 'cancelled']:
+            old_status = internship.status
             internship.status = status_value
             internship.save()
+
+            # Envoyer des notifications par email pour le changement de statut
+            from .utils import send_email_notification
+
+            # Déterminer le message en fonction du nouveau statut
+            status_message = {
+                'pending': "en attente",
+                'ongoing': "en cours",
+                'completed': "terminé",
+                'cancelled': "annulé"
+            }.get(status_value, status_value)
+
+            # Email au stagiaire
+            if internship.intern and internship.intern.email:
+                intern_subject = f"Mise à jour de votre stage : {internship.title}"
+                intern_message = (
+                    f"Bonjour {internship.intern.first_name} {internship.intern.last_name},\n\n"
+                    f"Le statut de votre stage a été modifié de '{old_status}' à '{status_message}' :\n\n"
+                    f"Titre : {internship.title}\n"
+                    f"Description : {internship.description or 'Aucune description fournie'}\n"
+                    f"Date de début : {internship.start_date.strftime('%d/%m/%Y')}\n"
+                    f"Date de fin : {internship.end_date.strftime('%d/%m/%Y')}\n\n"
+                    f"Superviseur : {internship.supervisor.first_name} {internship.supervisor.last_name}\n"
+                    f"Email du superviseur : {internship.supervisor.email}\n\n"
+                    f"Connectez-vous au système pour plus de détails."
+                )
+                send_email_notification(intern_subject, intern_message, [internship.intern.email])
+
+            # Email au superviseur si l'admin a fait le changement
+            if request.user.user_type == 'admin' and internship.supervisor and internship.supervisor.email:
+                supervisor_subject = f"Mise à jour du stage : {internship.title}"
+                supervisor_message = (
+                    f"Bonjour {internship.supervisor.first_name} {internship.supervisor.last_name},\n\n"
+                    f"Le statut du stage que vous supervisez a été modifié par un administrateur de '{old_status}' à '{status_message}' :\n\n"
+                    f"Titre : {internship.title}\n"
+                    f"Description : {internship.description or 'Aucune description fournie'}\n"
+                    f"Date de début : {internship.start_date.strftime('%d/%m/%Y')}\n"
+                    f"Date de fin : {internship.end_date.strftime('%d/%m/%Y')}\n\n"
+                    f"Stagiaire : {internship.intern.first_name} {internship.intern.last_name}\n"
+                    f"Email du stagiaire : {internship.intern.email}\n\n"
+                    f"Connectez-vous au système pour plus de détails."
+                )
+                send_email_notification(supervisor_subject, supervisor_message, [internship.supervisor.email])
+
             return Response({'status': f'internship status changed to {status_value}'})
         return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -959,6 +1066,36 @@ class MeetingViewSet(viewsets.ModelViewSet):
         try:
             participant = User.objects.get(id=participant_id)
             meeting.participants.add(participant)
+
+            # Envoyer un email au participant
+            from .utils import send_email_notification
+
+            # Déterminer le type de lieu
+            location_info = ""
+            if meeting.location_type == 'online':
+                location_info = f"Type: En ligne\nLien de réunion: {meeting.meeting_link}"
+            elif meeting.location_type == 'office':
+                location_info = f"Type: Au bureau\nLieu: {meeting.location_details}"
+            elif meeting.location_type == 'external':
+                location_info = f"Type: Lieu externe\nLieu: {meeting.location_details}"
+
+            # Envoyer l'email au participant
+            if participant.email:
+                subject = f"Invitation à un rendez-vous : {meeting.title}"
+                message = (
+                    f"Bonjour {participant.first_name} {participant.last_name},\n\n"
+                    f"Vous avez été invité(e) à un rendez-vous par {meeting.organizer.first_name} {meeting.organizer.last_name} :\n\n"
+                    f"Titre : {meeting.title}\n"
+                    f"Description : {meeting.description or 'Aucune description fournie'}\n"
+                    f"Date et heure : {meeting.date_time.strftime('%d/%m/%Y à %H:%M')}\n"
+                    f"Durée : {meeting.duration_minutes} minutes\n"
+                    f"{location_info}\n\n"
+                    f"Organisateur : {meeting.organizer.first_name} {meeting.organizer.last_name}\n"
+                    f"Email de l'organisateur : {meeting.organizer.email}\n\n"
+                    f"Connectez-vous au système pour plus de détails."
+                )
+                send_email_notification(subject, message, [participant.email])
+
             return Response({'status': 'participant added'})
         except User.DoesNotExist:
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
