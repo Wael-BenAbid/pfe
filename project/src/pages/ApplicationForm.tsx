@@ -165,7 +165,7 @@ const ApplicationForm: React.FC = () => {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/job-applications/`, {
+      const response = await fetch(`${API_BASE_URL}/api/job-applications/`, {
         method: "POST",
         body: submitData,
       });
@@ -201,7 +201,7 @@ const ApplicationForm: React.FC = () => {
           <div key={step.number} className="flex items-center">
             <div
               className={`
-                flex items-center justify-center w-10 h-10 rounded-full 
+                flex items-center justify-center w-10 h-10 rounded-full
                 ${
                   currentStep >= step.number
                     ? "bg-blue-600 text-white"

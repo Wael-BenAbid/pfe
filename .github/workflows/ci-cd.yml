@@ -67,11 +67,25 @@ jobs:
         run: pip install -r requirements.txt
         working-directory: ./back-end
 
+      - name: Create .env file
+        run: |
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
+          echo "DEBUG=True" >> .env
+          echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> .env
+          echo "DATABASE_NAME=rh" >> .env
+          echo "DATABASE_USER=postgres" >> .env
+          echo "DATABASE_PASSWORD=12345" >> .env
+          echo "DATABASE_HOST=localhost" >> .env
+          echo "DATABASE_PORT=5432" >> .env
+          echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
+          echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
+        working-directory: ./back-end
+
       - name: Run Tests
         run: python manage.py test
         working-directory: ./back-end
         env:
-          DATABASE_URL: "postgresql://postgres:12345@postgres:5432/rh"
+          DATABASE_URL: "postgresql://postgres:12345@localhost:5432/rh"
 
   deploy:
     needs: [test-frontend, test-backend]
@@ -102,5 +116,9 @@ jobs:
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          build-args: |
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}
+            EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
           secrets: |
             "DATABASE_URL=postgresql://postgres:12345@postgres:5432/rh"

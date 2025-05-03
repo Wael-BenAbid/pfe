@@ -34,7 +34,7 @@ const ApplicationTracking: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/job-applications/track/?email=${encodeURIComponent(
+        `${API_BASE_URL}/api/job-applications/track/?email=${encodeURIComponent(
           email
         )}&id=${applicationId}`,
         {
@@ -56,7 +56,7 @@ const ApplicationTracking: React.FC = () => {
       if (data.status === "approved" && !data.user_has_logged_in) {
         // Récupérer les informations de connexion temporaires
         const credentialsResponse = await fetch(
-          `${API_BASE_URL}/job-applications/${data.id}/get-credentials/`,
+          `${API_BASE_URL}/api/job-applications/${data.id}/get_credentials/`,
           {
             method: "POST",
             headers: {

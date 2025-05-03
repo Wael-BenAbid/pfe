@@ -612,7 +612,7 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'track', 'get_credentials']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
