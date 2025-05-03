@@ -19,14 +19,16 @@ interface Mission {
   id: number;
   title: string;
   description: string;
-  status: string;
+  status?: string;
   deadline: string;
-  user: number;
+  assigned_to: number;
+  user?: number; // Pour la compatibilité avec l'ancien code
   user_details?: {
     first_name: string;
     last_name: string;
   };
   created_at: string;
+  completed: boolean;
 }
 
 const MissionManagement: React.FC = () => {
@@ -39,7 +41,7 @@ const MissionManagement: React.FC = () => {
     title: "",
     description: "",
     deadline: "",
-    user: 0,
+    assigned_to: 0,
   });
 
   useEffect(() => {
@@ -67,10 +69,11 @@ const MissionManagement: React.FC = () => {
       const missionsWithUserDetails = await Promise.all(
         data.map(async (mission: Mission) => {
           try {
-            // Vérifier si mission.user existe avant de faire la requête
-            if (mission.user) {
+            // Vérifier si mission.assigned_to existe avant de faire la requête
+            const userId = mission.assigned_to || mission.user; // Utiliser assigned_to ou user (pour la compatibilité)
+            if (userId) {
               const userResponse = await fetch(
-                `${API_BASE_URL}/users/${mission.user}/`,
+                `${API_BASE_URL}/users/${userId}/`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -141,7 +144,7 @@ const MissionManagement: React.FC = () => {
     const { name, value } = e.target;
     setNewMission({
       ...newMission,
-      [name]: name === "user" ? parseInt(value) : value,
+      [name]: name === "assigned_to" || name === "supervisor" ? parseInt(value) : value,
     });
   };
 
@@ -169,13 +172,103 @@ const MissionManagement: React.FC = () => {
         title: "",
         description: "",
         deadline: "",
-        user: 0,
+        assigned_to: 0,
       });
       setShowNewMissionForm(false);
       fetchMissions();
     } catch (error) {
       console.error("Error creating mission:", error);
       alert("Failed to create mission. Please try again.");
+    }
+  };
+
+  const handleViewMission = (id: number) => {
+    // Trouver la mission dans la liste
+    const mission = missions.find((m) => m.id === id);
+    if (!mission) return;
+
+    // Afficher les détails de la mission dans une alerte (à remplacer par une modale)
+    alert(`
+      Titre: ${mission.title}
+      Description: ${mission.description}
+      Date d'échéance: ${new Date(mission.deadline).toLocaleDateString()}
+      Statut: ${mission.status || 'En attente'}
+      Assigné à: ${mission.user_details ? `${mission.user_details.first_name} ${mission.user_details.last_name}` : 'Non assigné'}
+    `);
+  };
+
+  const [editingMission, setEditingMission] = useState<Mission | null>(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+
+  const handleEditMission = async (id: number) => {
+    if (!token) return;
+
+    // Trouver la mission dans la liste
+    const mission = missions.find((m) => m.id === id);
+    if (!mission) return;
+
+    // Ouvrir le formulaire d'édition avec les données de la mission
+    setEditingMission(mission);
+    setShowEditForm(true);
+  };
+
+  const handleUpdateMission = async () => {
+    if (!token || !editingMission) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/missions/${editingMission.id}/`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: editingMission.title,
+          description: editingMission.description,
+          deadline: editingMission.deadline,
+          assigned_to: editingMission.assigned_to || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update mission");
+      }
+
+      // Fermer le formulaire et rafraîchir la liste
+      setShowEditForm(false);
+      setEditingMission(null);
+      fetchMissions();
+      alert("Mission mise à jour avec succès");
+    } catch (error) {
+      console.error("Error updating mission:", error);
+      alert("Échec de la mise à jour de la mission. Veuillez réessayer.");
+    }
+  };
+
+  const handleDeleteMission = async (id: number) => {
+    if (!token) return;
+
+    // Demander confirmation avant de supprimer
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette mission ?")) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/missions/${id}/`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete mission");
+      }
+
+      // Fetch updated missions
+      fetchMissions();
+      alert("Mission supprimée avec succès");
+    } catch (error) {
+      console.error("Error deleting mission:", error);
+      alert("Échec de la suppression de la mission. Veuillez réessayer.");
     }
   };
 
@@ -200,28 +293,26 @@ const MissionManagement: React.FC = () => {
 
       // Fetch updated missions
       fetchMissions();
+      alert("Mission marquée comme complétée");
     } catch (error) {
       console.error("Error completing mission:", error);
       alert("Failed to complete mission. Please try again.");
     }
   };
 
-  const getMissionStatusBadge = (status: string) => {
-    switch (status) {
-      case "pending":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-            Pending
-          </span>
-        );
-      case "completed":
-        return (
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-            Completed
-          </span>
-        );
-      default:
-        return null;
+  const getMissionStatusBadge = (mission: Mission) => {
+    if (mission.completed) {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Completed
+        </span>
+      );
+    } else {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          Pending
+        </span>
+      );
     }
   };
 
@@ -310,6 +401,8 @@ const MissionManagement: React.FC = () => {
                       <div className="text-sm text-gray-900">
                         {mission.user_details
                           ? `${mission.user_details.first_name} ${mission.user_details.last_name}`
+                          : mission.assigned_to
+                          ? `User #${mission.assigned_to}`
                           : mission.user
                           ? `User #${mission.user}`
                           : "Non assigné"}
@@ -319,19 +412,42 @@ const MissionManagement: React.FC = () => {
                       {new Date(mission.deadline).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {getMissionStatusBadge(mission.status)}
+                      {getMissionStatusBadge(mission)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {mission.status === "pending" && (
+                      <div className="flex justify-end space-x-2">
                         <Button
-                          variant="success"
+                          variant="info"
                           size="sm"
-                          icon={<CheckIcon className="h-4 w-4" />}
-                          onClick={() => handleCompleteMission(mission.id)}
+                          onClick={() => handleViewMission(mission.id)}
                         >
-                          Complete
+                          View
                         </Button>
-                      )}
+                        <Button
+                          variant="warning"
+                          size="sm"
+                          onClick={() => handleEditMission(mission.id)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          onClick={() => handleDeleteMission(mission.id)}
+                        >
+                          Delete
+                        </Button>
+                        {mission.status === "pending" && (
+                          <Button
+                            variant="success"
+                            size="sm"
+                            icon={<CheckIcon className="h-4 w-4" />}
+                            onClick={() => handleCompleteMission(mission.id)}
+                          >
+                            Complete
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -392,19 +508,16 @@ const MissionManagement: React.FC = () => {
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Assign To
-                  </label>
                   <label
-                    htmlFor="user-select"
+                    htmlFor="assigned-to-select"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
                     Assign To
                   </label>
                   <select
-                    id="user-select"
-                    name="user"
-                    value={newMission.user || ""}
+                    id="assigned-to-select"
+                    name="assigned_to"
+                    value={newMission.assigned_to || ""}
                     onChange={handleInputChange}
                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                     required
@@ -438,6 +551,102 @@ const MissionManagement: React.FC = () => {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Mission Form Modal */}
+      {showEditForm && editingMission && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Edit Mission</h3>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-500"
+                onClick={() => setShowEditForm(false)}
+                title="Close form"
+              >
+                <XIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <TextInput
+                label="Title"
+                name="title"
+                value={editingMission.title}
+                onChange={(e) => setEditingMission({...editingMission, title: e.target.value})}
+                required
+              />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={editingMission.description}
+                  onChange={(e) => setEditingMission({...editingMission, description: e.target.value})}
+                  rows={3}
+                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  placeholder="Enter mission description"
+                  required
+                />
+              </div>
+
+              <TextInput
+                label="Deadline"
+                name="deadline"
+                type="date"
+                value={editingMission.deadline}
+                onChange={(e) => setEditingMission({...editingMission, deadline: e.target.value})}
+                required
+              />
+
+              <div>
+                <label
+                  htmlFor="edit-assigned-to-select"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Assign To
+                </label>
+                <select
+                  id="edit-assigned-to-select"
+                  name="assigned_to"
+                  value={editingMission.assigned_to || ""}
+                  onChange={(e) => setEditingMission({...editingMission, assigned_to: parseInt(e.target.value)})}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  required
+                >
+                  <option value="">Select an employee</option>
+                  {employees.map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.first_name} {employee.last_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-5 sm:mt-6 flex space-x-2">
+              <Button
+                variant="outline"
+                size="md"
+                className="w-full"
+                onClick={() => setShowEditForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full"
+                onClick={handleUpdateMission}
+              >
+                Update Mission
+              </Button>
+            </div>
           </div>
         </div>
       )}

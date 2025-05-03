@@ -30,11 +30,23 @@ class LeaveSerializer(serializers.ModelSerializer):
 
 class MissionSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.ReadOnlyField(source='assigned_to.username')
-    supervisor_name = serializers.ReadOnlyField(source='supervisor.username')
+    supervisor_name = serializers.SerializerMethodField()
+
+    # Rendre le champ supervisor optionnel
+    supervisor = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = Mission
         fields = '__all__'
+
+    def get_supervisor_name(self, obj):
+        if obj.supervisor:
+            return obj.supervisor.username
+        return None
 
 class WorkHoursSerializer(serializers.ModelSerializer):
     user_name = serializers.ReadOnlyField(source='user.username')

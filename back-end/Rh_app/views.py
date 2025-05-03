@@ -418,11 +418,11 @@ class MissionViewSet(viewsets.ModelViewSet):
         if self.request.user.user_type == 'intern':
             raise PermissionDenied('Intern cannot create missions')
 
-        # Si l'utilisateur est un employé ou un admin, il est le superviseur par défaut
+        # L'utilisateur qui crée la mission est automatiquement désigné comme superviseur
         mission = serializer.save(supervisor=self.request.user)
 
         # Envoyer un email à l'assigné si la mission est assignée à quelqu'un
-        if mission.assigned_to:
+        if hasattr(mission, 'assigned_to') and mission.assigned_to:
             from .utils import send_email_notification
 
             subject = f"Nouvelle mission : {mission.title}"
@@ -431,8 +431,7 @@ class MissionViewSet(viewsets.ModelViewSet):
                 f"Une nouvelle mission vous a été assignée :\n\n"
                 f"Titre : {mission.title}\n"
                 f"Description : {mission.description}\n"
-                f"Date d'échéance : {mission.due_date.strftime('%d/%m/%Y') if mission.due_date else 'Non spécifiée'}\n"
-                f"Priorité : {mission.priority}\n\n"
+                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
                 f"Superviseur : {mission.supervisor.first_name} {mission.supervisor.last_name}\n\n"
                 f"Connectez-vous au système pour plus de détails.\n\n"
                 f"Cordialement,\n"

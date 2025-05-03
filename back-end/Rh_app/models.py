@@ -79,8 +79,10 @@ class Mission(models.Model):
     )
     supervisor = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
-        related_name='supervised_missions'
+        on_delete=models.SET_NULL,  # Si le superviseur est supprimé, la mission reste
+        related_name='supervised_missions',
+        null=True,  # Le superviseur est optionnel
+        blank=True  # Le champ peut être vide dans les formulaires
     )
     deadline = models.DateField()
     completed = models.BooleanField(default=False)

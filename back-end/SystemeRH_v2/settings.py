@@ -180,16 +180,18 @@ SIMPLE_JWT = {
 # En développement, on peut utiliser le backend de console pour voir les emails dans la console
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# En production, on utilise le backend SMTP pour envoyer des emails réels
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
+# Configuration SendGrid pour l'envoi d'emails
+SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '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')
 
-# Récupération des informations sensibles depuis les variables d'environnement
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-DEFAULT_FROM_EMAIL = f'HR System <{EMAIL_HOST_USER}>'
+# Désactiver le backend d'email standard de Django
+# Nous utiliserons uniquement l'API SendGrid directement
+EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
+
+# Adresse d'expéditeur par défaut (vérifiée dans SendGrid)
+DEFAULT_FROM_EMAIL = 'RH System <waelbenabid1@gmail.com>'
+
+# Log des informations de configuration
+print(f"SendGrid configuré: {'Oui' if SENDGRID_API_KEY else 'Non'}")
 
 # URL du frontend pour les liens dans les emails
 FRONTEND_URL = 'http://localhost:5173'
