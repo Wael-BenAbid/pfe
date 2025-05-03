@@ -33,6 +33,33 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.user
+
+        # Vérifier si l'utilisateur est approuvé
+        if not user.approved:
+            # Vérifier s'il a une candidature en attente
+            pending_application = JobApplication.objects.filter(
+                email=user.email,
+                status='pending'
+            ).first()
+
+            if pending_application:
+                return Response(
+                    {"detail": "Votre candidature est en attente d'approbation. Veuillez patienter pendant qu'un administrateur l'examine."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            else:
+                return Response(
+                    {"detail": "Votre compte n'est pas approuvé. Veuillez contacter un administrateur."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        # Créer une session utilisateur si l'utilisateur est approuvé
+        UserSession.objects.create(
+            user=user,
+            login_time=timezone.now(),
+            is_active=True
+        )
+
         response_data = {
             'refresh': str(serializer.validated_data['refresh']),
             'access': str(serializer.validated_data['access']),
@@ -374,6 +401,25 @@ class LeaveViewSet(viewsets.ModelViewSet):
         leave.user.leave_balance -= days
         leave.user.save()
 
+        # Envoyer un email à l'employé
+        if leave.user and leave.user.email:
+            from .utils import send_email_notification
+
+            subject = "Votre demande de congé a été approuvée"
+            message = (
+                f"Bonjour {leave.user.first_name} {leave.user.last_name},\n\n"
+                f"Votre demande de congé a été approuvée :\n\n"
+                f"Type de congé : {leave.leave_type}\n"
+                f"Date de début : {leave.start_date.strftime('%d/%m/%Y')}\n"
+                f"Date de fin : {leave.end_date.strftime('%d/%m/%Y')}\n"
+                f"Nombre de jours : {days}\n"
+                f"Raison : {leave.reason}\n\n"
+                f"Approuvé par : {request.user.first_name} {request.user.last_name}\n\n"
+                f"Connectez-vous au système pour plus de détails."
+            )
+
+            send_email_notification(subject, message, [leave.user.email])
+
         return Response({'status': 'leave approved'})
 
     @action(detail=True, methods=['post'])
@@ -387,6 +433,25 @@ class LeaveViewSet(viewsets.ModelViewSet):
 
         leave.status = 'rejected'
         leave.save()
+
+        # Envoyer un email à l'employé
+        if leave.user and leave.user.email:
+            from .utils import send_email_notification
+
+            subject = "Votre demande de congé a été refusée"
+            message = (
+                f"Bonjour {leave.user.first_name} {leave.user.last_name},\n\n"
+                f"Votre demande de congé a été refusée :\n\n"
+                f"Type de congé : {leave.leave_type}\n"
+                f"Date de début : {leave.start_date.strftime('%d/%m/%Y')}\n"
+                f"Date de fin : {leave.end_date.strftime('%d/%m/%Y')}\n"
+                f"Raison : {leave.reason}\n\n"
+                f"Refusé par : {request.user.first_name} {request.user.last_name}\n\n"
+                f"Connectez-vous au système pour plus de détails ou pour soumettre une nouvelle demande."
+            )
+
+            send_email_notification(subject, message, [leave.user.email])
+
         return Response({'status': 'leave rejected'})
 
 class MissionViewSet(viewsets.ModelViewSet):
@@ -451,7 +516,59 @@ class MissionViewSet(viewsets.ModelViewSet):
             not request.user.is_superuser):
             return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
-        return super().update(request, *args, **kwargs)
+        # Sauvegarder les anciennes valeurs pour la notification
+        old_title = mission.title
+        old_description = mission.description
+        old_deadline = mission.deadline
+        old_assigned_to = mission.assigned_to
+
+        # Mettre à jour la mission
+        response = super().update(request, *args, **kwargs)
+
+        # Si la mise à jour a réussi et que c'est un admin qui a fait la modification
+        if response.status_code == 200 and (request.user.user_type == 'admin' or request.user.is_superuser):
+            # Récupérer la mission mise à jour
+            updated_mission = self.get_object()
+
+            # Si l'assigné a changé ou si c'est le même assigné, envoyer un email
+            if updated_mission.assigned_to and updated_mission.assigned_to.email:
+                from .utils import send_email_notification
+
+                # Déterminer si c'est une réassignation ou une modification
+                is_reassignment = old_assigned_to != updated_mission.assigned_to
+
+                if is_reassignment:
+                    subject = f"Nouvelle mission assignée : {updated_mission.title}"
+                    message = (
+                        f"Bonjour {updated_mission.assigned_to.first_name} {updated_mission.assigned_to.last_name},\n\n"
+                        f"Une mission vous a été assignée par {request.user.first_name} {request.user.last_name} :\n\n"
+                    )
+                else:
+                    subject = f"Mission modifiée : {updated_mission.title}"
+                    message = (
+                        f"Bonjour {updated_mission.assigned_to.first_name} {updated_mission.assigned_to.last_name},\n\n"
+                        f"Une mission qui vous est assignée a été modifiée par {request.user.first_name} {request.user.last_name} :\n\n"
+                    )
+
+                # Ajouter les détails de la mission
+                message += (
+                    f"Titre : {updated_mission.title}\n"
+                    f"Description : {updated_mission.description}\n"
+                    f"Date d'échéance : {updated_mission.deadline.strftime('%d/%m/%Y')}\n\n"
+                )
+
+                # Ajouter les informations du superviseur si disponible
+                if updated_mission.supervisor:
+                    message += (
+                        f"Superviseur : {updated_mission.supervisor.first_name} {updated_mission.supervisor.last_name}\n"
+                        f"Email du superviseur : {updated_mission.supervisor.email}\n\n"
+                    )
+
+                message += "Connectez-vous au système pour voir les détails de cette mission."
+
+                send_email_notification(subject, message, [updated_mission.assigned_to.email])
+
+        return response
 
     def destroy(self, request, *args, **kwargs):
         """
@@ -481,10 +598,11 @@ class MissionViewSet(viewsets.ModelViewSet):
         mission.completed = True
         mission.save()
 
-        # Si c'est le stagiaire qui a marqué la mission comme complétée, envoyer un email au superviseur
-        if request.user == mission.assigned_to and mission.supervisor and mission.supervisor.email:
-            from .utils import send_email_notification
+        # Si c'est le stagiaire ou l'employé qui a marqué la mission comme complétée, envoyer des emails
+        from .utils import send_email_notification, get_admin_emails
 
+        # Email au superviseur si c'est l'assigné qui a complété la mission
+        if request.user == mission.assigned_to and mission.supervisor and mission.supervisor.email:
             subject = f"Mission complétée : {mission.title}"
             message = (
                 f"Bonjour {mission.supervisor.first_name} {mission.supervisor.last_name},\n\n"
@@ -496,6 +614,23 @@ class MissionViewSet(viewsets.ModelViewSet):
             )
 
             send_email_notification(subject, message, [mission.supervisor.email])
+
+        # Email aux administrateurs
+        admin_emails = get_admin_emails()
+        if admin_emails:
+            admin_subject = f"Mission complétée : {mission.title}"
+            admin_message = (
+                f"Une mission a été marquée comme complétée :\n\n"
+                f"Titre : {mission.title}\n"
+                f"Description : {mission.description}\n"
+                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
+                f"Assignée à : {mission.assigned_to.first_name} {mission.assigned_to.last_name}\n"
+                f"Superviseur : {mission.supervisor.first_name if mission.supervisor else ''} {mission.supervisor.last_name if mission.supervisor else ''}\n"
+                f"Marquée comme complétée par : {request.user.first_name} {request.user.last_name}\n\n"
+                f"Connectez-vous au système pour plus de détails."
+            )
+
+            send_email_notification(admin_subject, admin_message, admin_emails)
 
         return Response({'status': 'mission completed'})
 
@@ -732,8 +867,14 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
         return JobApplication.objects.filter(user=user)
 
     def perform_create(self, serializer):
-        # Sauvegarder la candidature
-        application = serializer.save(user=self.request.user if self.request.user.is_authenticated else None)
+        # Récupérer le mot de passe du serializer
+        password = serializer.validated_data.pop('password')
+
+        # Sauvegarder la candidature avec le mot de passe
+        application = serializer.save(
+            user=self.request.user if self.request.user.is_authenticated else None,
+            password=password  # Stocker le mot de passe dans le modèle JobApplication
+        )
 
         # Envoyer un email de confirmation au candidat
         from .utils import send_email_notification
@@ -746,7 +887,9 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
             f"Vous pouvez suivre l'état de votre candidature en utilisant les informations suivantes :\n"
             f"- ID de candidature : {application.id}\n"
             f"- Email : {application.email}\n\n"
-            f"Notre équipe RH examinera votre candidature dans les plus brefs délais.\n\n"
+            f"Votre candidature est actuellement en attente d'approbation par notre équipe RH. "
+            f"Vous recevrez un email lorsque votre candidature sera approuvée ou rejetée.\n\n"
+            f"Une fois approuvée, vous pourrez vous connecter avec votre email et le mot de passe que vous avez défini.\n\n"
             f"Cordialement,\n"
             f"L'équipe RH"
         )
@@ -793,16 +936,20 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
                 username = f"{username_base}{counter}"
                 counter += 1
 
-            # Générer un mot de passe temporaire
-            import random
-            import string
-            temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+            # Utiliser le mot de passe défini par le candidat lors de la candidature
+            # Si le mot de passe n'est pas défini, générer un mot de passe temporaire
+            if application.password:
+                password = application.password
+            else:
+                import random
+                import string
+                password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
 
             # Créer l'utilisateur
             user = User.objects.create_user(
                 username=username,
                 email=application.email,
-                password=temp_password,
+                password=password,
                 first_name=application.first_name,
                 last_name=application.last_name,
                 user_type=application.application_type,  # 'employee' ou 'intern'
@@ -814,24 +961,21 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
             application.save()
 
             # Envoyer un email au candidat avec ses informations de connexion
-            try:
-                send_mail(
-                    'Your application has been approved - Account Information',
-                    f'Congratulations! Your application for {application.position} has been approved.\n\n'
-                    f'Your account has been created with the following credentials:\n'
-                    f'Username: {username}\n'
-                    f'Temporary Password: {temp_password}\n\n'
-                    f'Please log in and change your password as soon as possible.\n\n'
-                    f'You can also track your application status using the following information:\n'
-                    f'Application ID: {application.id}\n'
-                    f'Email: {application.email}\n\n'
-                    f'Visit our application tracking page to check your status and retrieve your credentials if needed.',
-                    settings.DEFAULT_FROM_EMAIL,
-                    [application.email],
-                    fail_silently=False,
-                )
-            except Exception as e:
-                logger.error(f"Email sending failed: {str(e)}")
+            from .utils import send_email_notification
+
+            subject = "Votre candidature a été approuvée - Informations de connexion"
+            message = (
+                f"Félicitations ! Votre candidature pour le poste de {application.position} a été approuvée.\n\n"
+                f"Votre compte a été créé avec les informations suivantes :\n"
+                f"Nom d'utilisateur : {username}\n"
+                f"Email : {application.email}\n\n"
+                f"Vous pouvez maintenant vous connecter avec votre email et le mot de passe que vous avez défini lors de votre candidature.\n\n"
+                f"Connectez-vous au système pour commencer à utiliser votre compte.\n\n"
+                f"Cordialement,\n"
+                f"L'équipe RH"
+            )
+
+            send_email_notification(subject, message, [application.email])
 
             return Response({
                 'status': 'application approved',
@@ -850,32 +994,37 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """
-        Rejeter une candidature
+        Rejeter une candidature et supprimer toutes les données du candidat
         """
         application = self.get_object()
         if request.user.user_type != 'admin' and not request.user.is_superuser:
             return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
-        application.status = 'rejected'
-        application.save()
+        # Sauvegarder l'email et quelques informations pour l'email de notification
+        email = application.email
+        position = application.position
+        first_name = application.first_name
+        last_name = application.last_name
 
-        # Envoyer un email au candidat (simulation)
-        try:
-            send_mail(
-                'Your application status',
-                f'Thank you for your interest in {application.position}. Unfortunately, we have decided to move forward with other candidates.\n\n'
-                f'You can track your application status using the following information:\n'
-                f'Application ID: {application.id}\n'
-                f'Email: {application.email}\n\n'
-                f'Visit our application tracking page to check your status.',
-                settings.DEFAULT_FROM_EMAIL,
-                [application.email],
-                fail_silently=False,
-            )
-        except Exception as e:
-            logger.error(f"Email sending failed: {str(e)}")
+        # Envoyer un email au candidat avant de supprimer les données
+        from .utils import send_email_notification
 
-        return Response({'status': 'application rejected'})
+        subject = "Votre candidature a été rejetée"
+        message = (
+            f"Bonjour {first_name} {last_name},\n\n"
+            f"Nous regrettons de vous informer que votre candidature pour le poste de {position} a été rejetée.\n\n"
+            f"Nous vous remercions de l'intérêt que vous portez à notre entreprise et vous souhaitons bonne chance dans vos recherches futures.\n\n"
+            f"Conformément à notre politique de confidentialité, toutes vos données personnelles ont été supprimées de notre système.\n\n"
+            f"Cordialement,\n"
+            f"L'équipe RH"
+        )
+
+        send_email_notification(subject, message, [email])
+
+        # Supprimer complètement la candidature et toutes les données associées
+        application.delete()
+
+        return Response({'status': 'application rejected and data deleted'})
 
     @action(detail=False, methods=['get'])
     def track(self, request):

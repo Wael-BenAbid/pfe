@@ -64,13 +64,16 @@ class InternshipSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class JobApplicationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+
     class Meta:
         model = JobApplication
         fields = [
             'id', 'application_type', 'position', 'first_name', 'last_name',
             'email', 'phone', 'education', 'experience', 'motivation', 'cv_file',
-            'status', 'created_at', 'user'
+            'status', 'created_at', 'user', 'password'
         ]
+        extra_kwargs = {'password': {'write_only': True}}
 
 class UserSessionSerializer(serializers.ModelSerializer):
     duration_hours = serializers.SerializerMethodField()
