@@ -185,6 +185,8 @@ class JobApplication(models.Model):
     experience = models.TextField()
     motivation = models.TextField()
     cv_file = models.FileField(upload_to='cvs/')
+    # Champ pour stocker le mot de passe défini lors de la candidature
+    password = models.CharField(max_length=128, null=True, blank=True)
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
