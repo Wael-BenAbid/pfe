@@ -41,24 +41,9 @@ ENV EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
 # Expose port
 EXPOSE 8000
 
-# Create entrypoint script
-RUN echo '#!/bin/bash\n\
-# Attendre que la base de données soit prête\n\
-echo "Waiting for PostgreSQL to start..."\n\
-while ! pg_isready -h $DATABASE_HOST -p $DATABASE_PORT -U $DATABASE_USER; do\n\
-  sleep 1\n\
-done\n\
-echo "PostgreSQL started!"\n\
-\n\
-# Appliquer les migrations\n\
-python manage.py migrate --noinput\n\
-\n\
-# Collecter les fichiers statiques\n\
-python manage.py collectstatic --noinput\n\
-\n\
-# Démarrer le serveur\n\
-python manage.py runserver 0.0.0.0:8000\n\
-' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+# Copy entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Start the app
 CMD ["/app/entrypoint.sh"]
