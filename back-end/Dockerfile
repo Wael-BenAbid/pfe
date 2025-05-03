@@ -3,6 +3,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     postgresql-client \
@@ -11,10 +15,6 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -22,12 +22,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Ensure entrypoint script has the correct line endings and is executable
-RUN sed -i 's/\r$//' /app/entrypoint.sh && \
-    chmod +x /app/entrypoint.sh
+# Supprimer le dossier staticfiles_v2 s'il existe
+RUN rm -rf staticfiles_v2
 
 # Expose port
 EXPOSE 8000
 
-# Start the app
-CMD ["/bin/bash", "/app/entrypoint.sh"]
+# Start the app with a direct command
+CMD ["bash", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"]

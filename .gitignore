@@ -26,6 +26,10 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 media
+staticfiles_v2/
+static/
+back-end/entrypoint.sh
+back-end/docker-entrypoint.sh
 
 # Environment variables
 .env
