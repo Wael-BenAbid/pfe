@@ -87,10 +87,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </div>
             <div className="bg-orange-50 px-5 py-3">
               <div className="text-sm">
-                <a className="font-medium text-orange-700 hover:text-orange-900 flex justify-between items-center">
+                <div className="font-medium text-orange-700 hover:text-orange-900 flex justify-between items-center">
                   View all pending applications
                   <span>&rarr;</span>
-                </a>
+                </div>
               </div>
             </div>
           </div>
@@ -120,17 +120,17 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </div>
             <div className="bg-blue-50 px-5 py-3">
               <div className="text-sm">
-                <a className="font-medium text-blue-700 hover:text-blue-900 flex justify-between items-center">
+                <div className="font-medium text-blue-700 hover:text-blue-900 flex justify-between items-center">
                   Manage employees
                   <span>&rarr;</span>
-                </a>
+                </div>
               </div>
             </div>
           </div>
         </Link>
 
         {/* Active Interns */}
-        <Link to="/admin/employees?filter=intern" className="group">
+        <Link to="/admin/interns" className="group">
           <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02]">
             <div className="p-5">
               <div className="flex items-center">
@@ -153,10 +153,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </div>
             <div className="bg-green-50 px-5 py-3">
               <div className="text-sm">
-                <a className="font-medium text-green-700 hover:text-green-900 flex justify-between items-center">
+                <div className="font-medium text-green-700 hover:text-green-900 flex justify-between items-center">
                   Manage interns
                   <span>&rarr;</span>
-                </a>
+                </div>
               </div>
             </div>
           </div>

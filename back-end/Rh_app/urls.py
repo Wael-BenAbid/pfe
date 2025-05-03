@@ -18,6 +18,8 @@ from .views import (
     login_view,
     get_user_info,
     refresh_token,
+    forgot_password,
+    reset_password,
 )
 
 router = DefaultRouter()
@@ -47,4 +49,6 @@ urlpatterns = [
     path('auth/token/obtain/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
     path('auth/refresh-token/', refresh_token, name='token_refresh'),
+    path('auth/forgot-password/', forgot_password, name='forgot_password'),
+    path('auth/reset-password/', reset_password, name='reset_password'),
 ]

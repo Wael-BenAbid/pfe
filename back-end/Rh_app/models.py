@@ -22,6 +22,10 @@ class User(AbstractUser):
     leave_balance = models.FloatField(default=0.0)
     approved = models.BooleanField(default=False)
 
+    # Champs pour la réinitialisation de mot de passe
+    password_reset_token = models.CharField(max_length=100, null=True, blank=True)
+    password_reset_token_created = models.DateTimeField(null=True, blank=True)
+
     # Redéfinition des relations pour éviter les conflits avec AbstractUser
     groups = models.ManyToManyField(
         Group,

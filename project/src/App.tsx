@@ -10,6 +10,9 @@ import InternDashboard from './pages/intern/InternDashboard';
 import PendingApproval from './pages/auth/PendingApproval';
 import Login from './pages/auth/Login';
 import ApplicationSuccess from './pages/ApplicationSuccess';
+import ApplicationTracking from './pages/ApplicationTracking';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -23,7 +26,10 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/apply" element={<ApplicationForm />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/application-success" element={<ApplicationSuccess />} />
+            <Route path="/track-application" element={<ApplicationTracking />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
 
             {/* Protected routes - Admin only */}

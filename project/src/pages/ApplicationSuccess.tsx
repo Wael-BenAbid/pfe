@@ -34,6 +34,12 @@ const ApplicationSuccess: React.FC = () => {
         </div>
 
         <div className="space-y-3">
+          <Link to="/track-application">
+            <Button variant="outline" fullWidth>
+              Track Your Application
+            </Button>
+          </Link>
+
           <Link to="/login">
             <Button variant="outline" fullWidth>
               Go to Login Page

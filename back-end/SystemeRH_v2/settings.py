@@ -168,3 +168,15 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'waelbenabid1@gmail.com'  # Remplacez par votre adresse email
+EMAIL_HOST_PASSWORD = 'Azerty$123'  # Remplacez par votre mot de passe d'application
+DEFAULT_FROM_EMAIL = 'HR System <waelbenabid1@gmail.com>'
+
+# URL du frontend pour les liens dans les emails
+FRONTEND_URL = 'http://localhost:5173'

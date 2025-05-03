@@ -22,7 +22,8 @@ from rest_framework.routers import DefaultRouter
 from Rh_app.views import (
     UserViewSet, LeaveViewSet, MissionViewSet,
     WorkHoursViewSet, InternshipViewSet, JobApplicationViewSet,
-    UserSessionViewSet, MeetingViewSet, login_view, api_logout
+    UserSessionViewSet, MeetingViewSet, NotificationViewSet,
+    login_view, api_logout
 )
 from rest_framework_simplejwt.views import TokenVerifyView
 router = DefaultRouter()
@@ -34,6 +35,7 @@ router.register(r'internships', InternshipViewSet)
 router.register(r'job-applications', JobApplicationViewSet)
 router.register(r'user-sessions', UserSessionViewSet)
 router.register(r'meetings', MeetingViewSet)
+router.register(r'notifications', NotificationViewSet)
 
 
 def redirect_to_react(request):
