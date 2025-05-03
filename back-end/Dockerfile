@@ -9,8 +9,11 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
     python3-dev \
-    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Install Python dependencies
 COPY requirements.txt .
@@ -19,31 +22,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Create a non-root user to run the app
-RUN adduser --disabled-password --gecos '' appuser
-RUN chown -R appuser:appuser /app
-USER appuser
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
-# Define build arguments for sensitive data
-ARG SECRET_KEY
-ARG EMAIL_HOST_USER
-ARG EMAIL_HOST_PASSWORD
-
-# Set environment variables from build arguments
-ENV SECRET_KEY=${SECRET_KEY}
-ENV EMAIL_HOST_USER=${EMAIL_HOST_USER}
-ENV EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+# Ensure entrypoint script has the correct line endings and is executable
+RUN sed -i 's/\r$//' /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
 
 # Expose port
 EXPOSE 8000
 
-# Copy entrypoint script
-COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
-
 # Start the app
-CMD ["/app/entrypoint.sh"]
+CMD ["/bin/bash", "/app/entrypoint.sh"]
