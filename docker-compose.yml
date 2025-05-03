@@ -34,14 +34,11 @@ services:
       - DATABASE_NAME=rh_v2
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=12345
-      - DATABASE_HOST=db
-      - DATABASE_PORT=5432
+      - DATABASE_HOST=host.docker.internal
+      - DATABASE_PORT=5433
       - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
     volumes:
       - ./back-end:/app
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
@@ -55,7 +52,7 @@ services:
       bash -c "
         # Attendre que la base de données soit prête
         echo 'Waiting for PostgreSQL to start...'
-        until pg_isready -h db -p 5432 -U postgres; do
+        until pg_isready -h host.docker.internal -p 5433; do
           echo 'PostgreSQL is unavailable - sleeping'
           sleep 1
         done
@@ -74,28 +71,7 @@ services:
         python manage.py runserver 0.0.0.0:8000
       "
 
-  # Service de base de données PostgreSQL
-  db:
-    image: postgres:15-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_DB=rh_v2
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d rh_v2"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-    restart: unless-stopped
-
-volumes:
-  postgres_data:
+  # Le service db est commenté car nous utilisons la base de données locale
 
 networks:
   app-network:

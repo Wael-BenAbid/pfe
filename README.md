@@ -11,29 +11,34 @@ Ce projet est un système de gestion des ressources humaines qui permet de gére
 
 ## Configuration
 
+Le projet est configuré pour utiliser une base de données PostgreSQL locale au lieu d'une base de données dans un conteneur Docker. Cela permet de conserver les données même lorsque les conteneurs Docker sont arrêtés.
+
+### Configuration de la base de données locale
+
+1. Assurez-vous que PostgreSQL est installé et en cours d'exécution sur le port 5433.
+2. Créez une base de données nommée `rh_v2` :
+   ```sql
+   CREATE DATABASE rh_v2;
+   ```
+3. Assurez-vous que l'utilisateur `postgres` avec le mot de passe `12345` a les droits nécessaires sur la base de données `rh_v2`.
+
 ### Variables d'environnement
 
-1. Créez un fichier `.env` dans le dossier `back-end` en vous basant sur le fichier `.env.example` :
-
-```bash
-cp back-end/.env.example back-end/.env
-```
-
-2. Modifiez les valeurs dans le fichier `.env` selon votre environnement :
+Le fichier `.env` dans le dossier `back-end` est déjà configuré pour utiliser la base de données locale :
 
 ```
-SECRET_KEY=votre-clé-secrète
+SECRET_KEY=django-insecure-4!@e#some$%random^&characters
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
-DATABASE_NAME=votre_db_name
-DATABASE_USER=votre_db_user
-DATABASE_PASSWORD=votre_db_password
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
+DATABASE_NAME=rh_v2
+DATABASE_USER=postgres
+DATABASE_PASSWORD=12345
+DATABASE_HOST=host.docker.internal
+DATABASE_PORT=5433
 
 # Configuration des emails
-EMAIL_HOST_USER=votre.email@gmail.com
-EMAIL_HOST_PASSWORD=votre-mot-de-passe-app
+EMAIL_HOST_USER=waelbenabid1@gmail.com
+EMAIL_HOST_PASSWORD=voct gluk oifw jcpo
 ```
 
 ### Configuration des emails
@@ -46,15 +51,44 @@ Pour utiliser Gmail comme serveur SMTP, vous devez :
 
 ## Démarrage
 
-### Avec Docker
+### Utilisation des scripts PowerShell
 
-```bash
-docker-compose up -d
-```
+1. Vérifiez la connexion à la base de données :
+   ```powershell
+   ./check-db.ps1
+   ```
+
+2. Démarrez l'application :
+   ```powershell
+   ./start-app.ps1
+   ```
+
+3. Pour nettoyer l'environnement Docker :
+   ```powershell
+   ./clean-docker.ps1
+   ```
+
+### Utilisation manuelle de Docker Compose
+
+1. Démarrez l'application :
+   ```powershell
+   docker-compose up --build
+   ```
+
+2. Arrêtez l'application :
+   ```powershell
+   docker-compose down
+   ```
 
 L'application sera accessible à :
-- Frontend : http://localhost:5173
-- Backend : http://localhost:8000
+- Frontend : http://localhost:5173/
+- Backend API : http://localhost:8000/api/
+- Interface d'administration Django : http://localhost:8000/admin/
+
+### Informations d'identification par défaut
+
+- Nom d'utilisateur : wael
+- Mot de passe : Azerty$123
 
 ### Sans Docker (développement local)
 
