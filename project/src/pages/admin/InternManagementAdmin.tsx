@@ -116,29 +116,7 @@ const InternManagementAdmin: React.FC = () => {
                     ? "Interns"
                     : "Admins"}
             </h2>
-            <div className="flex space-x-2">
-              <Button
-                variant={filterType === "employee" ? "primary" : "outline"}
-                size="sm"
-                onClick={() => setFilterType("employee")}
-              >
-                Employees
-              </Button>
-              <Button
-                variant={filterType === "intern" ? "primary" : "outline"}
-                size="sm"
-                onClick={() => setFilterType("intern")}
-              >
-                Interns
-              </Button>
-              <Button
-                variant={filterType === "admin" ? "primary" : "outline"}
-                size="sm"
-                onClick={() => setFilterType("admin")}
-              >
-                Admins
-              </Button>
-            </div>
+            {/* Pas de boutons de filtrage ici */}
           </div>
         </div>
 

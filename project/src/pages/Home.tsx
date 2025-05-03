@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { UserPlus, LogIn, BriefcaseIcon } from "lucide-react";
+import { UserPlus, LogIn, BriefcaseIcon, SearchIcon } from "lucide-react";
 import Button from "../components/ui/Button";
 
 const Home: React.FC = () => {
@@ -17,6 +17,15 @@ const Home: React.FC = () => {
               </span>
             </div>
             <div className="flex items-center space-x-4">
+              <Link to="/track-application">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<SearchIcon className="h-4 w-4" />}
+                >
+                  Track Application
+                </Button>
+              </Link>
               <Link to="/login">
                 <Button
                   variant="outline"
