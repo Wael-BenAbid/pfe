@@ -12,8 +12,7 @@ services:
       - ./project:/app
       - /app/node_modules
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     healthcheck:
       test: ["CMD", "npm", "run", "health"]
       interval: 30s
@@ -35,14 +34,13 @@ services:
       - DATABASE_NAME=rh_v2
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=12345
-      - DATABASE_HOST=db
-      - DATABASE_PORT=5432
+      # Utiliser host.docker.internal pour se connecter à la machine hôte depuis Docker
+      - DATABASE_HOST=host.docker.internal
+      - DATABASE_PORT=5433  # Assurez-vous que c'est le bon port de votre PostgreSQL local
       - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
     volumes:
       - ./back-end:/app
-    depends_on:
-      db:
-        condition: service_healthy
+    # Nous avons supprimé la dépendance au service db car nous utilisons la base de données locale
     networks:
       - app-network
     restart: unless-stopped
@@ -51,27 +49,64 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    # Utiliser la commande définie dans le Dockerfile
-    # command: []
+    # Commande pour vérifier la base de données avant de démarrer l'application
+    command: >
+      bash -c "
+        # Attendre que la base de données soit prête
+        echo 'Waiting for PostgreSQL to start...'
+        while ! pg_isready -h $DATABASE_HOST -p $DATABASE_PORT -U $DATABASE_USER; do
+          sleep 1
+        done
+        echo 'PostgreSQL started!'
 
-  db:
-    image: postgres:15-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_DB=rh_v2
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=12345
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d rh_v2"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    networks:
-      - app-network
-    restart: unless-stopped
+        # Vérifier si la base de données existe
+        echo 'Checking if database exists...'
+        PGPASSWORD=$DATABASE_PASSWORD psql -h $DATABASE_HOST -p $DATABASE_PORT -U $DATABASE_USER -lqt | cut -d \| -f 1 | grep -qw $DATABASE_NAME || PGPASSWORD=$DATABASE_PASSWORD psql -h $DATABASE_HOST -p $DATABASE_PORT -U $DATABASE_USER -c \"CREATE DATABASE $DATABASE_NAME;\"
+
+        # Appliquer les migrations
+        echo 'Applying migrations...'
+        python manage.py migrate --noinput
+
+        # Créer un superutilisateur si nécessaire
+        echo 'Creating superuser if needed...'
+        python -c \"
+        import os
+        import django
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SystemeRH_v2.settings')
+        django.setup()
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        if not User.objects.filter(username='wael').exists():
+            User.objects.create_superuser('wael', 'wael@example.com', 'Azerty\$123')
+            print('Superuser created.')
+        else:
+            print('Superuser already exists.')
+        \"
+
+        # Démarrer le serveur
+        echo 'Starting server...'
+        python manage.py runserver 0.0.0.0:8000
+      "
+
+  # Le service db est commenté car nous utilisons la base de données locale
+  # db:
+  #   image: postgres:15-alpine
+  #   ports:
+  #     - "5432:5432"
+  #   environment:
+  #     - POSTGRES_DB=rh_v2
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=12345
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres -d rh_v2"]
+  #     interval: 5s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - app-network
+  #   restart: unless-stopped
 
 volumes:
   postgres_data:
