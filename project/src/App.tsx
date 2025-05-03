@@ -8,6 +8,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import InternDashboard from './pages/intern/InternDashboard';
 import PendingApproval from './pages/auth/PendingApproval';
+import ApplicationPending from './pages/ApplicationPending';
 import Login from './pages/auth/Login';
 import ApplicationSuccess from './pages/ApplicationSuccess';
 import ApplicationTracking from './pages/ApplicationTracking';
@@ -31,6 +32,7 @@ function App() {
             <Route path="/application-success" element={<ApplicationSuccess />} />
             <Route path="/track-application" element={<ApplicationTracking />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
+            <Route path="/not-found" element={<NotFound />} />
 
             {/* Protected routes - Admin only */}
             <Route

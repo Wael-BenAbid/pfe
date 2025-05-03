@@ -36,22 +36,35 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
         # Vérifier si l'utilisateur est approuvé
         if not user.approved:
-            # Vérifier s'il a une candidature en attente
-            pending_application = JobApplication.objects.filter(
-                email=user.email,
-                status='pending'
+            # Vérifier s'il a une candidature en attente ou rejetée
+            application = JobApplication.objects.filter(
+                email=user.email
             ).first()
 
-            if pending_application:
-                return Response(
-                    {"detail": "Votre candidature est en attente d'approbation. Veuillez patienter pendant qu'un administrateur l'examine."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            else:
-                return Response(
-                    {"detail": "Votre compte n'est pas approuvé. Veuillez contacter un administrateur."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+            if application:
+                if application.status == 'pending':
+                    return Response(
+                        {
+                            "detail": "Votre candidature est en attente d'approbation.",
+                            "status": "pending",
+                            "application_id": application.id
+                        },
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                elif application.status == 'rejected':
+                    return Response(
+                        {
+                            "detail": "Votre candidature a été rejetée.",
+                            "status": "rejected"
+                        },
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+            # Si aucune candidature n'est trouvée ou autre cas
+            return Response(
+                {"detail": "Votre compte n'est pas approuvé. Veuillez contacter un administrateur."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
         # Créer une session utilisateur si l'utilisateur est approuvé
         UserSession.objects.create(
@@ -82,10 +95,78 @@ def login_view(request):
             return Response({'error': 'Username and password required'},
                           status=status.HTTP_400_BAD_REQUEST)
 
+        # Essayer d'authentifier avec le nom d'utilisateur
         user = authenticate(username=username, password=password)
+
+        # Si l'authentification échoue, essayer avec l'email
         if not user:
+            # Chercher un utilisateur avec cet email
+            try:
+                user_obj = User.objects.get(email=username)
+                user = authenticate(username=user_obj.username, password=password)
+            except User.DoesNotExist:
+                pass
+
+        if not user:
+            # Vérifier si c'est une candidature en attente
+            try:
+                application = JobApplication.objects.filter(
+                    email=username,
+                    status='pending'
+                ).first()
+
+                if application:
+                    return Response(
+                        {
+                            "detail": "Votre candidature est en attente d'approbation.",
+                            "status": "pending",
+                            "application_id": application.id
+                        },
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+                # Vérifier si c'est une candidature rejetée
+                application = JobApplication.objects.filter(
+                    email=username,
+                    status='rejected'
+                ).first()
+
+                if application:
+                    return Response(
+                        {
+                            "detail": "Votre candidature a été rejetée.",
+                            "status": "rejected"
+                        },
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            except:
+                pass
+
             return Response({'error': 'Invalid credentials'},
                           status=status.HTTP_401_UNAUTHORIZED)
+
+        # Vérifier si l'utilisateur est approuvé
+        if not user.approved:
+            # Vérifier s'il a une candidature en attente
+            application = JobApplication.objects.filter(
+                email=user.email,
+                status='pending'
+            ).first()
+
+            if application:
+                return Response(
+                    {
+                        "detail": "Votre candidature est en attente d'approbation.",
+                        "status": "pending",
+                        "application_id": application.id
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            else:
+                return Response(
+                    {"detail": "Votre compte n'est pas approuvé. Veuillez contacter un administrateur."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
 
         # Create a new user session
         from .models import UserSession
@@ -955,6 +1036,10 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
                 user_type=application.application_type,  # 'employee' ou 'intern'
                 approved=True  # L'utilisateur est déjà approuvé
             )
+
+            # S'assurer que le champ approved est bien défini
+            user.approved = True
+            user.save()
 
             # Lier l'utilisateur à la candidature
             application.user = user

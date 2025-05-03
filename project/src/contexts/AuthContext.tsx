@@ -132,6 +132,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const data = await response.json();
         localStorage.setItem('access_token', data.access);
         localStorage.setItem('refresh_token', data.refresh);
+        localStorage.setItem('user_type', data.user?.user_type || '');
 
         // Store the session ID
         if (data.session_id) {
@@ -154,11 +155,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(userData);
         }
       } else {
+        // Gérer les différents cas d'erreur
+        try {
+          const errorData = await response.json();
+
+          if (response.status === 403) {
+            // Candidature en attente ou rejetée
+            if (errorData.status === 'pending') {
+              throw new Error(`pending:${errorData.application_id}`);
+            } else if (errorData.status === 'rejected') {
+              throw new Error('rejected');
+            }
+          }
+
+          // Si l'erreur contient un message détaillé, l'utiliser
+          if (errorData.detail) {
+            throw new Error(errorData.detail);
+          } else if (errorData.error) {
+            throw new Error(errorData.error);
+          }
+        } catch (parseError) {
+          // Si l'erreur n'est pas au format JSON ou n'a pas les champs attendus
+          console.error('Error parsing error response:', parseError);
+        }
+
         throw new Error('Invalid credentials');
       }
     } catch (error) {
       console.error('Login error:', error);
-      throw new Error('Invalid credentials');
+
+      // Propager l'erreur avec le message approprié
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('Invalid credentials');
+      }
     }
   };
 

@@ -27,6 +27,7 @@ interface FormData {
   experience: string;
   motivation: string;
   cv_file: File | null;
+  password: string;
 }
 
 interface FormErrors {
@@ -40,6 +41,7 @@ interface FormErrors {
   experience?: string;
   motivation?: string;
   cv_file?: string;
+  password?: string;
 }
 
 const ApplicationForm: React.FC = () => {
@@ -55,6 +57,7 @@ const ApplicationForm: React.FC = () => {
     experience: "",
     motivation: "",
     cv_file: null,
+    password: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -87,6 +90,11 @@ const ApplicationForm: React.FC = () => {
       }
       if (!formData.phone) {
         newErrors.phone = VALIDATION_MESSAGES.REQUIRED;
+      }
+      if (!formData.password) {
+        newErrors.password = VALIDATION_MESSAGES.REQUIRED;
+      } else if (formData.password.length < 8) {
+        newErrors.password = VALIDATION_MESSAGES.PASSWORD_TOO_SHORT;
       }
     }
 
@@ -165,7 +173,7 @@ const ApplicationForm: React.FC = () => {
         }
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/job-applications/`, {
+      const response = await fetch(`${API_BASE_URL}/job-applications/`, {
         method: "POST",
         body: submitData,
       });
@@ -316,6 +324,16 @@ const ApplicationForm: React.FC = () => {
               value={formData.phone}
               onChange={(e) => handleChange("phone", e.target.value)}
               error={errors.phone}
+            />
+
+            <TextInput
+              label="Password"
+              type="password"
+              placeholder="Create a password for your account"
+              value={formData.password}
+              onChange={(e) => handleChange("password", e.target.value)}
+              error={errors.password}
+              helper="You'll use this password to log in if your application is approved"
             />
           </div>
         );
