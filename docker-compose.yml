@@ -49,19 +49,16 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    # Commande pour vérifier la base de données avant de démarrer l'application
+    # Commande simplifiée pour démarrer l'application
     command: >
       bash -c "
         # Attendre que la base de données soit prête
         echo 'Waiting for PostgreSQL to start...'
-        while ! pg_isready -h $DATABASE_HOST -p $DATABASE_PORT -U $DATABASE_USER; do
+        until pg_isready -h host.docker.internal -p 5433; do
+          echo 'PostgreSQL is unavailable - sleeping'
           sleep 1
         done
         echo 'PostgreSQL started!'
-
-        # Vérifier si la base de données existe
-        echo 'Checking if database exists...'
-        PGPASSWORD=$DATABASE_PASSWORD psql -h $DATABASE_HOST -p $DATABASE_PORT -U $DATABASE_USER -lqt | cut -d \| -f 1 | grep -qw $DATABASE_NAME || PGPASSWORD=$DATABASE_PASSWORD psql -h $DATABASE_HOST -p $DATABASE_PORT -U $DATABASE_USER -c \"CREATE DATABASE $DATABASE_NAME;\"
 
         # Appliquer les migrations
         echo 'Applying migrations...'
@@ -69,18 +66,14 @@ services:
 
         # Créer un superutilisateur si nécessaire
         echo 'Creating superuser if needed...'
-        python -c \"
-        import os
-        import django
-        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SystemeRH_v2.settings')
-        django.setup()
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
+        python manage.py shell -c \"
+        from django.contrib.auth import get_user_model;
+        User = get_user_model();
         if not User.objects.filter(username='wael').exists():
-            User.objects.create_superuser('wael', 'wael@example.com', 'Azerty\$123')
-            print('Superuser created.')
+            User.objects.create_superuser('wael', 'wael@example.com', 'Azerty\$123');
+            print('Superuser created.');
         else:
-            print('Superuser already exists.')
+            print('Superuser already exists.');
         \"
 
         # Démarrer le serveur
