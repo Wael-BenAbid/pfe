@@ -19,6 +19,7 @@ export const VALIDATION_MESSAGES = {
   REQUIRED: 'This field is required',
   EMAIL_INVALID: 'Please enter a valid email address',
   PHONE_INVALID: 'Please enter a valid phone number',
+  PASSWORD_TOO_SHORT: 'Password must be at least 8 characters long',
   FILE_REQUIRED: 'Please upload your CV',
   FILE_SIZE_EXCEEDED: 'File size exceeds the maximum limit of 5MB',
   FILE_TYPE_INVALID: 'Please upload a PDF, DOC, or DOCX file'

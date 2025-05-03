@@ -41,9 +41,16 @@ const Login: React.FC = () => {
       if (error instanceof Error) {
         if (error.message.includes("credentials")) {
           setErrorMessage("Invalid username or password");
-        } else if (error.message.includes("pending")) {
-          setErrorMessage("Your account is pending approval");
-          navigate("/pending-approval");
+        } else if (error.message.startsWith("pending:")) {
+          // Extraire l'ID de l'application
+          const applicationId = error.message.split(":")[1];
+          setErrorMessage("Your application is pending approval");
+          navigate("/pending-approval", {
+            state: { applicationId }
+          });
+        } else if (error.message === "rejected") {
+          setErrorMessage("Your application has been rejected");
+          navigate("/not-found", { replace: true });
         } else {
           setErrorMessage("An error occurred. Please try again.");
         }
