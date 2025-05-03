@@ -78,6 +78,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           title: notification.title,
           message: notification.message,
           type: notification.type || 'info',
+          user: user.id,
         }),
       });
 

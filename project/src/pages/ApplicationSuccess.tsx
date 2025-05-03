@@ -33,6 +33,18 @@ const ApplicationSuccess: React.FC = () => {
           </p>
         </div>
 
+        <div className="bg-yellow-50 border border-yellow-100 rounded-md p-4 mb-6">
+          <h3 className="text-md font-semibold text-yellow-800 mb-2">
+            Track Your Application
+          </h3>
+          <p className="text-sm text-yellow-700">
+            You can track the status of your application using your email address and application ID.
+            <br />
+            <br />
+            <strong>Important:</strong> Please note your application ID for future reference. You'll need it to check your application status.
+          </p>
+        </div>
+
         <div className="space-y-3">
           <Link to="/track-application">
             <Button variant="outline" fullWidth>

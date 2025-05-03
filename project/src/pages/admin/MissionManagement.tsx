@@ -67,24 +67,27 @@ const MissionManagement: React.FC = () => {
       const missionsWithUserDetails = await Promise.all(
         data.map(async (mission: Mission) => {
           try {
-            const userResponse = await fetch(
-              `${API_BASE_URL}/users/${mission.user}/`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
+            // Vérifier si mission.user existe avant de faire la requête
+            if (mission.user) {
+              const userResponse = await fetch(
+                `${API_BASE_URL}/users/${mission.user}/`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
 
-            if (userResponse.ok) {
-              const userData = await userResponse.json();
-              return {
-                ...mission,
-                user_details: {
-                  first_name: userData.first_name,
-                  last_name: userData.last_name,
-                },
-              };
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                return {
+                  ...mission,
+                  user_details: {
+                    first_name: userData.first_name,
+                    last_name: userData.last_name,
+                  },
+                };
+              }
             }
 
             return mission;
@@ -307,7 +310,9 @@ const MissionManagement: React.FC = () => {
                       <div className="text-sm text-gray-900">
                         {mission.user_details
                           ? `${mission.user_details.first_name} ${mission.user_details.last_name}`
-                          : `User #${mission.user}`}
+                          : mission.user
+                          ? `User #${mission.user}`
+                          : "Non assigné"}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

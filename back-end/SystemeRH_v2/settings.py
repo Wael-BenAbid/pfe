@@ -170,13 +170,20 @@ SIMPLE_JWT = {
 }
 
 # Email Configuration
+# Configuration des emails
+# En développement, on peut utiliser le backend de console pour voir les emails dans la console
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# En production, on utilise le backend SMTP pour envoyer des emails réels
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'waelbenabid1@gmail.com'  # Remplacez par votre adresse email
-EMAIL_HOST_PASSWORD = 'Azerty$123'  # Remplacez par votre mot de passe d'application
-DEFAULT_FROM_EMAIL = 'HR System <waelbenabid1@gmail.com>'
+
+# Récupération des informations sensibles depuis les variables d'environnement
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = f'HR System <{EMAIL_HOST_USER}>'
 
 # URL du frontend pour les liens dans les emails
 FRONTEND_URL = 'http://localhost:5173'
