@@ -1,0 +1,98 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-run-as-non-root
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+  - name: run-as-non-root
+    match:
+      resources:
+        kinds:
+        - Pod
+    validate:
+      message: "Running as root is not allowed. Set runAsNonRoot to true."
+      pattern:
+        spec:
+          containers:
+          - securityContext:
+              runAsNonRoot: true
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-privileged-containers
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+  - name: privileged-containers
+    match:
+      resources:
+        kinds:
+        - Pod
+    validate:
+      message: "Privileged containers are not allowed."
+      pattern:
+        spec:
+          containers:
+          - securityContext:
+              privileged: false
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-pod-probes
+spec:
+  validationFailureAction: audit
+  background: true
+  rules:
+  - name: require-readiness-probe
+    match:
+      resources:
+        kinds:
+        - Deployment
+    validate:
+      message: "Readiness probe is required."
+      pattern:
+        spec:
+          template:
+            spec:
+              containers:
+              - readinessProbe:
+                  {}
+  - name: require-liveness-probe
+    match:
+      resources:
+        kinds:
+        - Deployment
+    validate:
+      message: "Liveness probe is required."
+      pattern:
+        spec:
+          template:
+            spec:
+              containers:
+              - livenessProbe:
+                  {}
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-image-registries
+spec:
+  validationFailureAction: enforce
+  background: true
+  rules:
+  - name: allowed-registries
+    match:
+      resources:
+        kinds:
+        - Pod
+    validate:
+      message: "Only images from approved registries are allowed."
+      pattern:
+        spec:
+          containers:
+          - image: "docker.io/waelbenabid/*"

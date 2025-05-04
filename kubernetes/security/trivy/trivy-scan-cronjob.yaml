@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: trivy-scan
+  namespace: security
+spec:
+  schedule: "0 0 * * *"  # Exécuter tous les jours à minuit
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: trivy-scanner
+          containers:
+          - name: trivy
+            image: aquasec/trivy:0.45.1
+            args:
+            - image
+            - --format
+            - json
+            - --output
+            - /results/scan-results.json
+            - --severity
+            - HIGH,CRITICAL
+            - --ignore-unfixed
+            - waelbenabid/rh-frontend:latest
+            - waelbenabid/rh-backend:latest
+            volumeMounts:
+            - name: results
+              mountPath: /results
+          - name: results-processor
+            image: busybox:1.36
+            command:
+            - /bin/sh
+            - -c
+            - |
+              cat /results/scan-results.json | tee /dev/stderr > /dev/null
+              TIMESTAMP=$(date +%Y%m%d%H%M%S)
+              kubectl create configmap trivy-results-$TIMESTAMP --from-file=/results/scan-results.json -n security
+            volumeMounts:
+            - name: results
+              mountPath: /results
+            - name: kubectl
+              mountPath: /usr/local/bin/kubectl
+              subPath: kubectl
+          volumes:
+          - name: results
+            emptyDir: {}
+          - name: kubectl
+            configMap:
+              name: kubectl-binary
+              defaultMode: 0755
+          restartPolicy: OnFailure
