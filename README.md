@@ -97,7 +97,7 @@ L'application sera accessible à :
 
 ```bash
 cd back-end
-pip install -r requirements.txt
+pip insquitall -r rerements.txt
 python manage.py migrate
 python manage.py runserver
 ```
@@ -171,6 +171,29 @@ Les composants de sécurité incluent :
 - **NetworkPolicies** : Sécurisation des communications entre pods
 
 Le projet intègre également des scans de sécurité automatiques dans le pipeline CI/CD pour détecter les vulnérabilités avant le déploiement.
+
+### Centralisation des Logs
+
+Le projet inclut une configuration complète pour la centralisation des logs avec la stack ELK (Elasticsearch, Logstash, Kibana). Les configurations se trouvent dans le répertoire `kubernetes/logging/`.
+
+Pour déployer la stack ELK :
+
+```bash
+cd kubernetes/logging
+chmod +x install-logging.sh
+./install-logging.sh
+```
+
+Une fois déployée, l'interface Kibana est accessible à l'adresse :
+- Kibana : http://kibana.rh-system.local
+
+Les composants de la stack ELK incluent :
+- **Elasticsearch** : Stockage et indexation des logs
+- **Logstash** : Traitement et enrichissement des logs
+- **Kibana** : Visualisation et analyse des logs
+- **Filebeat** : Collecte des logs sur les nœuds
+
+Des dashboards préconfigurés sont disponibles pour visualiser les logs du système, de l'application, de la base de données, des accès HTTP et de la sécurité.
 
 ## CI/CD
 
