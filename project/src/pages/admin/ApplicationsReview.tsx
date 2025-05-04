@@ -30,10 +30,7 @@ const ApplicationsReview: React.FC = () => {
   const [filter, setFilter] = useState("all");
   const [processingId, setProcessingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchApplications();
-  }, [token, filter]);
-
+  // Fonction pour récupérer les applications
   const fetchApplications = async () => {
     if (!token) return;
 
@@ -61,6 +58,14 @@ const ApplicationsReview: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Appeler fetchApplications lorsque le token ou le filtre change
+  useEffect(() => {
+    fetchApplications();
+    // Fermer le modal de détails si ouvert lors du changement de filtre
+    setSelectedApplication(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, filter]);
 
   const updateApplicationStatus = async (id: number, status: string) => {
     if (!token) return;
@@ -90,12 +95,14 @@ const ApplicationsReview: React.FC = () => {
         );
       }
 
-      // Refresh the applications list
-      fetchApplications();
+      // After approval/rejection, automatically filter to show only pending applications
+      setFilter("pending");
 
-      // If the updated application is the selected one, update it
+      // La liste sera automatiquement mise à jour par le useEffect lorsque le filtre change
+
+      // If the updated application is the selected one, close the modal
       if (selectedApplication && selectedApplication.id === id) {
-        setSelectedApplication((prev) => (prev ? { ...prev, status } : null));
+        setSelectedApplication(null);
       }
 
       // Show success message

@@ -72,6 +72,9 @@ const Login: React.FC = () => {
           Sign in to your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
+          Use your email address to sign in
+        </p>
+        <p className="mt-2 text-center text-sm text-gray-600">
           Or{" "}
           <Link
             to="/apply"
@@ -92,12 +95,14 @@ const Login: React.FC = () => {
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             <TextInput
-              label="Username"
+              label="Email or Username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              autoComplete="username"
+              autoComplete="email"
+              placeholder="Enter your email address"
+              helper="You can use either your email or username to log in"
             />
 
             <TextInput

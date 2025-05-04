@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { useNotifications } from "../../contexts/NotificationContext";
+import { useNotifications } from "../../hooks/useNotifications";
 import Button from "../../components/ui/Button";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import {
@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import InternMissions from "./InternMissions";
 import InternMeetings from "./InternMeetings";
-import InternNotifications from "./InternNotifications";
+import NotificationsPage from "./NotificationsPage";
 
 const InternDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -153,7 +153,7 @@ const InternDashboard: React.FC = () => {
         <div className="bg-white shadow rounded-lg p-6">
           {activeTab === "missions" && <InternMissions />}
           {activeTab === "meetings" && <InternMeetings />}
-          {activeTab === "notifications" && <InternNotifications />}
+          {activeTab === "notifications" && <NotificationsPage />}
         </div>
       </main>
     </div>

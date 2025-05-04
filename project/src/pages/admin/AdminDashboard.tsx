@@ -12,6 +12,7 @@ import UserWorkHours from "./UserWorkHours";
 import MissionManagement from "./MissionManagement";
 import InternshipManagement from "./InternshipManagement";
 import LeaveManagement from "./LeaveManagement";
+import NotificationsPage from "./NotificationsPage";
 import NotFound from "../NotFound";
 import { API_BASE_URL } from "../../config/constants";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
@@ -114,6 +115,7 @@ const AdminDashboard: React.FC = () => {
               <Route path="missions" element={<MissionManagement />} />
               <Route path="internships" element={<InternshipManagement />} />
               <Route path="leaves" element={<LeaveManagement />} />
+              <Route path="notifications" element={<NotificationsPage />} />
               <Route path="user/:userId" element={<UserProfile />} />
               <Route
                 path="user/:userId/work-hours"

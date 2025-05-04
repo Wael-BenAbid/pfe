@@ -31,6 +31,8 @@ class LeaveSerializer(serializers.ModelSerializer):
 class MissionSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.ReadOnlyField(source='assigned_to.username')
     supervisor_name = serializers.SerializerMethodField()
+    assigned_to_full_name = serializers.SerializerMethodField()
+    work_duration_display = serializers.SerializerMethodField()
 
     # Rendre le champ supervisor optionnel
     supervisor = serializers.PrimaryKeyRelatedField(
@@ -39,6 +41,11 @@ class MissionSerializer(serializers.ModelSerializer):
         allow_null=True
     )
 
+    # Rendre les champs d'attachement optionnels
+    attachment_link = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+    attachment_file = serializers.FileField(required=False, allow_null=True)
+    completion_link = serializers.URLField(required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = Mission
         fields = '__all__'
@@ -46,6 +53,26 @@ class MissionSerializer(serializers.ModelSerializer):
     def get_supervisor_name(self, obj):
         if obj.supervisor:
             return obj.supervisor.username
+        return None
+
+    def get_assigned_to_full_name(self, obj):
+        if obj.assigned_to:
+            return f"{obj.assigned_to.first_name} {obj.assigned_to.last_name}"
+        return None
+
+    def get_work_duration_display(self, obj):
+        if obj.work_duration:
+            total_seconds = obj.work_duration.total_seconds()
+            days = total_seconds // 86400
+            hours = (total_seconds % 86400) // 3600
+            minutes = (total_seconds % 3600) // 60
+
+            if days > 0:
+                return f"{int(days)} jours, {int(hours)} heures, {int(minutes)} minutes"
+            elif hours > 0:
+                return f"{int(hours)} heures, {int(minutes)} minutes"
+            else:
+                return f"{int(minutes)} minutes"
         return None
 
 class WorkHoursSerializer(serializers.ModelSerializer):

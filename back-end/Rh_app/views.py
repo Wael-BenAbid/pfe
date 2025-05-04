@@ -26,6 +26,19 @@ logger = logging.getLogger(__name__)
 # Authentication Views
 class CustomTokenObtainPairView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
+        # Récupérer les identifiants
+        username = request.data.get('username')
+        password = request.data.get('password')
+
+        # Si l'identifiant ressemble à un email, essayer de trouver l'utilisateur correspondant
+        if username and '@' in username:
+            try:
+                user_obj = User.objects.get(email=username)
+                # Remplacer l'email par le nom d'utilisateur pour l'authentification
+                request.data['username'] = user_obj.username
+            except User.DoesNotExist:
+                pass
+
         serializer = self.get_serializer(data=request.data)
         try:
             serializer.is_valid(raise_exception=True)
@@ -95,17 +108,15 @@ def login_view(request):
             return Response({'error': 'Username and password required'},
                           status=status.HTTP_400_BAD_REQUEST)
 
-        # Essayer d'authentifier avec le nom d'utilisateur
-        user = authenticate(username=username, password=password)
-
-        # Si l'authentification échoue, essayer avec l'email
-        if not user:
+        # Essayer d'abord d'authentifier avec l'email
+        user = None
+        try:
             # Chercher un utilisateur avec cet email
-            try:
-                user_obj = User.objects.get(email=username)
-                user = authenticate(username=user_obj.username, password=password)
-            except User.DoesNotExist:
-                pass
+            user_obj = User.objects.get(email=username)
+            user = authenticate(username=user_obj.username, password=password)
+        except User.DoesNotExist:
+            # Si aucun utilisateur n'est trouvé avec cet email, essayer avec le nom d'utilisateur
+            user = authenticate(username=username, password=password)
 
         if not user:
             # Vérifier si c'est une candidature en attente
@@ -292,7 +303,27 @@ def forgot_password(request):
         return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user = User.objects.get(email=email)
+        # Vérifier si l'utilisateur existe avec cet email
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # Pour des raisons de sécurité, ne pas révéler si l'email existe ou non
+            logger.info(f"Password reset requested for non-existent email: {email}")
+            return Response({'message': 'Password reset email sent if email exists'}, status=status.HTTP_200_OK)
+
+        # Vérifier si l'utilisateur est approuvé
+        if not user.approved:
+            # Vérifier s'il a une candidature en attente
+            application = JobApplication.objects.filter(
+                email=email,
+                status='pending'
+            ).first()
+
+            if application:
+                return Response({
+                    'message': 'Your account is pending approval. You will be able to reset your password once your account is approved.',
+                    'status': 'pending'
+                }, status=status.HTTP_200_OK)
 
         # Générer un token unique pour la réinitialisation du mot de passe
         import uuid
@@ -321,12 +352,9 @@ def forgot_password(request):
         )
 
         send_email_notification(subject, message, [email])
-
+        logger.info(f"Password reset email sent to: {email}")
         return Response({'message': 'Password reset email sent'}, status=status.HTTP_200_OK)
 
-    except User.DoesNotExist:
-        # Pour des raisons de sécurité, ne pas révéler si l'email existe ou non
-        return Response({'message': 'Password reset email sent if email exists'}, status=status.HTTP_200_OK)
     except Exception as e:
         logger.error(f"Error sending password reset email: {str(e)}")
         return Response({'error': 'Error sending password reset email'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -345,24 +373,53 @@ def reset_password(request):
     if not email or not token or not new_password:
         return Response({'error': 'Email, token and new password are required'}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Vérifier la longueur du mot de passe
+    if len(new_password) < 8:
+        return Response({'error': 'Password must be at least 8 characters long'}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        user = User.objects.get(email=email, password_reset_token=token)
+        # Vérifier si l'utilisateur existe avec cet email et ce token
+        try:
+            user = User.objects.get(email=email, password_reset_token=token)
+        except User.DoesNotExist:
+            logger.warning(f"Password reset attempt with invalid email or token: {email}")
+            return Response({'error': 'Invalid email or token'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Vérifier si le token n'a pas expiré (24 heures)
         from django.utils import timezone
-        if user.password_reset_token_created and (timezone.now() - user.password_reset_token_created).days < 1:
-            # Mettre à jour le mot de passe
-            user.set_password(new_password)
-            user.password_reset_token = None
-            user.password_reset_token_created = None
-            user.save()
-
-            return Response({'message': 'Password reset successful'}, status=status.HTTP_200_OK)
-        else:
+        if not user.password_reset_token_created or (timezone.now() - user.password_reset_token_created).days >= 1:
+            logger.warning(f"Password reset attempt with expired token: {email}")
             return Response({'error': 'Password reset token has expired'}, status=status.HTTP_400_BAD_REQUEST)
 
-    except User.DoesNotExist:
-        return Response({'error': 'Invalid email or token'}, status=status.HTTP_400_BAD_REQUEST)
+        # Vérifier si l'utilisateur est approuvé
+        if not user.approved:
+            logger.warning(f"Password reset attempt for non-approved user: {email}")
+            return Response({'error': 'Your account is not approved yet'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Mettre à jour le mot de passe
+        user.set_password(new_password)
+        user.password_reset_token = None
+        user.password_reset_token_created = None
+        user.save()
+
+        logger.info(f"Password reset successful for user: {email}")
+
+        # Envoyer un email de confirmation
+        from .utils import send_email_notification
+
+        subject = "Votre mot de passe a été réinitialisé"
+        message = (
+            f"Bonjour {user.first_name} {user.last_name},\n\n"
+            f"Votre mot de passe a été réinitialisé avec succès.\n\n"
+            f"Si vous n'avez pas effectué cette action, veuillez contacter immédiatement l'administrateur.\n\n"
+            f"Cordialement,\n"
+            f"L'équipe RH"
+        )
+
+        send_email_notification(subject, message, [email])
+
+        return Response({'message': 'Password reset successful'}, status=status.HTTP_200_OK)
+
     except Exception as e:
         logger.error(f"Error resetting password: {str(e)}")
         return Response({'error': 'Error resetting password'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -545,6 +602,53 @@ class MissionViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
+    def perform_create(self, serializer):
+        if self.request.user.user_type == 'intern':
+            raise PermissionDenied('Intern cannot create missions')
+
+        # Récupérer les données du formulaire
+        attachment_link = self.request.data.get('attachment_link', None)
+        attachment_file = self.request.FILES.get('attachment_file', None)
+
+        # L'utilisateur qui crée la mission est automatiquement désigné comme superviseur
+        mission = serializer.save(
+            supervisor=self.request.user,
+            attachment_link=attachment_link,
+            attachment_file=attachment_file
+        )
+
+        # Vérifier si la mission a une date d'échéance passée
+        from django.utils import timezone
+        if mission.deadline < timezone.now().date():
+            mission.status = 'late'
+            mission.save()
+
+        # Envoyer un email à l'assigné si la mission est assignée à quelqu'un
+        if hasattr(mission, 'assigned_to') and mission.assigned_to:
+            from .utils import send_email_notification
+
+            subject = f"Nouvelle mission : {mission.title}"
+            message = (
+                f"Bonjour {mission.assigned_to.first_name} {mission.assigned_to.last_name},\n\n"
+                f"Une nouvelle mission vous a été assignée :\n\n"
+                f"Titre : {mission.title}\n"
+                f"Description : {mission.description}\n"
+                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
+                f"Superviseur : {mission.supervisor.first_name} {mission.supervisor.last_name}\n\n"
+            )
+
+            if mission.attachment_link:
+                message += f"Lien de document : {mission.attachment_link}\n\n"
+
+            if mission.attachment_file:
+                message += f"Un fichier a été joint à cette mission. Connectez-vous au système pour le télécharger.\n\n"
+
+            message += "Connectez-vous au système pour plus de détails.\n\n"
+            message += "Cordialement,\n"
+            message += "L'équipe RH"
+
+            send_email_notification(subject, message, [mission.assigned_to.email])
+
     def get_queryset(self):
         """
         Limiter les résultats en fonction du type d'utilisateur
@@ -665,6 +769,134 @@ class MissionViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'])
+    def apply_penalty(self, request, pk=None):
+        """
+        Appliquer une pénalité pour une mission en retard
+        """
+        mission = self.get_object()
+
+        # Vérifier que l'utilisateur est un administrateur
+        if request.user.user_type != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Vérifier que la mission est en retard
+        if mission.status != 'late':
+            return Response({'error': 'Cannot apply penalty to a mission that is not late'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérifier que l'assigné est un employé
+        if mission.assigned_to.user_type != 'employee':
+            return Response({'error': 'Cannot apply penalty to an intern'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Récupérer le nombre de jours de pénalité
+        penalty_days = request.data.get('penalty_days', 1)
+        try:
+            penalty_days = int(penalty_days)
+            if penalty_days <= 0:
+                raise ValueError("Penalty days must be positive")
+        except (ValueError, TypeError):
+            return Response({'error': 'Invalid penalty days'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Appliquer la pénalité
+        employee = mission.assigned_to
+        if employee.leave_balance < penalty_days:
+            penalty_days = employee.leave_balance  # Ne pas aller en négatif
+
+        if penalty_days > 0:
+            employee.leave_balance -= penalty_days
+            employee.save()
+
+            # Créer une notification pour l'employé
+            from .models import Notification
+            Notification.objects.create(
+                user=employee,
+                title="Pénalité appliquée",
+                message=f"Une pénalité de {penalty_days} jour(s) de congé a été appliquée pour la mission en retard '{mission.title}'.",
+                type="warning"
+            )
+
+            # Envoyer un email à l'employé
+            from .utils import send_email_notification
+
+            subject = f"Pénalité appliquée pour mission en retard : {mission.title}"
+            message = (
+                f"Bonjour {employee.first_name} {employee.last_name},\n\n"
+                f"Une pénalité de {penalty_days} jour(s) de congé a été appliquée pour la mission en retard suivante :\n\n"
+                f"Titre : {mission.title}\n"
+                f"Description : {mission.description}\n"
+                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
+                f"Votre solde de congés actuel est de {employee.leave_balance} jour(s).\n\n"
+                f"Cordialement,\n"
+                f"L'équipe RH"
+            )
+
+            send_email_notification(subject, message, [employee.email])
+
+            return Response({
+                'status': 'penalty applied',
+                'penalty_days': penalty_days,
+                'new_leave_balance': employee.leave_balance
+            })
+        else:
+            return Response({'error': 'Employee has no leave balance to deduct'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'])
+    def check_late_missions(self, request):
+        """
+        Vérifier les missions en retard et mettre à jour leur statut
+        """
+        # Vérifier que l'utilisateur est un administrateur
+        if request.user.user_type != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Récupérer toutes les missions en attente dont la date d'échéance est passée
+        from django.utils import timezone
+        today = timezone.now().date()
+
+        late_missions = Mission.objects.filter(
+            status='pending',
+            completed=False,
+            deadline__lt=today
+        )
+
+        # Mettre à jour le statut des missions en retard
+        updated_count = 0
+        for mission in late_missions:
+            mission.status = 'late'
+            mission.save()
+            updated_count += 1
+
+            # Créer une notification pour l'assigné
+            from .models import Notification
+            Notification.objects.create(
+                user=mission.assigned_to,
+                title="Mission en retard",
+                message=f"La mission '{mission.title}' est maintenant en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}.",
+                type="error"
+            )
+
+            # Envoyer un email à l'assigné
+            from .utils import send_email_notification
+
+            subject = f"Mission en retard : {mission.title}"
+            message = (
+                f"Bonjour {mission.assigned_to.first_name} {mission.assigned_to.last_name},\n\n"
+                f"La mission suivante est maintenant en retard :\n\n"
+                f"Titre : {mission.title}\n"
+                f"Description : {mission.description}\n"
+                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
+                f"Veuillez compléter cette mission dès que possible pour éviter une pénalité.\n\n"
+                f"Cordialement,\n"
+                f"L'équipe RH"
+            )
+
+            send_email_notification(subject, message, [mission.assigned_to.email])
+
+        return Response({
+            'status': 'late missions checked',
+            'updated_count': updated_count
+        })
+
+    @action(detail=True, methods=['post'])
     def complete_mission(self, request, pk=None):
         """
         Marquer une mission comme complétée
@@ -676,8 +908,38 @@ class MissionViewSet(viewsets.ModelViewSet):
             not request.user.is_superuser):
             return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
+        # Récupérer le lien de complétion s'il est fourni
+        completion_link = request.data.get('completion_link', None)
+        if completion_link:
+            mission.completion_link = completion_link
+
+        # Marquer la mission comme complétée
         mission.completed = True
+        mission.status = 'completed'
+
+        # Enregistrer la date de complétion
+        from django.utils import timezone
+        mission.completed_at = timezone.now()
+
+        # Calculer la durée de travail
+        if mission.created_at:
+            mission.work_duration = mission.completed_at - mission.created_at
+
         mission.save()
+
+        # Ajouter un jour de congé à l'employé qui a complété la mission
+        if mission.assigned_to.user_type == 'employee':
+            mission.assigned_to.leave_balance += 1
+            mission.assigned_to.save()
+
+            # Créer une notification pour l'employé
+            from .models import Notification
+            Notification.objects.create(
+                user=mission.assigned_to,
+                title="Jour de congé ajouté",
+                message=f"Vous avez reçu un jour de congé supplémentaire pour avoir complété la mission '{mission.title}'.",
+                type="success"
+            )
 
         # Si c'est le stagiaire ou l'employé qui a marqué la mission comme complétée, envoyer des emails
         from .utils import send_email_notification, get_admin_emails
@@ -690,9 +952,23 @@ class MissionViewSet(viewsets.ModelViewSet):
                 f"{mission.assigned_to.first_name} {mission.assigned_to.last_name} a marqué la mission suivante comme complétée :\n\n"
                 f"Titre : {mission.title}\n"
                 f"Description : {mission.description}\n"
-                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
-                f"Connectez-vous au système pour vérifier cette mission et la valider si nécessaire."
+                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n"
             )
+
+            if mission.completion_link:
+                message += f"Lien fourni : {mission.completion_link}\n\n"
+
+            if mission.work_duration:
+                days = mission.work_duration.days
+                hours = mission.work_duration.seconds // 3600
+                minutes = (mission.work_duration.seconds % 3600) // 60
+
+                message += f"Durée de travail : "
+                if days > 0:
+                    message += f"{days} jours, "
+                message += f"{hours} heures, {minutes} minutes\n\n"
+
+            message += "Connectez-vous au système pour vérifier cette mission et la valider si nécessaire."
 
             send_email_notification(subject, message, [mission.supervisor.email])
 
@@ -708,12 +984,33 @@ class MissionViewSet(viewsets.ModelViewSet):
                 f"Assignée à : {mission.assigned_to.first_name} {mission.assigned_to.last_name}\n"
                 f"Superviseur : {mission.supervisor.first_name if mission.supervisor else ''} {mission.supervisor.last_name if mission.supervisor else ''}\n"
                 f"Marquée comme complétée par : {request.user.first_name} {request.user.last_name}\n\n"
-                f"Connectez-vous au système pour plus de détails."
             )
+
+            if mission.completion_link:
+                admin_message += f"Lien fourni : {mission.completion_link}\n\n"
+
+            if mission.work_duration:
+                days = mission.work_duration.days
+                hours = mission.work_duration.seconds // 3600
+                minutes = (mission.work_duration.seconds % 3600) // 60
+
+                admin_message += f"Durée de travail : "
+                if days > 0:
+                    admin_message += f"{days} jours, "
+                admin_message += f"{hours} heures, {minutes} minutes\n\n"
+
+            if mission.assigned_to.user_type == 'employee':
+                admin_message += f"Un jour de congé a été automatiquement ajouté à {mission.assigned_to.first_name} {mission.assigned_to.last_name}.\n\n"
+
+            admin_message += "Connectez-vous au système pour plus de détails."
 
             send_email_notification(admin_subject, admin_message, admin_emails)
 
-        return Response({'status': 'mission completed'})
+        return Response({
+            'status': 'mission completed',
+            'work_duration': str(mission.work_duration) if mission.work_duration else None,
+            'leave_added': mission.assigned_to.user_type == 'employee'
+        })
 
 class WorkHoursViewSet(viewsets.ModelViewSet):
     queryset = WorkHours.objects.all()
