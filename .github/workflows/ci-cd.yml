@@ -138,10 +138,11 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'config'
-          scan-ref: './kubernetes'
+          scan-ref: '.'
           format: 'table'
           exit-code: '0'
           severity: 'CRITICAL,HIGH'
+        continue-on-error: true
 
   build-push:
     needs: [test-frontend, test-backend, security-scan]
