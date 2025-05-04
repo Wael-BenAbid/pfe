@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-config
+  namespace: logging
+data:
+  logstash.yml: |
+    http.host: "0.0.0.0"
+    path.config: /usr/share/logstash/pipeline
+    xpack.monitoring.enabled: true
+    xpack.monitoring.elasticsearch.hosts: ["http://elasticsearch:9200"]
+  
+  logstash.conf: |
+    input {
+      beats {
+        port => 5044
+      }
+    }
+
+    filter {
+      if [kubernetes][labels][app] == "rh-frontend" {
+        mutate {
+          add_field => { "[@metadata][app_type]" => "frontend" }
+        }
+        grok {
+          match => { "message" => "%{COMBINEDAPACHELOG}" }
+        }
+      }
+      
+      if [kubernetes][labels][app] == "rh-backend" {
+        mutate {
+          add_field => { "[@metadata][app_type]" => "backend" }
+        }
+        grok {
+          match => { "message" => "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:log_level} %{GREEDYDATA:log_message}" }
+        }
+      }
+      
+      if [kubernetes][labels][app] == "postgres-db" {
+        mutate {
+          add_field => { "[@metadata][app_type]" => "database" }
+        }
+        grok {
+          match => { "message" => "%{TIMESTAMP_ISO8601:timestamp} %{WORD:log_level} %{GREEDYDATA:log_message}" }
+        }
+      }
+      
+      if [log_level] == "ERROR" or [log_level] == "FATAL" {
+        mutate {
+          add_tag => ["error"]
+        }
+      }
+    }
+
+    output {
+      elasticsearch {
+        hosts => ["elasticsearch:9200"]
+        index => "rh-system-logs-%{[@metadata][app_type]}-%{+YYYY.MM.dd}"
+      }
+    }
