@@ -79,6 +79,7 @@ const InternDashboard: React.FC = () => {
                   notifications={useNotifications().notifications}
                   onMarkAsRead={useNotifications().markAsRead}
                   onMarkAllAsRead={useNotifications().markAllAsRead}
+                  userType="intern"
                 />
               </div>
               <div className="flex items-center">

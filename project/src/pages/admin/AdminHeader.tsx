@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { MenuIcon, LogOutIcon } from "lucide-react";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
-import { useNotifications } from "../../contexts/NotificationContext";
+import { useNotifications } from "../../hooks/useNotifications";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/constants";
 
@@ -83,6 +83,7 @@ const NotificationDropdownWrapper: React.FC<{ pendingCount: number }> = ({ pendi
       notifications={notifications}
       onMarkAsRead={markAsRead}
       onMarkAllAsRead={markAllAsRead}
+      userType="admin"
     />
   );
 };

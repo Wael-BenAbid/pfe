@@ -14,12 +14,14 @@ interface NotificationDropdownProps {
   notifications: Notification[];
   onMarkAsRead: (id: number) => void;
   onMarkAllAsRead: () => void;
+  userType?: 'admin' | 'employee' | 'intern';
 }
 
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   notifications,
   onMarkAsRead,
-  onMarkAllAsRead
+  onMarkAllAsRead,
+  userType = 'employee'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -138,7 +140,12 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             )}
           </div>
           <div className="py-2 px-3 bg-gray-100 border-t border-gray-200 text-xs text-center text-gray-500">
-            <a href="/notifications" className="text-blue-600 hover:text-blue-800">
+            <a
+              href={userType === 'admin' ? '/admin/notifications' :
+                   userType === 'intern' ? '/intern/notifications' :
+                   '/employee/notifications'}
+              className="text-blue-600 hover:text-blue-800"
+            >
               Voir toutes les notifications
             </a>
           </div>
