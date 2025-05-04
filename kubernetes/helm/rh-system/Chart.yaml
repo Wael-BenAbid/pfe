@@ -1,0 +1,9 @@
+apiVersion: v2
+name: rh-system
+description: A Helm chart for RH System application
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+maintainers:
+  - name: Wael Ben Abid
+    email: waelbenabid1@gmail.com

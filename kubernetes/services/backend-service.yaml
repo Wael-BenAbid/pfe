@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rh-backend
+  namespace: rh-system
+  labels:
+    app: rh-backend
+spec:
+  selector:
+    app: rh-backend
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  type: ClusterIP

@@ -1,0 +1,18 @@
+{{- if .Values.frontend.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.frontend.name }}
+  namespace: rh-system
+  labels:
+    app: {{ .Values.frontend.name }}
+spec:
+  selector:
+    app: {{ .Values.frontend.name }}
+  ports:
+  - port: {{ .Values.frontend.service.port }}
+    targetPort: {{ .Values.frontend.service.port }}
+    protocol: TCP
+    name: http
+  type: {{ .Values.frontend.service.type }}
+{{- end }}

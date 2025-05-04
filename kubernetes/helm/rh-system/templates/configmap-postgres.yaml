@@ -1,0 +1,10 @@
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: rh-system
+data:
+  POSTGRES_DB: "{{ .Values.postgresql.config.database }}"
+  POSTGRES_USER: "{{ .Values.postgresql.config.user }}"
+{{- end }}
