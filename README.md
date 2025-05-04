@@ -131,6 +131,28 @@ Le projet peut être déployé sur un cluster Kubernetes. Les configurations né
 
 Pour plus d'informations, consultez le fichier `kubernetes/README.md`.
 
+### Monitoring avec Prometheus et Grafana
+
+Le projet inclut une configuration complète pour le monitoring avec Prometheus et Grafana. Les configurations se trouvent dans le répertoire `kubernetes/monitoring/`.
+
+Pour déployer la stack de monitoring :
+
+```bash
+cd kubernetes/monitoring
+chmod +x install-monitoring.sh
+./install-monitoring.sh
+```
+
+Une fois déployé, vous pouvez accéder aux interfaces :
+- Prometheus : http://prometheus.rh-system.local
+- Grafana : http://grafana.rh-system.local (identifiants par défaut : admin/admin)
+
+Des dashboards préconfigurés sont disponibles pour surveiller :
+- L'état général du cluster
+- Les performances des applications
+- La base de données PostgreSQL
+- Les ressources système
+
 ## CI/CD
 
 Le projet utilise GitHub Actions pour l'intégration continue et le déploiement continu. Le pipeline CI/CD :
