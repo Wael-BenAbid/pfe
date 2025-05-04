@@ -1,0 +1,129 @@
+# Default values for rh-system
+# This is a YAML-formatted file.
+
+# Global settings
+global:
+  environment: production
+  domain: rh-system.local
+
+# Frontend configuration
+frontend:
+  enabled: true
+  name: rh-frontend
+  image:
+    repository: waelbenabid/rh-frontend
+    tag: latest
+    pullPolicy: Always
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 80
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  config:
+    apiBaseUrl: http://rh-backend:8000/api
+    nodeEnv: production
+
+# Backend configuration
+backend:
+  enabled: true
+  name: rh-backend
+  image:
+    repository: waelbenabid/rh-backend
+    tag: latest
+    pullPolicy: Always
+  replicaCount: 2
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  config:
+    debug: false
+    allowedHosts: "localhost,127.0.0.1,rh-backend,rh-frontend"
+    frontendUrl: "http://rh-frontend"
+    emailBackend: "django.core.mail.backends.smtp.EmailBackend"
+  database:
+    name: rh_v2
+    user: postgres
+    host: postgres-db
+    port: 5432
+    # password should be set in secrets
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  name: postgres-db
+  image:
+    repository: postgres
+    tag: 15-alpine
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5432
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: standard
+  config:
+    database: rh_v2
+    user: postgres
+    # password should be set in secrets
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+  hosts:
+    - host: rh-system.local
+      paths:
+        - path: /api(/|$)(.*)
+          pathType: Prefix
+          backend: rh-backend
+          port: 8000
+        - path: /admin(/|$)(.*)
+          pathType: Prefix
+          backend: rh-backend
+          port: 8000
+        - path: /(.*)
+          pathType: Prefix
+          backend: rh-frontend
+          port: 80
+  tls: []
+  # - secretName: rh-system-tls
+  #   hosts:
+  #     - rh-system.local

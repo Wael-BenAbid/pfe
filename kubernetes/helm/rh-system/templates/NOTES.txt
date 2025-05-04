@@ -1,0 +1,30 @@
+Merci d'avoir installé {{ .Chart.Name }}.
+
+Votre application est maintenant déployée sur Kubernetes !
+
+{{- if .Values.ingress.enabled }}
+Vous pouvez accéder à l'application via l'URL suivante :
+{{- range $host := .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ $host.host }}
+{{- end }}
+{{- else }}
+Pour accéder à l'application, vous devez exposer les services manuellement :
+
+  kubectl port-forward -n rh-system svc/{{ .Values.frontend.name }} 8080:{{ .Values.frontend.service.port }}
+
+Ensuite, accédez à http://localhost:8080 dans votre navigateur.
+{{- end }}
+
+Pour vérifier l'état des pods :
+  kubectl get pods -n rh-system
+
+Pour voir les logs du backend :
+  kubectl logs -n rh-system -l app={{ .Values.backend.name }} -f
+
+Pour voir les logs du frontend :
+  kubectl logs -n rh-system -l app={{ .Values.frontend.name }} -f
+
+{{- if .Values.postgresql.enabled }}
+Pour vérifier l'état de la base de données :
+  kubectl get pods -n rh-system -l app={{ .Values.postgresql.name }}
+{{- end }}

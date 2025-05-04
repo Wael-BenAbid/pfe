@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rh-backend-config
+  namespace: rh-system
+data:
+  DEBUG: "False"
+  ALLOWED_HOSTS: "localhost,127.0.0.1,rh-backend,rh-frontend"
+  DATABASE_NAME: "rh_v2"
+  DATABASE_USER: "postgres"
+  DATABASE_HOST: "postgres-db"
+  DATABASE_PORT: "5432"
+  EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
+  FRONTEND_URL: "http://rh-frontend"

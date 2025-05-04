@@ -8,6 +8,7 @@ Ce projet est un système de gestion des ressources humaines qui permet de gére
 - Node.js (pour le développement local)
 - Python 3.11 (pour le développement local)
 - PostgreSQL (pour le développement local)
+- Kubernetes et Helm (pour le déploiement sur Kubernetes)
 
 ## Configuration
 
@@ -118,6 +119,17 @@ npm run dev
 - Notifications par email
 - Suivi des candidatures
 - Récupération de mot de passe
+
+## Déploiement sur Kubernetes
+
+Le projet peut être déployé sur un cluster Kubernetes. Les configurations nécessaires se trouvent dans le répertoire `kubernetes/`.
+
+### Options de déploiement
+
+1. **Déploiement manuel avec kubectl** : Utilisez le script `kubernetes/deploy.sh`
+2. **Déploiement avec Helm** : Utilisez le script `kubernetes/helm/install-helm.sh`
+
+Pour plus d'informations, consultez le fichier `kubernetes/README.md`.
 
 ## CI/CD
 

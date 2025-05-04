@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rh-frontend-config
+  namespace: rh-system
+data:
+  API_BASE_URL: "{{ .Values.frontend.config.apiBaseUrl }}"
+  NODE_ENV: "{{ .Values.frontend.config.nodeEnv }}"
