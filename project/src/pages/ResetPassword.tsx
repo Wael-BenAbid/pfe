@@ -49,7 +49,7 @@ const ResetPassword: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/reset-password/`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

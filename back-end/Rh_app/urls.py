@@ -51,4 +51,14 @@ urlpatterns = [
     path('auth/refresh-token/', refresh_token, name='token_refresh'),
     path('auth/forgot-password/', forgot_password, name='forgot_password'),
     path('auth/reset-password/', reset_password, name='reset_password'),
+
+    # API Authentication endpoints (duplicated for compatibility)
+    path('api/auth/signup/', api_signup, name='api_signup_v2'),
+    path('api/auth/login/', login_view, name='login_v2'),
+    path('api/auth/logout/', api_logout, name='api_logout_v2'),
+    path('api/auth/token/obtain/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair_v2'),
+    path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify_v2'),
+    path('api/auth/refresh-token/', refresh_token, name='token_refresh_v2'),
+    path('api/auth/forgot-password/', forgot_password, name='forgot_password_v2'),
+    path('api/auth/reset-password/', reset_password, name='reset_password_v2'),
 ]

@@ -48,6 +48,7 @@ const EmployeeDashboard: React.FC = () => {
                     notifications={useNotifications().notifications}
                     onMarkAsRead={useNotifications().markAsRead}
                     onMarkAllAsRead={useNotifications().markAllAsRead}
+                    userType="employee"
                   />
                 </div>
                 <div className="mr-4">

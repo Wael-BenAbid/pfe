@@ -208,7 +208,10 @@ def api_logout(request):
         # Close the user session and record work hours
         from .models import UserSession, WorkHours
         from datetime import datetime, date
-        import pytz
+        from django.utils import timezone
+
+        # Initialiser hours_worked à 0
+        hours_worked = 0
 
         # Get the user's active session
         if session_id:
@@ -220,7 +223,7 @@ def api_logout(request):
 
         if user_session:
             # Set the logout time and mark session as inactive
-            user_session.logout_time = datetime.now(pytz.UTC)
+            user_session.logout_time = timezone.now()
             user_session.is_active = False
             user_session.save()
 
@@ -249,16 +252,21 @@ def api_logout(request):
         # Blacklist the refresh token
         refresh_token = request.data.get('refresh')
         if refresh_token:
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except Exception as token_error:
+                logger.warning(f"Error blacklisting token: {str(token_error)}")
+                # Continue with logout even if token blacklisting fails
 
         return Response({
             'message': 'Successfully logged out',
-            'hours_worked': hours_worked if user_session else 0
+            'hours_worked': hours_worked
         }, status=status.HTTP_200_OK)
     except Exception as e:
         logger.error(f"Error during logout: {str(e)}")
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Retourner une réponse plus générique pour éviter de divulguer des informations sensibles
+        return Response({'error': 'An error occurred during logout'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
