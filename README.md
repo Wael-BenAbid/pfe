@@ -153,6 +153,25 @@ Des dashboards préconfigurés sont disponibles pour surveiller :
 - La base de données PostgreSQL
 - Les ressources système
 
+### Sécurité
+
+Le projet inclut des configurations pour renforcer la sécurité de l'application sur Kubernetes. Les configurations se trouvent dans le répertoire `kubernetes/security/`.
+
+Pour déployer les composants de sécurité :
+
+```bash
+cd kubernetes/security
+chmod +x install-security.sh
+./install-security.sh
+```
+
+Les composants de sécurité incluent :
+- **Trivy** : Scanner de vulnérabilités pour les images de conteneurs
+- **Kyverno** : Politiques de sécurité Kubernetes
+- **NetworkPolicies** : Sécurisation des communications entre pods
+
+Le projet intègre également des scans de sécurité automatiques dans le pipeline CI/CD pour détecter les vulnérabilités avant le déploiement.
+
 ## CI/CD
 
 Le projet utilise GitHub Actions pour l'intégration continue et le déploiement continu. Le pipeline CI/CD :
