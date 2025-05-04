@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Button from "../components/ui/Button";
-import TextInput from "../components/ui/TextInput";
+import { TextInput } from "../components/ui/FormElements";
 import { API_BASE_URL } from "../config/constants";
-import { KeyIcon } from "lucide-react";
+import { KeyIcon, LockIcon, ShieldIcon } from "lucide-react";
 
 const ResetPassword: React.FC = () => {
   const [password, setPassword] = useState("");
@@ -34,7 +34,7 @@ const ResetPassword: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
@@ -83,13 +83,16 @@ const ResetPassword: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <KeyIcon className="h-12 w-12 text-blue-600" />
+          <ShieldIcon className="h-12 w-12 text-blue-600" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Reset your password
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Enter your new password below
+          Create a new secure password for your account
+        </p>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Your password should be at least 8 characters long and include a mix of letters, numbers, and symbols
         </p>
       </div>
 
@@ -172,7 +175,10 @@ const ResetPassword: React.FC = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your new password"
+                    helper="At least 8 characters long"
                     required
+                    autoComplete="new-password"
+                    icon={<LockIcon className="h-5 w-5 text-gray-400" />}
                   />
 
                   <TextInput
@@ -181,7 +187,10 @@ const ResetPassword: React.FC = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm your new password"
+                    helper="Enter the same password again"
                     required
+                    autoComplete="new-password"
+                    icon={<LockIcon className="h-5 w-5 text-gray-400" />}
                   />
 
                   {error && (

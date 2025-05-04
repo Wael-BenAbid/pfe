@@ -68,6 +68,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        type="button"
         className="relative p-1 text-gray-600 hover:text-gray-900 focus:outline-none"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Notifications"
@@ -86,6 +87,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             <span className="text-sm font-medium text-gray-700">Notifications</span>
             {unreadCount > 0 && (
               <button
+                type="button"
                 onClick={onMarkAllAsRead}
                 className="text-xs text-blue-600 hover:text-blue-800"
               >
@@ -136,8 +138,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
             )}
           </div>
           <div className="py-2 px-3 bg-gray-100 border-t border-gray-200 text-xs text-center text-gray-500">
-            <a href="#" className="text-blue-600 hover:text-blue-800">
-              View all notifications
+            <a href="/notifications" className="text-blue-600 hover:text-blue-800">
+              Voir toutes les notifications
             </a>
           </div>
         </div>

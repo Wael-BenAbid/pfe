@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
-import TextInput from "../components/ui/TextInput";
+import { TextInput } from "../components/ui/FormElements";
 import { API_BASE_URL } from "../config/constants";
-import { KeyIcon } from "lucide-react";
+import { KeyIcon, MailIcon } from "lucide-react";
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -43,13 +43,16 @@ const ForgotPassword: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <KeyIcon className="h-12 w-12 text-blue-600" />
+          <MailIcon className="h-12 w-12 text-blue-600" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Forgot your password?
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           Enter your email address and we'll send you a link to reset your password.
+        </p>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Use the same email address you use to log in to your account.
         </p>
       </div>
 
@@ -103,8 +106,11 @@ const ForgotPassword: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
+                placeholder="Enter your email address"
+                helper="Enter the email address you use to log in"
                 required
+                autoComplete="email"
+                icon={<MailIcon className="h-5 w-5 text-gray-400" />}
               />
 
               {error && (

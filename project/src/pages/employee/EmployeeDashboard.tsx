@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { useNotifications } from "../../contexts/NotificationContext";
+import { useNotifications } from "../../hooks/useNotifications";
 import Button from "../../components/ui/Button";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import {
@@ -10,11 +10,13 @@ import {
   BriefcaseIcon,
   GraduationCapIcon,
   ClockIcon,
+  BellIcon,
 } from "lucide-react";
 import LeaveRequests from "./LeaveRequests";
 import Missions from "./Missions";
 import SupervisedInterns from "./SupervisedInterns";
 import WorkHours from "./WorkHours";
+import NotificationsPage from "./NotificationsPage";
 
 const EmployeeDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -81,6 +83,7 @@ const EmployeeDashboard: React.FC = () => {
                 icon: GraduationCapIcon,
               },
               { id: "hours", label: "Work Hours", icon: ClockIcon },
+              { id: "notifications", label: "Notifications", icon: BellIcon },
             ].map((tab) => (
               <button
                 type="button"
@@ -129,6 +132,7 @@ const EmployeeDashboard: React.FC = () => {
           {activeTab === "missions" && <Missions />}
           {activeTab === "interns" && <SupervisedInterns />}
           {activeTab === "hours" && <WorkHours />}
+          {activeTab === "notifications" && <NotificationsPage />}
         </div>
       </div>
     </div>

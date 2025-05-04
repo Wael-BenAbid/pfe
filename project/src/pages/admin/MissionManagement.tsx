@@ -26,27 +26,39 @@ interface Mission {
   user_details?: {
     first_name: string;
     last_name: string;
+    user_type?: string; // Ajout du type d'utilisateur
   };
   created_at: string;
   completed: boolean;
+  assignee_type?: 'employees' | 'interns'; // Pour filtrer les missions par type d'assigné
 }
 
 const MissionManagement: React.FC = () => {
   const { token } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [employees, setEmployees] = useState<User[]>([]);
+  const [interns, setInterns] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewMissionForm, setShowNewMissionForm] = useState(false);
+  const [showCompletionForm, setShowCompletionForm] = useState(false);
+  const [completingMission, setCompletingMission] = useState<Mission | null>(null);
+  const [completionLink, setCompletionLink] = useState("");
+  const [penaltyDays, setPenaltyDays] = useState(1);
+  const [showPenaltyForm, setShowPenaltyForm] = useState(false);
+  const [penaltyMission, setPenaltyMission] = useState<Mission | null>(null);
+  const [activeTab, setActiveTab] = useState<'employees' | 'interns'>('employees');
   const [newMission, setNewMission] = useState({
     title: "",
     description: "",
     deadline: "",
     assigned_to: 0,
+    attachment_link: "",
   });
 
   useEffect(() => {
     fetchMissions();
     fetchEmployees();
+    fetchInterns();
   }, [token]);
 
   const fetchMissions = async () => {
@@ -83,12 +95,17 @@ const MissionManagement: React.FC = () => {
 
               if (userResponse.ok) {
                 const userData = await userResponse.json();
+                // Déterminer le type d'utilisateur assigné
+                const assignee_type = userData.user_type === 'intern' ? 'interns' : 'employees';
+
                 return {
                   ...mission,
                   user_details: {
                     first_name: userData.first_name,
                     last_name: userData.last_name,
+                    user_type: userData.user_type,
                   },
+                  assignee_type: assignee_type,
                 };
               }
             }
@@ -136,6 +153,30 @@ const MissionManagement: React.FC = () => {
     }
   };
 
+  const fetchInterns = async () => {
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/users/?user_type=intern`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch interns");
+      }
+
+      const data = await response.json();
+      setInterns(data);
+    } catch (error) {
+      console.error("Error fetching interns:", error);
+    }
+  };
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -173,6 +214,7 @@ const MissionManagement: React.FC = () => {
         description: "",
         deadline: "",
         assigned_to: 0,
+        attachment_link: "",
       });
       setShowNewMissionForm(false);
       fetchMissions();
@@ -272,18 +314,34 @@ const MissionManagement: React.FC = () => {
     }
   };
 
-  const handleCompleteMission = async (id: number) => {
+  const handleCompleteMission = (id: number) => {
     if (!token) return;
+
+    // Trouver la mission dans la liste
+    const mission = missions.find((m) => m.id === id);
+    if (!mission) return;
+
+    // Ouvrir le formulaire de confirmation
+    setCompletingMission(mission);
+    setCompletionLink("");
+    setShowCompletionForm(true);
+  };
+
+  const submitCompleteMission = async () => {
+    if (!token || !completingMission) return;
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/missions/${id}/complete_mission/`,
+        `${API_BASE_URL}/missions/${completingMission.id}/complete_mission/`,
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({
+            completion_link: completionLink
+          }),
         }
       );
 
@@ -291,20 +349,93 @@ const MissionManagement: React.FC = () => {
         throw new Error("Failed to complete mission");
       }
 
-      // Fetch updated missions
+      const data = await response.json();
+
+      // Fermer le formulaire et rafraîchir la liste
+      setShowCompletionForm(false);
+      setCompletingMission(null);
+      setCompletionLink("");
       fetchMissions();
-      alert("Mission marquée comme complétée");
+
+      // Afficher un message de succès avec les informations de durée et de congé
+      let message = "Mission marquée comme complétée";
+      if (data.work_duration) {
+        message += `\nDurée de travail: ${data.work_duration}`;
+      }
+      if (data.leave_added) {
+        message += "\nUn jour de congé a été ajouté à votre solde.";
+      }
+
+      alert(message);
     } catch (error) {
       console.error("Error completing mission:", error);
       alert("Failed to complete mission. Please try again.");
     }
   };
 
+  const handleApplyPenalty = (id: number) => {
+    if (!token) return;
+
+    // Trouver la mission dans la liste
+    const mission = missions.find((m) => m.id === id);
+    if (!mission) return;
+
+    // Ouvrir le formulaire de pénalité
+    setPenaltyMission(mission);
+    setPenaltyDays(1);
+    setShowPenaltyForm(true);
+  };
+
+  const submitApplyPenalty = async () => {
+    if (!token || !penaltyMission) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/missions/${penaltyMission.id}/apply_penalty/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            penalty_days: penaltyDays
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to apply penalty");
+      }
+
+      const data = await response.json();
+
+      // Fermer le formulaire et rafraîchir la liste
+      setShowPenaltyForm(false);
+      setPenaltyMission(null);
+      setPenaltyDays(1);
+      fetchMissions();
+
+      // Afficher un message de succès
+      alert(`Pénalité de ${data.penalty_days} jour(s) appliquée avec succès. Nouveau solde de congés : ${data.new_leave_balance} jour(s).`);
+    } catch (error) {
+      console.error("Error applying penalty:", error);
+      alert(error instanceof Error ? error.message : "Failed to apply penalty. Please try again.");
+    }
+  };
+
   const getMissionStatusBadge = (mission: Mission) => {
-    if (mission.completed) {
+    if (mission.completed || mission.status === 'completed') {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
           Completed
+        </span>
+      );
+    } else if (mission.status === 'late') {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          Late
         </span>
       );
     } else {
@@ -326,9 +457,37 @@ const MissionManagement: React.FC = () => {
         Mission Management
       </h1>
 
+      {/* Onglets pour filtrer les missions */}
+      <div className="flex border-b border-gray-200 mb-6">
+        <button
+          type="button"
+          className={`py-2 px-4 font-medium text-sm ${
+            activeTab === 'employees'
+              ? 'border-b-2 border-blue-500 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setActiveTab('employees')}
+        >
+          Employee Missions
+        </button>
+        <button
+          type="button"
+          className={`py-2 px-4 font-medium text-sm ${
+            activeTab === 'interns'
+              ? 'border-b-2 border-blue-500 text-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setActiveTab('interns')}
+        >
+          Intern Missions
+        </button>
+      </div>
+
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
         <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-          <h2 className="text-lg font-medium text-gray-900">All Missions</h2>
+          <h2 className="text-lg font-medium text-gray-900">
+            {activeTab === 'employees' ? 'Employee Missions' : 'Intern Missions'}
+          </h2>
           <Button
             variant="primary"
             size="sm"
@@ -339,14 +498,14 @@ const MissionManagement: React.FC = () => {
           </Button>
         </div>
 
-        {missions.length === 0 ? (
+        {missions.filter(mission => mission.assignee_type === activeTab).length === 0 ? (
           <div className="p-6 text-center">
             <ClipboardListIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No missions found
+              No {activeTab === 'employees' ? 'employee' : 'intern'} missions found
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              Get started by creating a new mission.
+              Get started by creating a new mission for {activeTab === 'employees' ? 'an employee' : 'an intern'}.
             </p>
           </div>
         ) : (
@@ -387,7 +546,9 @@ const MissionManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {missions.map((mission) => (
+                {missions
+                  .filter(mission => mission.assignee_type === activeTab)
+                  .map((mission) => (
                   <tr key={mission.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
@@ -417,7 +578,7 @@ const MissionManagement: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <Button
-                          variant="info"
+                          variant="secondary"
                           size="sm"
                           onClick={() => handleViewMission(mission.id)}
                         >
@@ -437,7 +598,7 @@ const MissionManagement: React.FC = () => {
                         >
                           Delete
                         </Button>
-                        {mission.status === "pending" && (
+                        {(mission.status === "pending" || mission.status === "late") && !mission.completed && (
                           <Button
                             variant="success"
                             size="sm"
@@ -445,6 +606,16 @@ const MissionManagement: React.FC = () => {
                             onClick={() => handleCompleteMission(mission.id)}
                           >
                             Complete
+                          </Button>
+                        )}
+
+                        {mission.status === "late" && mission.user_details?.user_type === "employee" && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleApplyPenalty(mission.id)}
+                          >
+                            Penalty
                           </Button>
                         )}
                       </div>
@@ -522,14 +693,26 @@ const MissionManagement: React.FC = () => {
                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                     required
                   >
-                    <option value="">Select an employee</option>
-                    {employees.map((employee) => (
-                      <option key={employee.id} value={employee.id}>
-                        {employee.first_name} {employee.last_name}
+                    <option value="">
+                      {activeTab === 'employees' ? 'Select an employee' : 'Select an intern'}
+                    </option>
+                    {(activeTab === 'employees' ? employees : interns).map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.first_name} {user.last_name}
                       </option>
                     ))}
                   </select>
                 </div>
+
+                <TextInput
+                  label="Attachment Link (Optional)"
+                  name="attachment_link"
+                  type="text"
+                  value={newMission.attachment_link}
+                  onChange={handleInputChange}
+                  placeholder="Google Drive or GitHub link"
+                  helperText="Add a link to a Google Drive document or GitHub repository"
+                />
               </div>
 
               <div className="mt-5 sm:mt-6 flex space-x-2">
@@ -619,10 +802,12 @@ const MissionManagement: React.FC = () => {
                   className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                   required
                 >
-                  <option value="">Select an employee</option>
-                  {employees.map((employee) => (
-                    <option key={employee.id} value={employee.id}>
-                      {employee.first_name} {employee.last_name}
+                  <option value="">
+                    {activeTab === 'employees' ? 'Select an employee' : 'Select an intern'}
+                  </option>
+                  {(activeTab === 'employees' ? employees : interns).map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.first_name} {user.last_name}
                     </option>
                   ))}
                 </select>
@@ -645,6 +830,174 @@ const MissionManagement: React.FC = () => {
                 onClick={handleUpdateMission}
               >
                 Update Mission
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Complete Mission Form Modal */}
+      {showCompletionForm && completingMission && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Complete Mission</h3>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-500"
+                onClick={() => setShowCompletionForm(false)}
+                title="Close form"
+              >
+                <XIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-md font-medium text-gray-900">{completingMission.title}</h4>
+                <p className="text-sm text-gray-500 mt-1">{completingMission.description}</p>
+              </div>
+
+              <div className="bg-gray-50 p-3 rounded-md">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-500">Deadline:</span>
+                  <span className="text-sm text-gray-900">{new Date(completingMission.deadline).toLocaleDateString()}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-gray-500">Time to complete:</span>
+                  <span className="text-sm text-gray-900">
+                    {Math.ceil((new Date().getTime() - new Date(completingMission.created_at).getTime()) / (1000 * 60 * 60 * 24))} days
+                  </span>
+                </div>
+              </div>
+
+              <TextInput
+                label="GitHub or Google Drive Link (Optional)"
+                name="completion_link"
+                type="text"
+                value={completionLink}
+                onChange={(e) => setCompletionLink(e.target.value)}
+                placeholder="Enter link to your work"
+                helperText="Provide a link to your GitHub repository or Google Drive folder"
+              />
+
+              {completingMission.user_details && completingMission.user_details.user_type === 'employee' && (
+                <div className="bg-blue-50 p-3 rounded-md">
+                  <p className="text-sm text-blue-700">
+                    <span className="font-medium">Note:</span> Completing this mission will add 1 day to your leave balance.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 sm:mt-6 flex space-x-2">
+              <Button
+                variant="outline"
+                size="md"
+                className="w-full"
+                onClick={() => setShowCompletionForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="success"
+                size="md"
+                className="w-full"
+                onClick={submitCompleteMission}
+              >
+                Complete Mission
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Apply Penalty Form Modal */}
+      {showPenaltyForm && penaltyMission && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Apply Penalty</h3>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-500"
+                onClick={() => setShowPenaltyForm(false)}
+                title="Close form"
+              >
+                <XIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-md font-medium text-gray-900">{penaltyMission.title}</h4>
+                <p className="text-sm text-gray-500 mt-1">{penaltyMission.description}</p>
+              </div>
+
+              <div className="bg-red-50 p-3 rounded-md">
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm font-medium text-red-700">Deadline:</span>
+                  <span className="text-sm text-red-700">{new Date(penaltyMission.deadline).toLocaleDateString()}</span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-red-700">Status:</span>
+                  <span className="text-sm text-red-700">
+                    Late
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-red-700">Assigned to:</span>
+                  <span className="text-sm text-red-700">
+                    {penaltyMission.user_details ? `${penaltyMission.user_details.first_name} ${penaltyMission.user_details.last_name}` : 'Unknown'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Penalty Days
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={penaltyDays}
+                  onChange={(e) => setPenaltyDays(parseInt(e.target.value) || 1)}
+                  className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  placeholder="Enter penalty days"
+                  title="Penalty Days Input"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Number of leave days to deduct from the employee's balance
+                </p>
+              </div>
+
+              <div className="bg-yellow-50 p-3 rounded-md">
+                <p className="text-sm text-yellow-700">
+                  <span className="font-medium">Warning:</span> This action will deduct leave days from the employee's balance and cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 sm:mt-6 flex space-x-2">
+              <Button
+                variant="outline"
+                size="md"
+                className="w-full"
+                onClick={() => setShowPenaltyForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="md"
+                className="w-full"
+                onClick={submitApplyPenalty}
+              >
+                Apply Penalty
               </Button>
             </div>
           </div>

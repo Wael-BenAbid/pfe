@@ -70,6 +70,12 @@ class Leave(models.Model):
 
 
 class Mission(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'En attente'),
+        ('completed', 'Terminée'),
+        ('late', 'En retard'),
+    )
+
     title = models.CharField(max_length=200)
     description = models.TextField()
     assigned_to = models.ForeignKey(
@@ -87,6 +93,14 @@ class Mission(models.Model):
     deadline = models.DateField()
     completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    # Nouveaux champs
+    attachment_link = models.URLField(max_length=500, null=True, blank=True, help_text="Lien vers un document Google Drive ou GitHub")
+    attachment_file = models.FileField(upload_to='mission_attachments/', null=True, blank=True)
+    completion_link = models.URLField(max_length=500, null=True, blank=True, help_text="Lien fourni par l'employé lors de la complétion")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    work_duration = models.DurationField(null=True, blank=True, help_text="Durée de travail sur la mission")
 
     def __str__(self):
         return self.title
