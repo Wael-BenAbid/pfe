@@ -5,11 +5,15 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    - cron: '0 0 * * 0'  # Exécuter tous les dimanches à minuit
 
 env:
   DOCKER_HUB_USERNAME: waelbenabid
   FRONTEND_IMAGE: rh-frontend
   BACKEND_IMAGE: rh-backend
+  KUBERNETES_NAMESPACE: rh-system
+  KUBERNETES_CLUSTER: minikube
 
 jobs:
   test-frontend:
@@ -43,7 +47,7 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_DB: rh
+          POSTGRES_DB: rh_v2
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: "12345"
         ports:
@@ -67,14 +71,80 @@ jobs:
         run: pip install -r requirements.txt
         working-directory: ./back-end
 
+      - name: Create .env file
+        run: |
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
+          echo "DEBUG=True" >> .env
+          echo "ALLOWED_HOSTS=localhost,127.0.0.1,rh-backend,rh-frontend" >> .env
+          echo "DATABASE_NAME=rh_v2" >> .env
+          echo "DATABASE_USER=postgres" >> .env
+          echo "DATABASE_PASSWORD=12345" >> .env
+          echo "DATABASE_HOST=localhost" >> .env
+          echo "DATABASE_PORT=5432" >> .env
+          echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
+          echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}" >> .env
+          echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >> .env
+        working-directory: ./back-end
+
       - name: Run Tests
         run: python manage.py test
         working-directory: ./back-end
         env:
-          DATABASE_URL: "postgresql://postgres:12345@postgres:5432/rh"
+          DATABASE_URL: "postgresql://postgres:12345@localhost:5432/rh_v2"
 
-  deploy:
-    needs: [test-frontend, test-backend]
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build frontend image for scanning
+        run: |
+          docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} ./project
+
+      - name: Build backend image for scanning
+        run: |
+          docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }} ./back-end
+
+      - name: Scan frontend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan backend image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan repository with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          format: 'table'
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan Kubernetes manifests
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: './kubernetes'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
+  build-push:
+    needs: [test-frontend, test-backend, security-scan]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
@@ -102,5 +172,194 @@ jobs:
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          build-args: |
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+            EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}
+            EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
           secrets: |
-            "DATABASE_URL=postgresql://postgres:12345@postgres:5432/rh"
+            "DATABASE_URL=postgresql://postgres:12345@postgres-db:5432/rh_v2"
+
+  deploy-kubernetes:
+    needs: [build-push]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Create namespace if not exists
+        run: |
+          kubectl get namespace ${{ env.KUBERNETES_NAMESPACE }} || kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Create Kubernetes secrets
+        run: |
+          kubectl create secret generic postgres-secrets \
+            --namespace=${{ env.KUBERNETES_NAMESPACE }} \
+            --from-literal=POSTGRES_PASSWORD="12345" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          kubectl create secret generic rh-backend-secrets \
+            --namespace=${{ env.KUBERNETES_NAMESPACE }} \
+            --from-literal=SECRET_KEY="${{ secrets.SECRET_KEY }}" \
+            --from-literal=DATABASE_PASSWORD="12345" \
+            --from-literal=EMAIL_HOST_USER="${{ secrets.EMAIL_HOST_USER }}" \
+            --from-literal=EMAIL_HOST_PASSWORD="${{ secrets.EMAIL_HOST_PASSWORD }}" \
+            --from-literal=SENDGRID_API_KEY="${{ secrets.SENDGRID_API_KEY }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy ConfigMaps
+        run: kubectl apply -f kubernetes/configmaps/
+
+      - name: Deploy Storage
+        run: kubectl apply -f kubernetes/storage/
+
+      - name: Deploy PostgreSQL
+        run: |
+          kubectl apply -f kubernetes/deployments/postgres-deployment.yaml
+          kubectl apply -f kubernetes/services/postgres-service.yaml
+
+          # Wait for PostgreSQL to be ready
+          kubectl rollout status deployment/postgres-db -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=300s
+
+      - name: Deploy Backend
+        run: |
+          # Update image tag in backend deployment
+          sed -i "s|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:.*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/backend-deployment.yaml
+
+          kubectl apply -f kubernetes/deployments/backend-deployment.yaml
+          kubectl apply -f kubernetes/services/backend-service.yaml
+
+          # Wait for backend to be ready
+          kubectl rollout status deployment/rh-backend -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=300s
+
+      - name: Deploy Frontend
+        run: |
+          # Update image tag in frontend deployment
+          sed -i "s|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:.*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/frontend-deployment.yaml
+
+          kubectl apply -f kubernetes/deployments/frontend-deployment.yaml
+          kubectl apply -f kubernetes/services/frontend-service.yaml
+
+          # Wait for frontend to be ready
+          kubectl rollout status deployment/rh-frontend -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=300s
+
+      - name: Deploy Ingress
+        run: kubectl apply -f kubernetes/ingress/
+
+      - name: Deploy Autoscaling
+        run: kubectl apply -f kubernetes/autoscaling/
+
+  deploy-monitoring:
+    needs: [deploy-kubernetes]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Install Metrics Server
+        run: |
+          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+          kubectl rollout status deployment metrics-server -n kube-system --timeout=300s
+
+      - name: Create monitoring namespace
+        run: kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy Prometheus and Grafana
+        run: |
+          if [ -d "kubernetes/monitoring" ]; then
+            kubectl apply -f kubernetes/monitoring/
+          else
+            echo "Monitoring directory not found, skipping deployment"
+          fi
+
+  deploy-logging:
+    needs: [deploy-kubernetes]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Create logging namespace
+        run: kubectl create namespace logging --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy ELK Stack
+        run: |
+          if [ -d "kubernetes/logging" ]; then
+            kubectl apply -f kubernetes/logging/
+          else
+            echo "Logging directory not found, skipping deployment"
+          fi
+
+  deploy-security:
+    needs: [deploy-kubernetes]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Set up kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Create security namespace
+        run: kubectl create namespace security --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy Network Policies
+        run: |
+          if [ -d "kubernetes/security/network-policies" ]; then
+            kubectl apply -f kubernetes/security/network-policies/
+          else
+            echo "Network policies directory not found, skipping deployment"
+          fi
+
+      - name: Deploy Kyverno Policies
+        run: |
+          if [ -d "kubernetes/security/kyverno" ]; then
+            kubectl apply -f kubernetes/security/kyverno/
+          else
+            echo "Kyverno policies directory not found, skipping deployment"
+          fi
