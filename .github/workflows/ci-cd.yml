@@ -194,11 +194,18 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Set up kubeconfig
+      # Utilisation de minikube pour les tests locaux
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@master
+        with:
+          minikube-version: 'latest'
+          kubernetes-version: 'stable'
+          driver: 'docker'
+
+      - name: Check Kubernetes connection
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
+          kubectl cluster-info
+          kubectl get nodes
 
       - name: Create namespace if not exists
         run: |
@@ -275,11 +282,18 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Set up kubeconfig
+      # Utilisation de minikube pour les tests locaux
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@master
+        with:
+          minikube-version: 'latest'
+          kubernetes-version: 'stable'
+          driver: 'docker'
+
+      - name: Check Kubernetes connection
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
+          kubectl cluster-info
+          kubectl get nodes
 
       - name: Install Metrics Server
         run: |
@@ -310,11 +324,18 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Set up kubeconfig
+      # Utilisation de minikube pour les tests locaux
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@master
+        with:
+          minikube-version: 'latest'
+          kubernetes-version: 'stable'
+          driver: 'docker'
+
+      - name: Check Kubernetes connection
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
+          kubectl cluster-info
+          kubectl get nodes
 
       - name: Create logging namespace
         run: kubectl create namespace logging --dry-run=client -o yaml | kubectl apply -f -
@@ -340,11 +361,18 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Set up kubeconfig
+      # Utilisation de minikube pour les tests locaux
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@master
+        with:
+          minikube-version: 'latest'
+          kubernetes-version: 'stable'
+          driver: 'docker'
+
+      - name: Check Kubernetes connection
         run: |
-          mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
+          kubectl cluster-info
+          kubectl get nodes
 
       - name: Create security namespace
         run: kubectl create namespace security --dry-run=client -o yaml | kubectl apply -f -
