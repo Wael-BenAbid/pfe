@@ -6,7 +6,10 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$namespace = "rh-system"
+    [string]$namespace = "rh-system",
+
+    [Parameter(Mandatory=$false)]
+    [switch]$enableHttps = $false
 )
 
 # Définir les couleurs pour les messages
@@ -115,7 +118,31 @@ kubectl rollout status deployment/rh-frontend -n $namespace --timeout=300s
 
 # Déployer l'ingress
 Write-Message "Déploiement de l'ingress..." -color $colorInfo
-kubectl apply -f kubernetes/ingress/ -n $namespace
+if ($enableHttps) {
+    # Vérifier si cert-manager est installé
+    $certManagerPods = kubectl get pods -n cert-manager -l app.kubernetes.io/instance=cert-manager --ignore-not-found
+    if (-not $certManagerPods) {
+        Write-Message "cert-manager n'est pas installé. Installation..." -color $colorWarning
+        & .\kubernetes\cert-manager\install-cert-manager.ps1
+    } else {
+        Write-Message "cert-manager est déjà installé." -color $colorInfo
+    }
+
+    # Appliquer les émetteurs de certificats
+    Write-Message "Application des émetteurs de certificats..." -color $colorInfo
+    kubectl apply -f kubernetes\cert-manager\selfsigned-issuer.yaml
+
+    # Attendre que les émetteurs soient prêts
+    Write-Message "Attente que les émetteurs soient prêts..." -color $colorInfo
+    Start-Sleep -Seconds 10
+
+    # Appliquer l'ingress avec TLS
+    Write-Message "Application de l'ingress avec TLS..." -color $colorInfo
+    kubectl apply -f kubernetes\ingress\ingress-tls.yaml -n $namespace
+} else {
+    # Appliquer l'ingress standard
+    kubectl apply -f kubernetes/ingress/ingress.yaml -n $namespace
+}
 
 # Afficher les ressources déployées
 Write-Message "Ressources déployées:" -color $colorSuccess
@@ -134,9 +161,17 @@ Write-Message "   $minikubeIP rh-system.local" -color $colorInfo
 Write-Message "2. Démarrer le tunnel Minikube:" -color $colorInfo
 Write-Message "   minikube tunnel" -color $colorInfo
 Write-Message "3. Accéder à l'application via:" -color $colorInfo
-Write-Message "   Frontend: http://rh-system.local/" -color $colorInfo
-Write-Message "   Backend API: http://rh-system.local/api/" -color $colorInfo
-Write-Message "   Backend Admin: http://rh-system.local/admin/" -color $colorInfo
+if ($enableHttps) {
+    Write-Message "   Frontend: https://rh-system.local/" -color $colorSuccess
+    Write-Message "   Backend API: https://rh-system.local/api/" -color $colorSuccess
+    Write-Message "   Backend Admin: https://rh-system.local/admin/" -color $colorSuccess
+    Write-Message "   Note: Comme nous utilisons un certificat auto-signé pour le développement, votre navigateur affichera un avertissement de sécurité." -color $colorWarning
+    Write-Message "   Vous pouvez ignorer cet avertissement en développement, mais en production, vous devriez utiliser un certificat valide." -color $colorWarning
+} else {
+    Write-Message "   Frontend: http://rh-system.local/" -color $colorInfo
+    Write-Message "   Backend API: http://rh-system.local/api/" -color $colorInfo
+    Write-Message "   Backend Admin: http://rh-system.local/admin/" -color $colorInfo
+}
 
 # Démarrer le tunnel Minikube
 Write-Message "Démarrage du tunnel Minikube..." -color $colorInfo
