@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    # URL de l'API ACME de Let's Encrypt Staging
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    # Email pour les notifications importantes
+    email: waelbenabid1@gmail.com
+    # Secret pour stocker la clé privée de l'ACME account
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    # Méthode de validation HTTP01
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
