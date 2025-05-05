@@ -6,7 +6,7 @@ metadata:
   labels:
     app: rh-frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: rh-frontend
@@ -40,16 +40,5 @@ spec:
             configMapKeyRef:
               name: rh-frontend-config
               key: API_BASE_URL
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 5173
-          initialDelaySeconds: 10
-          periodSeconds: 5
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 5173
-          initialDelaySeconds: 20
-          periodSeconds: 15
+
       restartPolicy: Always

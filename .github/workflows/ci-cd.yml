@@ -271,26 +271,13 @@ jobs:
           # Wait for PostgreSQL to be ready
           kubectl rollout status deployment/postgres-db -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=300s
 
-      - name: Modify Backend Deployment
+      - name: Update Backend Deployment Image
         run: |
-          # Update image tag in backend deployment
-          sed -i "s|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:.*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/backend-deployment.yaml
+          # Update image tag in the deployment file
+          sed -i "s|image: waelbenabid/rh-backend:latest|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/backend-deployment.yaml
 
-          # Réduire le nombre de réplicas à 1
-          sed -i "s|replicas: 2|replicas: 1|g" kubernetes/deployments/backend-deployment.yaml
-
-          # Supprimer les sondes de santé (liveness et readiness probes)
-          # Cette commande supprime toutes les lignes entre "livenessProbe:" et "restartPolicy:" inclusivement
-          sed -i '/livenessProbe:/,/readinessProbe:/d' kubernetes/deployments/backend-deployment.yaml
-          sed -i '/readinessProbe:/,/restartPolicy:/d' kubernetes/deployments/backend-deployment.yaml
-
-          # Ajouter la ligne restartPolicy si elle a été supprimée
-          if ! grep -q "restartPolicy:" kubernetes/deployments/backend-deployment.yaml; then
-            sed -i '/resources:/a\      restartPolicy: Always' kubernetes/deployments/backend-deployment.yaml
-          fi
-
-          # Afficher le contenu du fichier de déploiement modifié
-          echo "Contenu du fichier de déploiement backend modifié :"
+          # Display the content of the modified deployment file
+          echo "Content of the modified backend deployment file:"
           cat kubernetes/deployments/backend-deployment.yaml
 
       - name: Deploy Backend
@@ -315,26 +302,13 @@ jobs:
           # Wait for backend to be ready with increased timeout
           kubectl rollout status deployment/rh-backend -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=600s
 
-      - name: Modify Frontend Deployment
+      - name: Update Frontend Deployment Image
         run: |
-          # Update image tag in frontend deployment
-          sed -i "s|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:.*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/frontend-deployment.yaml
+          # Update image tag in the deployment file
+          sed -i "s|image: waelbenabid/rh-frontend:latest|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/frontend-deployment.yaml
 
-          # Réduire le nombre de réplicas à 1
-          sed -i "s|replicas: 2|replicas: 1|g" kubernetes/deployments/frontend-deployment.yaml
-
-          # Supprimer les sondes de santé (liveness et readiness probes)
-          # Cette commande supprime toutes les lignes entre "livenessProbe:" et "restartPolicy:" inclusivement
-          sed -i '/livenessProbe:/,/readinessProbe:/d' kubernetes/deployments/frontend-deployment.yaml
-          sed -i '/readinessProbe:/,/restartPolicy:/d' kubernetes/deployments/frontend-deployment.yaml
-
-          # Ajouter la ligne restartPolicy si elle a été supprimée
-          if ! grep -q "restartPolicy:" kubernetes/deployments/frontend-deployment.yaml; then
-            sed -i '/resources:/a\      restartPolicy: Always' kubernetes/deployments/frontend-deployment.yaml
-          fi
-
-          # Afficher le contenu du fichier de déploiement modifié
-          echo "Contenu du fichier de déploiement frontend modifié :"
+          # Display the content of the modified deployment file
+          echo "Content of the modified frontend deployment file:"
           cat kubernetes/deployments/frontend-deployment.yaml
 
       - name: Deploy Frontend
