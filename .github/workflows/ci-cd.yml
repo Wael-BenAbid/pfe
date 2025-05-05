@@ -370,15 +370,28 @@ jobs:
           kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
           kubectl rollout status deployment metrics-server -n kube-system --timeout=300s
 
-      - name: Create monitoring namespace
-        run: kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+      - name: Create namespaces
+        run: |
+          # Create monitoring namespace
+          kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+
+          # Create rh-system namespace if it doesn't exist
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy Prometheus and Grafana
         run: |
-          if [ -d "kubernetes/monitoring" ]; then
-            kubectl apply -f kubernetes/monitoring/
+          # Vérifier que le namespace rh-system existe
+          if kubectl get namespace ${{ env.KUBERNETES_NAMESPACE }} &> /dev/null; then
+            echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} exists, proceeding with Prometheus and Grafana deployment"
+
+            if [ -d "kubernetes/monitoring" ]; then
+              echo "Applying Prometheus and Grafana..."
+              kubectl apply -f kubernetes/monitoring/ || true
+            else
+              echo "Monitoring directory not found, skipping deployment"
+            fi
           else
-            echo "Monitoring directory not found, skipping deployment"
+            echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} does not exist, skipping Prometheus and Grafana deployment"
           fi
 
   deploy-logging:
@@ -407,15 +420,28 @@ jobs:
           kubectl cluster-info
           kubectl get nodes
 
-      - name: Create logging namespace
-        run: kubectl create namespace logging --dry-run=client -o yaml | kubectl apply -f -
+      - name: Create namespaces
+        run: |
+          # Create logging namespace
+          kubectl create namespace logging --dry-run=client -o yaml | kubectl apply -f -
+
+          # Create rh-system namespace if it doesn't exist
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy ELK Stack
         run: |
-          if [ -d "kubernetes/logging" ]; then
-            kubectl apply -f kubernetes/logging/
+          # Vérifier que le namespace rh-system existe
+          if kubectl get namespace ${{ env.KUBERNETES_NAMESPACE }} &> /dev/null; then
+            echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} exists, proceeding with ELK Stack deployment"
+
+            if [ -d "kubernetes/logging" ]; then
+              echo "Applying ELK Stack..."
+              kubectl apply -f kubernetes/logging/ || true
+            else
+              echo "Logging directory not found, skipping deployment"
+            fi
           else
-            echo "Logging directory not found, skipping deployment"
+            echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} does not exist, skipping ELK Stack deployment"
           fi
 
   deploy-security:
@@ -444,21 +470,42 @@ jobs:
           kubectl cluster-info
           kubectl get nodes
 
-      - name: Create security namespace
-        run: kubectl create namespace security --dry-run=client -o yaml | kubectl apply -f -
+      - name: Create namespaces
+        run: |
+          # Create security namespace
+          kubectl create namespace security --dry-run=client -o yaml | kubectl apply -f -
+
+          # Create rh-system namespace if it doesn't exist
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy Network Policies
         run: |
-          if [ -d "kubernetes/security/network-policies" ]; then
-            kubectl apply -f kubernetes/security/network-policies/
+          # Vérifier que le namespace rh-system existe
+          if kubectl get namespace ${{ env.KUBERNETES_NAMESPACE }} &> /dev/null; then
+            echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} exists, proceeding with Network Policies deployment"
+
+            if [ -d "kubernetes/security/network-policies" ]; then
+              echo "Applying Network Policies..."
+              kubectl apply -f kubernetes/security/network-policies/ || true
+            else
+              echo "Network policies directory not found, skipping deployment"
+            fi
           else
-            echo "Network policies directory not found, skipping deployment"
+            echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} does not exist, skipping Network Policies deployment"
           fi
 
       - name: Deploy Kyverno Policies
         run: |
-          if [ -d "kubernetes/security/kyverno" ]; then
-            kubectl apply -f kubernetes/security/kyverno/
+          # Vérifier que le namespace rh-system existe
+          if kubectl get namespace ${{ env.KUBERNETES_NAMESPACE }} &> /dev/null; then
+            echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} exists, proceeding with Kyverno Policies deployment"
+
+            if [ -d "kubernetes/security/kyverno" ]; then
+              echo "Applying Kyverno Policies..."
+              kubectl apply -f kubernetes/security/kyverno/ || true
+            else
+              echo "Kyverno policies directory not found, skipping deployment"
+            fi
           else
-            echo "Kyverno policies directory not found, skipping deployment"
+            echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} does not exist, skipping Kyverno Policies deployment"
           fi
