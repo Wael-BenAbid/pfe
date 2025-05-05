@@ -19,9 +19,10 @@ spec:
     - protocol: TCP
       port: 8000
   - from:
-    - namespaceSelector:
+    - namespaceSelector: {}
+      podSelector:
         matchLabels:
-          name: ingress-nginx
+          app.kubernetes.io/name: ingress-nginx
     ports:
     - protocol: TCP
       port: 8000
