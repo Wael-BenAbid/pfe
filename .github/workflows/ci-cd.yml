@@ -241,27 +241,73 @@ jobs:
           # Wait for PostgreSQL to be ready
           kubectl rollout status deployment/postgres-db -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=300s
 
-      - name: Deploy Backend
+      - name: Modify Backend Deployment
         run: |
           # Update image tag in backend deployment
           sed -i "s|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:.*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/backend-deployment.yaml
 
+          # Réduire le nombre de réplicas à 1
+          sed -i "s|replicas: 2|replicas: 1|g" kubernetes/deployments/backend-deployment.yaml
+
+          # Afficher le contenu du fichier de déploiement modifié
+          echo "Contenu du fichier de déploiement backend modifié :"
+          cat kubernetes/deployments/backend-deployment.yaml
+
+      - name: Deploy Backend
+        run: |
           kubectl apply -f kubernetes/deployments/backend-deployment.yaml
           kubectl apply -f kubernetes/services/backend-service.yaml
 
-          # Wait for backend to be ready
-          kubectl rollout status deployment/rh-backend -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=300s
+          # Attendre un peu avant de vérifier l'état
+          sleep 30
 
-      - name: Deploy Frontend
+          # Vérifier l'état des pods
+          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }}
+
+          # Vérifier les logs des pods backend
+          echo "Logs des pods backend :"
+          kubectl logs -l app=rh-backend -n ${{ env.KUBERNETES_NAMESPACE }} --tail=100 || true
+
+          # Décrire les pods pour voir les événements
+          echo "Description des pods backend :"
+          kubectl describe pods -l app=rh-backend -n ${{ env.KUBERNETES_NAMESPACE }} || true
+
+          # Wait for backend to be ready with increased timeout
+          kubectl rollout status deployment/rh-backend -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=600s
+
+      - name: Modify Frontend Deployment
         run: |
           # Update image tag in frontend deployment
           sed -i "s|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:.*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/frontend-deployment.yaml
 
+          # Réduire le nombre de réplicas à 1
+          sed -i "s|replicas: 2|replicas: 1|g" kubernetes/deployments/frontend-deployment.yaml
+
+          # Afficher le contenu du fichier de déploiement modifié
+          echo "Contenu du fichier de déploiement frontend modifié :"
+          cat kubernetes/deployments/frontend-deployment.yaml
+
+      - name: Deploy Frontend
+        run: |
           kubectl apply -f kubernetes/deployments/frontend-deployment.yaml
           kubectl apply -f kubernetes/services/frontend-service.yaml
 
-          # Wait for frontend to be ready
-          kubectl rollout status deployment/rh-frontend -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=300s
+          # Attendre un peu avant de vérifier l'état
+          sleep 30
+
+          # Vérifier l'état des pods
+          kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }}
+
+          # Vérifier les logs des pods frontend
+          echo "Logs des pods frontend :"
+          kubectl logs -l app=rh-frontend -n ${{ env.KUBERNETES_NAMESPACE }} --tail=100 || true
+
+          # Décrire les pods pour voir les événements
+          echo "Description des pods frontend :"
+          kubectl describe pods -l app=rh-frontend -n ${{ env.KUBERNETES_NAMESPACE }} || true
+
+          # Wait for frontend to be ready with increased timeout
+          kubectl rollout status deployment/rh-frontend -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=600s
 
       - name: Deploy Ingress
         run: kubectl apply -f kubernetes/ingress/
