@@ -64,9 +64,24 @@ Pour utiliser Gmail comme serveur SMTP, vous devez :
    ./start-app.ps1
    ```
 
+   Ou utilisez le nouveau script de déploiement :
+   ```powershell
+   ./deploy.ps1
+   ```
+
 3. Pour nettoyer l'environnement Docker :
    ```powershell
    ./clean-docker.ps1
+   ```
+
+4. Pour sauvegarder la base de données :
+   ```powershell
+   ./backup.ps1
+   ```
+
+5. Pour restaurer la base de données à partir d'une sauvegarde :
+   ```powershell
+   ./restore.ps1 ./backups/rh_v2_20250505_120000.sql
    ```
 
 ### Utilisation manuelle de Docker Compose
@@ -126,10 +141,92 @@ Le projet peut être déployé sur un cluster Kubernetes. Les configurations né
 
 ### Options de déploiement
 
-1. **Déploiement manuel avec kubectl** : Utilisez le script `kubernetes/deploy.sh`
-2. **Déploiement avec Helm** : Utilisez le script `kubernetes/helm/install-helm.sh`
+1. **Déploiement local avec Minikube** :
+   ```powershell
+   # Démarrer Minikube
+   minikube start --driver=docker
 
-Pour plus d'informations, consultez le fichier `kubernetes/README.md`.
+   # Activer l'addon ingress
+   minikube addons enable ingress
+
+   # Déployer l'application
+   ./deploy-kubernetes.ps1
+   ```
+
+2. **Déploiement sur Azure Kubernetes Service (AKS)** :
+   ```powershell
+   # Configurer un cluster AKS
+   ./setup-aks.ps1
+
+   # Déployer l'application
+   ./deploy-kubernetes.ps1
+   ```
+
+3. **Déploiement sur Amazon Elastic Kubernetes Service (EKS)** :
+   ```powershell
+   # Configurer un cluster EKS
+   ./setup-eks.ps1
+
+   # Déployer l'application
+   ./deploy-kubernetes.ps1
+   ```
+
+4. **Déploiement manuel avec kubectl** :
+   ```powershell
+   # Créer le namespace
+   kubectl create namespace rh-system
+
+   # Appliquer les configurations
+   kubectl apply -f kubernetes/configmaps/ -n rh-system
+   kubectl apply -f kubernetes/storage/ -n rh-system
+   kubectl apply -f kubernetes/deployments/ -n rh-system
+   kubectl apply -f kubernetes/services/ -n rh-system
+   kubectl apply -f kubernetes/ingress/ -n rh-system
+   ```
+
+5. **Déploiement avec Helm** :
+   ```powershell
+   # Installer Helm
+   choco install kubernetes-helm
+
+   # Déployer l'application
+   helm install rh-system kubernetes/helm/rh-system/ --namespace rh-system --create-namespace
+   ```
+
+### Structure des fichiers Kubernetes
+
+- `kubernetes/configmaps/` : ConfigMaps pour la configuration de l'application
+- `kubernetes/deployments/` : Déploiements pour les pods
+- `kubernetes/services/` : Services pour exposer les pods
+- `kubernetes/ingress/` : Ingress pour l'accès externe
+- `kubernetes/storage/` : PersistentVolumeClaims pour le stockage
+- `kubernetes/autoscaling/` : HorizontalPodAutoscalers pour l'autoscaling
+- `kubernetes/security/` : Politiques de sécurité et NetworkPolicies
+- `kubernetes/monitoring/` : Configurations pour Prometheus et Grafana
+- `kubernetes/logging/` : Configurations pour la stack ELK
+- `kubernetes/helm/` : Charts Helm pour le déploiement
+
+### Problèmes connus
+
+Si vous rencontrez des problèmes avec Minikube, essayez les solutions suivantes :
+
+1. Utilisez le pilote Docker au lieu de WSL2 :
+   ```powershell
+   minikube delete
+   minikube start --driver=docker
+   ```
+
+2. Vérifiez que l'addon ingress est activé :
+   ```powershell
+   minikube addons enable ingress
+   ```
+
+3. Utilisez le tunnel Minikube pour accéder aux services :
+   ```powershell
+   minikube tunnel
+   ```
+
+4. Si vous ne pouvez pas accéder à l'application via `http://rh-system.local/`, utilisez Docker Compose comme alternative pour le développement local.
 
 ### Monitoring avec Prometheus et Grafana
 
@@ -216,6 +313,37 @@ Pour que le pipeline CI/CD fonctionne correctement, vous devez configurer les se
 - Le fichier `.env` est exclu du dépôt Git
 - Les mots de passe sont hachés avant d'être stockés dans la base de données
 - Les connexions sont sécurisées par JWT
+
+## Résolution des problèmes
+
+### Problèmes courants
+
+1. **Impossible de se connecter à la base de données**
+   - Vérifiez que PostgreSQL est en cours d'exécution sur le port 5433
+   - Vérifiez que la base de données `rh_v2` existe
+   - Vérifiez que l'utilisateur `postgres` a les droits nécessaires
+
+2. **Problèmes avec Docker**
+   - Vérifiez que Docker Desktop est en cours d'exécution
+   - Essayez de redémarrer Docker Desktop
+   - Nettoyez les conteneurs et les images avec `./clean-docker.ps1`
+
+3. **Problèmes avec Kubernetes/Minikube**
+   - Si vous rencontrez des problèmes avec Minikube, utilisez Docker Compose comme alternative
+   - Pour les déploiements en production, envisagez d'utiliser un service Kubernetes géré (AKS, EKS, GKE)
+
+4. **Problèmes avec les emails**
+   - Vérifiez que les informations d'identification SendGrid sont correctes
+   - Vérifiez que l'expéditeur est autorisé dans SendGrid
+
+### Logs
+
+Les logs des conteneurs peuvent être consultés avec :
+
+```powershell
+docker logs pfe-frontend-1
+docker logs pfe-backend-1
+```
 
 ## Contribution
 

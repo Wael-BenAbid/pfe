@@ -11,4 +11,4 @@ data:
   DATABASE_HOST: "postgres-db"
   DATABASE_PORT: "5432"
   EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
-  FRONTEND_URL: "http://rh-frontend"
+  FRONTEND_URL: "http://rh-system.local"
