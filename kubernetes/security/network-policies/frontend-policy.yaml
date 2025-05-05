@@ -12,9 +12,10 @@ spec:
   - Egress
   ingress:
   - from:
-    - namespaceSelector:
+    - namespaceSelector: {}
+      podSelector:
         matchLabels:
-          name: ingress-nginx
+          app.kubernetes.io/name: ingress-nginx
     ports:
     - protocol: TCP
       port: 80
