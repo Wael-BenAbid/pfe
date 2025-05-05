@@ -20,35 +20,36 @@ function Write-Message {
     param(
         [Parameter(Mandatory=$true)]
         [string]$message,
-        
+
         [Parameter(Mandatory=$false)]
         [string]$color = "White"
     )
-    
+
     Write-Host $message -ForegroundColor $color
 }
 
 # Vérifier si Minikube est en cours d'exécution
-$minikubeStatus = minikube status
+$minikubeStatus = & minikube status
 if ($minikubeStatus -match "host: Stopped") {
     Write-Message "Minikube n'est pas en cours d'exécution. Démarrage..." -color $colorWarning
-    minikube start --driver=docker
+    & minikube start --driver=docker
 }
 
 # Vérifier si l'addon ingress est activé
-$ingressEnabled = minikube addons list | Select-String "ingress"
+$ingressOutput = & minikube addons list
+$ingressEnabled = $ingressOutput | Select-String "ingress"
 if ($ingressEnabled -match "disabled") {
     Write-Message "L'addon ingress n'est pas activé. Activation..." -color $colorWarning
-    minikube addons enable ingress
+    & minikube addons enable ingress
 }
 
 # Obtenir l'adresse IP de Minikube
-$minikubeIP = minikube ip
+$minikubeIP = & minikube ip
 Write-Message "Adresse IP de Minikube: $minikubeIP" -color $colorInfo
 
 # Créer le namespace s'il n'existe pas
 Write-Message "Création du namespace $namespace s'il n'existe pas..." -color $colorInfo
-kubectl create namespace $namespace --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f kubernetes/namespace/rh-system.yaml
 
 # Créer les secrets
 Write-Message "Création des secrets..." -color $colorInfo
@@ -69,7 +70,7 @@ kubectl create secret generic rh-backend-secrets `
 # Mettre à jour les ConfigMaps
 Write-Message "Mise à jour des ConfigMaps..." -color $colorInfo
 $backendConfigMap = Get-Content kubernetes/configmaps/backend-configmap.yaml
-$backendConfigMap = $backendConfigMap -replace 'ALLOWED_HOSTS: "localhost,127.0.0.1,rh-backend,rh-frontend,rh-system.local"', 'ALLOWED_HOSTS: "localhost,127.0.0.1,rh-backend,rh-frontend,rh-system.local,'$minikubeIP'"'
+$backendConfigMap = $backendConfigMap -replace 'ALLOWED_HOSTS: "localhost,127.0.0.1,rh-backend,rh-frontend,rh-system.local"', "ALLOWED_HOSTS: `"localhost,127.0.0.1,rh-backend,rh-frontend,rh-system.local,$minikubeIP`""
 $backendConfigMap = $backendConfigMap -replace 'FRONTEND_URL: "http://rh-system.local"', 'FRONTEND_URL: "http://rh-system.local"'
 Set-Content kubernetes/configmaps/backend-configmap.yaml $backendConfigMap
 
@@ -141,4 +142,4 @@ Write-Message "   Backend Admin: http://rh-system.local/admin/" -color $colorInf
 Write-Message "Démarrage du tunnel Minikube..." -color $colorInfo
 Write-Message "Appuyez sur Ctrl+C pour arrêter le tunnel." -color $colorInfo
 Write-Message "Ouvrez un autre terminal pour continuer à travailler." -color $colorInfo
-minikube tunnel
+& minikube tunnel
