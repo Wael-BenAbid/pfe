@@ -342,7 +342,8 @@ jobs:
   deploy-monitoring:
     needs: [deploy-kubernetes]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    # Ajouter un délai pour s'assurer que le cluster est prêt
+    if: always() && github.ref == 'refs/heads/main'
 
     steps:
       - uses: actions/checkout@v4
@@ -360,15 +361,50 @@ jobs:
           kubernetes-version: 'stable'
           driver: 'docker'
 
-      - name: Check Kubernetes connection
+      - name: Configure Minikube
         run: |
+          # Activer les addons nécessaires
+          minikube addons enable metrics-server
+          minikube addons enable dashboard
+
+          # Attendre que les addons soient prêts
+          echo "Attente que les addons soient prêts..."
+          sleep 30
+
+          # Vérifier l'état des addons
+          minikube addons list
+
+      - name: Check Kubernetes connection and wait for cluster readiness
+        run: |
+          # Vérifier la connexion au cluster
           kubectl cluster-info
           kubectl get nodes
 
-      - name: Install Metrics Server
+          # Attendre que les composants du système soient prêts
+          echo "Attente que les composants du système soient prêts..."
+          kubectl wait --for=condition=Ready pods --all -n kube-system --timeout=300s || true
+
+          # Afficher l'état des pods du système
+          echo "État des pods du système :"
+          kubectl get pods -n kube-system
+
+      - name: Verify Metrics Server
         run: |
-          kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-          kubectl rollout status deployment metrics-server -n kube-system --timeout=300s
+          # Vérifier que le Metrics Server est activé via l'addon Minikube
+          echo "Vérification de l'état du Metrics Server..."
+          minikube addons list | grep metrics-server
+
+          # Vérifier l'état du pod Metrics Server
+          echo "État du pod Metrics Server :"
+          kubectl get pods -n kube-system -l k8s-app=metrics-server
+
+          # Afficher les logs du pod Metrics Server pour le débogage
+          echo "Logs du pod Metrics Server :"
+          kubectl logs -n kube-system -l k8s-app=metrics-server --tail=50 || true
+
+          # Tester le fonctionnement du Metrics Server
+          echo "Test du Metrics Server avec kubectl top nodes :"
+          kubectl top nodes || true
 
       - name: Create namespaces
         run: |
