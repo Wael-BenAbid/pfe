@@ -875,6 +875,30 @@ jobs:
             EOF
           )
 
+          # Vérifier que le PVC existe
+          echo "Vérification que le PVC postgres-backup-pvc existe..."
+          if ! kubectl get pvc postgres-backup-pvc -n ${{ env.KUBERNETES_NAMESPACE }} &> /dev/null; then
+            echo "Le PVC postgres-backup-pvc n'existe pas, création..."
+            kubectl apply -f kubernetes/backup/backup-pvc.yaml -n ${{ env.KUBERNETES_NAMESPACE }} --validate=false || true
+
+            # Attendre que le PVC soit créé
+            echo "Attente que le PVC soit créé..."
+            sleep 10
+            kubectl get pvc -n ${{ env.KUBERNETES_NAMESPACE }}
+          fi
+
+          # Vérifier que le ConfigMap existe
+          echo "Vérification que le ConfigMap postgres-backup-scripts existe..."
+          if ! kubectl get configmap postgres-backup-scripts -n ${{ env.KUBERNETES_NAMESPACE }} &> /dev/null; then
+            echo "Le ConfigMap postgres-backup-scripts n'existe pas, création..."
+            kubectl apply -f kubernetes/backup/backup-scripts-configmap.yaml -n ${{ env.KUBERNETES_NAMESPACE }} --validate=false || true
+
+            # Attendre que le ConfigMap soit créé
+            echo "Attente que le ConfigMap soit créé..."
+            sleep 5
+            kubectl get configmap -n ${{ env.KUBERNETES_NAMESPACE }}
+          fi
+
           # Vérifier le contenu du fichier backup-management-pod.yaml
           echo "Contenu du fichier backup-management-pod.yaml:"
           cat kubernetes/backup/backup-management-pod.yaml || echo "Fichier non trouvé"
@@ -882,6 +906,14 @@ jobs:
           # Créer un répertoire temporaire pour les sauvegardes sur le nœud Minikube
           echo "Création du répertoire temporaire pour les sauvegardes sur le nœud Minikube..."
           minikube ssh "sudo mkdir -p /tmp/postgres-backup && sudo chmod 777 /tmp/postgres-backup" || true
+
+          # Supprimer le pod s'il existe déjà
+          echo "Suppression du pod s'il existe déjà..."
+          kubectl delete pod postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} --ignore-not-found=true || true
+
+          # Attendre que le pod soit supprimé
+          echo "Attente que le pod soit supprimé..."
+          sleep 10
 
           # Créer le Pod pour la gestion des sauvegardes avec --validate=false
           echo "Création du Pod pour la gestion des sauvegardes..."
@@ -903,10 +935,14 @@ jobs:
           echo "Détails du Pod:"
           kubectl describe pod postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} || true
 
+          # Attendre que le pod soit prêt
+          echo "Attente supplémentaire que le pod soit prêt..."
+          kubectl wait --for=condition=Ready pod/postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=60s || true
+
           # Vérifier les volumes montés dans le Pod
           echo "Volumes montés dans le Pod:"
-          kubectl exec -it postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /backup || true
-          kubectl exec -it postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /scripts || true
+          kubectl exec postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /backup || true
+          kubectl exec postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /scripts || true
 
       - name: Run Manual Backup
         run: |
@@ -921,7 +957,7 @@ jobs:
 
           # Vérifier que les scripts de sauvegarde sont correctement montés
           echo "Vérification que les scripts de sauvegarde sont correctement montés..."
-          kubectl exec -it postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /scripts || true
+          kubectl exec postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /scripts || true
 
           # Exécuter une sauvegarde manuelle avec --validate=false
           echo "Exécution d'une sauvegarde manuelle..."
@@ -950,7 +986,7 @@ jobs:
 
           # Vérifier les sauvegardes créées
           echo "Vérification des sauvegardes créées:"
-          kubectl exec -it postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /backup || true
+          kubectl exec postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /backup || true
 
   deploy-security:
     needs: [deploy-kubernetes, deploy-https, deploy-backups]
