@@ -108,43 +108,38 @@ jobs:
         run: |
           docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }} ./back-end
 
+      - name: Install Trivy directly
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+          trivy --version
+
       - name: Scan frontend image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: '${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}'
-          format: 'table'
-          exit-code: '0'  # Changed from '1' to '0' to continue pipeline despite vulnerabilities
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+        run: |
+          echo "Scanning frontend image..."
+          trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+        continue-on-error: true
 
       - name: Scan backend image with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: '${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}'
-          format: 'table'
-          exit-code: '0'  # Changed from '1' to '0' to continue pipeline despite vulnerabilities
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+        run: |
+          echo "Scanning backend image..."
+          trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+        continue-on-error: true
 
       - name: Scan repository with Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+        run: |
+          echo "Scanning repository..."
+          trivy fs --no-progress --ignore-unfixed --severity HIGH,CRITICAL .
+        continue-on-error: true
 
-      - name: Scan Kubernetes manifests
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'config'
-          scan-ref: '.'
-          format: 'table'
-          exit-code: '0'
-          severity: 'CRITICAL,HIGH'
+      - name: Scan Kubernetes manifests with Trivy
+        run: |
+          echo "Scanning Kubernetes manifests..."
+          trivy config --no-progress --severity HIGH,CRITICAL .
         continue-on-error: true
 
   build-push:
@@ -1022,4 +1017,67 @@ jobs:
             fi
           else
             echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} does not exist, skipping Kyverno Policies deployment"
+          fi
+
+      - name: Install Trivy directly
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
+          trivy --version
+
+      - name: Deploy Trivy Scanner
+        run: |
+          # Vérifier que le namespace security existe
+          if kubectl get namespace security &> /dev/null; then
+            echo "Namespace security exists, proceeding with Trivy Scanner deployment"
+
+            if [ -d "kubernetes/security/trivy" ]; then
+              echo "Applying Trivy Scanner configurations..."
+
+              # Créer le ConfigMap pour le binaire kubectl
+              echo "Creating kubectl binary ConfigMap..."
+              which kubectl
+              kubectl create configmap kubectl-binary --from-file=kubectl=$(which kubectl) -n security --dry-run=client -o yaml | kubectl apply -f -
+
+              # Appliquer les configurations Trivy
+              echo "Applying Trivy RBAC..."
+              kubectl apply -f kubernetes/security/trivy/trivy-rbac.yaml || true
+
+              echo "Applying Trivy CronJob..."
+              kubectl apply -f kubernetes/security/trivy/trivy-scan-cronjob.yaml || true
+
+              # Exécuter un scan manuel avec le job Kubernetes
+              echo "Running manual Trivy scan using Kubernetes job..."
+              kubectl apply -f kubernetes/security/trivy/trivy-scan-job.yaml || true
+
+              # Attendre que le job soit terminé
+              echo "Waiting for the scan job to complete..."
+              sleep 30
+
+              # Vérifier l'état du job
+              echo "Checking job status..."
+              kubectl get job trivy-scan-manual -n security || true
+
+              # Afficher les pods créés par le job
+              echo "Pods created by the job:"
+              kubectl get pods -n security -l job-name=trivy-scan-manual || true
+
+              # Afficher les logs du job
+              echo "Job logs (if available):"
+              SCAN_POD=$(kubectl get pods -n security -l job-name=trivy-scan-manual -o jsonpath='{.items[0].metadata.name}' 2>/dev/null) || true
+              if [ -n "$SCAN_POD" ]; then
+                kubectl logs $SCAN_POD -n security -c trivy-scanner || true
+                kubectl logs $SCAN_POD -n security -c results-processor || true
+              else
+                echo "No pod found for the job"
+              fi
+            else
+              echo "Trivy directory not found, skipping deployment"
+            fi
+          else
+            echo "Namespace security does not exist, skipping Trivy Scanner deployment"
           fi

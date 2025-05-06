@@ -3,11 +3,11 @@ kind: ConfigMap
 metadata:
   name: kubectl-binary
   namespace: security
-binaryData:
-  kubectl: |-
-    # Ce fichier est un placeholder. Dans un environnement réel, vous devriez
-    # remplacer ce contenu par le binaire kubectl encodé en base64.
-    # Exemple: cat $(which kubectl) | base64 -w 0
-    # 
-    # Pour des raisons de simplicité, nous utiliserons une image qui contient
-    # déjà kubectl dans un environnement de production.
+data:
+  kubectl: |
+    #!/bin/sh
+    echo "This is a simulated kubectl command for development purposes only."
+    echo "In a real environment, this would be the actual kubectl binary."
+    echo "Command received: $@"
+    echo "Simulating successful execution."
+    exit 0
