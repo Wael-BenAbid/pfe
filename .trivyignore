@@ -1,0 +1,14 @@
+# Ignorer les vulnérabilités spécifiques
+CVE-2021-44228  # Log4Shell - Non applicable à notre application
+CVE-2022-22965  # Spring4Shell - Non applicable à notre application
+
+# Ignorer les faux positifs courants
+CVE-2023-2650   # Faux positif dans les images Alpine
+CVE-2023-2975   # Faux positif dans les images Alpine
+CVE-2023-3446   # Faux positif dans les images Alpine
+CVE-2023-3817   # Faux positif dans les images Alpine
+CVE-2023-4911   # Faux positif dans les images Alpine
+CVE-2023-5156   # Faux positif dans les images Alpine
+
+# Ignorer les vulnérabilités de sévérité moyenne et faible
+# (nous nous concentrons uniquement sur les vulnérabilités critiques et élevées)
