@@ -14,6 +14,9 @@ env:
   BACKEND_IMAGE: rh-backend
   KUBERNETES_NAMESPACE: rh-system
   KUBERNETES_CLUSTER: minikube
+  # Valeur par défaut pour le stockage Azure (sera remplacée si le secret est défini)
+  AZURE_STORAGE_ACCOUNT: rhsystembackup
+  AZURE_CONTAINER: postgres-backups
 
 jobs:
   test-frontend:
@@ -340,7 +343,7 @@ jobs:
         run: kubectl apply -f kubernetes/autoscaling/
 
   deploy-monitoring:
-    needs: [deploy-kubernetes]
+    needs: [deploy-kubernetes, deploy-https, deploy-backups]
     runs-on: ubuntu-latest
     # Ajouter un délai pour s'assurer que le cluster est prêt
     if: always() && github.ref == 'refs/heads/main'
@@ -431,7 +434,7 @@ jobs:
           fi
 
   deploy-logging:
-    needs: [deploy-kubernetes]
+    needs: [deploy-kubernetes, deploy-https, deploy-backups]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
@@ -480,8 +483,153 @@ jobs:
             echo "Namespace ${{ env.KUBERNETES_NAMESPACE }} does not exist, skipping ELK Stack deployment"
           fi
 
-  deploy-security:
+  deploy-https:
     needs: [deploy-kubernetes]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      # Utilisation de minikube pour les tests locaux
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@master
+        with:
+          minikube-version: 'latest'
+          kubernetes-version: 'stable'
+          driver: 'docker'
+
+      - name: Check Kubernetes connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Create namespace for cert-manager
+        run: |
+          kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Install cert-manager
+        run: |
+          # Télécharger le manifeste cert-manager
+          CERT_MANAGER_VERSION="v1.14.3"
+          CERT_MANAGER_URL="https://github.com/cert-manager/cert-manager/releases/download/$CERT_MANAGER_VERSION/cert-manager.yaml"
+          curl -L -o cert-manager.yaml $CERT_MANAGER_URL
+
+          # Appliquer le manifeste
+          kubectl apply -f cert-manager.yaml
+
+          # Attendre que cert-manager soit prêt
+          echo "Attente que cert-manager soit prêt..."
+          kubectl wait --for=condition=ready pod -l app=cert-manager -n cert-manager --timeout=300s || true
+          kubectl wait --for=condition=ready pod -l app=webhook -n cert-manager --timeout=300s || true
+          kubectl wait --for=condition=ready pod -l app=cainjector -n cert-manager --timeout=300s || true
+
+          # Vérifier l'installation
+          kubectl get pods -n cert-manager
+
+      - name: Configure TLS Issuers
+        run: |
+          # Appliquer les émetteurs de certificats
+          kubectl apply -f kubernetes/cert-manager/selfsigned-issuer.yaml
+          kubectl apply -f kubernetes/cert-manager/letsencrypt-staging-issuer.yaml
+          kubectl apply -f kubernetes/cert-manager/letsencrypt-prod-issuer.yaml
+
+          # Attendre que les émetteurs soient prêts
+          sleep 10
+
+      - name: Update Ingress for HTTPS
+        run: |
+          # Appliquer l'ingress avec TLS
+          kubectl apply -f kubernetes/ingress/ingress-tls.yaml -n ${{ env.KUBERNETES_NAMESPACE }}
+
+          # Attendre que le certificat soit émis
+          sleep 20
+
+          # Vérifier le certificat
+          kubectl get certificate -n ${{ env.KUBERNETES_NAMESPACE }}
+
+          # Vérifier l'ingress
+          kubectl get ingress -n ${{ env.KUBERNETES_NAMESPACE }}
+
+  deploy-backups:
+    needs: [deploy-kubernetes, deploy-https]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      # Utilisation de minikube pour les tests locaux
+      - name: Set up Minikube
+        uses: medyagh/setup-minikube@master
+        with:
+          minikube-version: 'latest'
+          kubernetes-version: 'stable'
+          driver: 'docker'
+
+      - name: Check Kubernetes connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Create Backup Storage
+        run: |
+          # Créer le volume persistant pour les sauvegardes
+          kubectl apply -f kubernetes/backup/backup-pv.yaml
+          kubectl apply -f kubernetes/backup/backup-pvc.yaml -n ${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Configure Backup Scripts
+        run: |
+          # Créer le ConfigMap des scripts de sauvegarde
+          kubectl apply -f kubernetes/backup/backup-scripts-configmap.yaml -n ${{ env.KUBERNETES_NAMESPACE }}
+
+          # Créer le Secret pour les informations d'identification Azure
+          AZURE_STORAGE_KEY="${{ secrets.AZURE_STORAGE_KEY }}"
+          if [ -z "$AZURE_STORAGE_KEY" ]; then
+            AZURE_STORAGE_KEY="default-key-for-development-only"
+            echo "WARNING: Using default AZURE_STORAGE_KEY. This should only be used for development!"
+          fi
+
+          kubectl create secret generic postgres-backup-secrets \
+            --namespace=${{ env.KUBERNETES_NAMESPACE }} \
+            --from-literal=AZURE_STORAGE_KEY="$AZURE_STORAGE_KEY" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy Backup CronJob
+        run: |
+          # Créer le CronJob pour les sauvegardes automatiques
+          kubectl apply -f kubernetes/backup/backup-cronjob.yaml -n ${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Deploy Backup Management Pod
+        run: |
+          # Créer le Pod pour la gestion des sauvegardes
+          kubectl apply -f kubernetes/backup/backup-management-pod.yaml -n ${{ env.KUBERNETES_NAMESPACE }}
+
+          # Attendre que le Pod soit prêt
+          sleep 10
+          kubectl get pod postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }}
+
+      - name: Run Manual Backup
+        run: |
+          # Exécuter une sauvegarde manuelle
+          kubectl apply -f kubernetes/backup/manual-backup-job.yaml -n ${{ env.KUBERNETES_NAMESPACE }}
+
+          # Attendre que la sauvegarde soit terminée
+          sleep 30
+          kubectl get job postgres-manual-backup -n ${{ env.KUBERNETES_NAMESPACE }}
+
+  deploy-security:
+    needs: [deploy-kubernetes, deploy-https, deploy-backups]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
