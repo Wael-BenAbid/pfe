@@ -16,7 +16,7 @@ spec:
           - name: postgres-backup
             image: postgres:15-alpine
             command:
-            - /bin/bash
+            - /bin/sh
             - /scripts/backup.sh
             volumeMounts:
             - name: backup-volume

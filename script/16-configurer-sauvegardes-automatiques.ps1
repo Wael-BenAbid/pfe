@@ -7,13 +7,13 @@
 param(
     [Parameter(Mandatory=$false)]
     [string]$namespace = "rh-system",
-    
+
     [Parameter(Mandatory=$false)]
     [string]$azureStorageKey = "",
-    
+
     [Parameter(Mandatory=$false)]
     [string]$azureStorageAccount = "rhsystembackup",
-    
+
     [Parameter(Mandatory=$false)]
     [string]$azureContainer = "postgres-backups"
 )
@@ -29,17 +29,17 @@ function Write-Message {
     param(
         [Parameter(Mandatory=$true)]
         [string]$message,
-        
+
         [Parameter(Mandatory=$false)]
         [string]$color = "White"
     )
-    
+
     Write-Host $message -ForegroundColor $color
 }
 
 # Vérifier si kubectl est installé
 try {
-    $kubectlVersion = kubectl version --client
+    kubectl version --client | Out-Null
     Write-Message "kubectl est installé" -color $colorInfo
 } catch {
     Write-Message "kubectl n'est pas installé ou n'est pas dans le PATH. Veuillez l'installer et réessayer." -color $colorError
@@ -91,7 +91,20 @@ kubectl apply -f kubernetes/backup/backup-management-pod.yaml -n $namespace
 
 # Attendre que le Pod soit prêt
 Write-Message "Attente que le Pod de gestion des sauvegardes soit prêt..." -color $colorInfo
-kubectl wait --for=condition=ready pod/postgres-backup-management -n $namespace --timeout=300s
+Start-Sleep -Seconds 10
+$podStatus = kubectl get pod postgres-backup-management -n $namespace -o jsonpath="{.status.phase}"
+if ($podStatus -ne "Running") {
+    Write-Message "Le Pod de gestion des sauvegardes n'est pas encore prêt. Attente supplémentaire..." -color $colorWarning
+    Start-Sleep -Seconds 20
+    $podStatus = kubectl get pod postgres-backup-management -n $namespace -o jsonpath="{.status.phase}"
+    if ($podStatus -ne "Running") {
+        Write-Message "Le Pod de gestion des sauvegardes n'est toujours pas prêt, mais nous continuons..." -color $colorWarning
+    } else {
+        Write-Message "Le Pod de gestion des sauvegardes est maintenant prêt!" -color $colorSuccess
+    }
+} else {
+    Write-Message "Le Pod de gestion des sauvegardes est prêt!" -color $colorSuccess
+}
 
 # Exécuter une sauvegarde manuelle
 Write-Message "Exécution d'une sauvegarde manuelle..." -color $colorInfo
@@ -99,12 +112,24 @@ kubectl apply -f kubernetes/backup/manual-backup-job.yaml -n $namespace
 
 # Attendre que la sauvegarde soit terminée
 Write-Message "Attente que la sauvegarde manuelle soit terminée..." -color $colorInfo
-Start-Sleep -Seconds 10
-kubectl wait --for=condition=complete job/postgres-manual-backup -n $namespace --timeout=300s
+Start-Sleep -Seconds 30
+$jobStatus = kubectl get job postgres-manual-backup -n $namespace -o jsonpath="{.status.succeeded}"
+if ($jobStatus -ne "1") {
+    Write-Message "La sauvegarde manuelle n'est pas encore terminée. Attente supplémentaire..." -color $colorWarning
+    Start-Sleep -Seconds 30
+    $jobStatus = kubectl get job postgres-manual-backup -n $namespace -o jsonpath="{.status.succeeded}"
+    if ($jobStatus -ne "1") {
+        Write-Message "La sauvegarde manuelle n'est toujours pas terminée, mais nous continuons..." -color $colorWarning
+    } else {
+        Write-Message "La sauvegarde manuelle est terminée avec succès!" -color $colorSuccess
+    }
+} else {
+    Write-Message "La sauvegarde manuelle est terminée avec succès!" -color $colorSuccess
+}
 
 # Afficher les sauvegardes disponibles
 Write-Message "Sauvegardes disponibles:" -color $colorInfo
-kubectl exec -it postgres-backup-management -n $namespace -- bash -c "ls -la /backup"
+kubectl exec -it postgres-backup-management -n $namespace -- sh -c "ls -la /backup"
 
 # Afficher les instructions pour gérer les sauvegardes
 Write-Message "Les sauvegardes automatiques ont été configurées avec succès!" -color $colorSuccess
@@ -112,9 +137,9 @@ Write-Message "Une sauvegarde sera exécutée tous les jours à 2h du matin." -c
 Write-Message "Pour exécuter une sauvegarde manuelle:" -color $colorInfo
 Write-Message "kubectl apply -f kubernetes/backup/manual-backup-job.yaml -n $namespace" -color $colorInfo
 Write-Message "Pour lister les sauvegardes disponibles:" -color $colorInfo
-Write-Message "kubectl exec -it postgres-backup-management -n $namespace -- bash -c '/scripts/list-backups.sh'" -color $colorInfo
+Write-Message "kubectl exec -it postgres-backup-management -n $namespace -- sh -c '/scripts/list-backups.sh'" -color $colorInfo
 Write-Message "Pour restaurer une sauvegarde:" -color $colorInfo
-Write-Message "kubectl exec -it postgres-backup-management -n $namespace -- bash -c '/scripts/restore.sh <nom_du_fichier_de_sauvegarde>'" -color $colorInfo
+Write-Message "kubectl exec -it postgres-backup-management -n $namespace -- sh -c '/scripts/restore.sh <nom_du_fichier_de_sauvegarde>'" -color $colorInfo
 
 if ($azureStorageKey) {
     Write-Message "Les sauvegardes sont également téléchargées vers Azure Blob Storage:" -color $colorInfo

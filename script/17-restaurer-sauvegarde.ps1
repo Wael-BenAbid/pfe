@@ -7,7 +7,7 @@
 param(
     [Parameter(Mandatory=$false)]
     [string]$namespace = "rh-system",
-    
+
     [Parameter(Mandatory=$true)]
     [string]$backupFile
 )
@@ -23,17 +23,17 @@ function Write-Message {
     param(
         [Parameter(Mandatory=$true)]
         [string]$message,
-        
+
         [Parameter(Mandatory=$false)]
         [string]$color = "White"
     )
-    
+
     Write-Host $message -ForegroundColor $color
 }
 
 # Vérifier si kubectl est installé
 try {
-    $kubectlVersion = kubectl version --client
+    kubectl version --client | Out-Null
     Write-Message "kubectl est installé" -color $colorInfo
 } catch {
     Write-Message "kubectl n'est pas installé ou n'est pas dans le PATH. Veuillez l'installer et réessayer." -color $colorError
@@ -57,7 +57,7 @@ if (-not $backupPod) {
 
 # Lister les sauvegardes disponibles
 Write-Message "Sauvegardes disponibles:" -color $colorInfo
-kubectl exec -it postgres-backup-management -n $namespace -- bash -c "ls -la /backup"
+kubectl exec -it postgres-backup-management -n $namespace -- sh -c "ls -la /backup"
 
 # Demander confirmation avant de restaurer
 Write-Message "Vous êtes sur le point de restaurer la base de données à partir de la sauvegarde: $backupFile" -color $colorWarning
@@ -70,7 +70,7 @@ if ($confirmation -ne "o") {
 
 # Restaurer la sauvegarde
 Write-Message "Restauration de la base de données à partir de la sauvegarde: $backupFile..." -color $colorInfo
-kubectl exec -it postgres-backup-management -n $namespace -- bash -c "/scripts/restore.sh $backupFile"
+kubectl exec -it postgres-backup-management -n $namespace -- sh -c "/scripts/restore.sh $backupFile"
 
 # Vérifier si la restauration a réussi
 if ($LASTEXITCODE -eq 0) {
