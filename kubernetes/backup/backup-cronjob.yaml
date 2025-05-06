@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: postgres-backup
+  namespace: rh-system
 spec:
   schedule: "0 2 * * *"  # Tous les jours à 2h du matin
   concurrencyPolicy: Forbid

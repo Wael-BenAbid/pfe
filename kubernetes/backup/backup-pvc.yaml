@@ -2,6 +2,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-backup-pvc
+  namespace: rh-system
 spec:
   storageClassName: standard
   accessModes:
