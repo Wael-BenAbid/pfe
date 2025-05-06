@@ -195,14 +195,19 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
+
+      - name: Verify kubectl installation
+        run: |
+          kubectl version --client
+          which kubectl || echo "kubectl not found in PATH"
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'latest'
-          kubernetes-version: 'stable'
+          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
+          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
           driver: 'docker'
 
       - name: Check Kubernetes connection
@@ -354,14 +359,14 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'latest'
-          kubernetes-version: 'stable'
+          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
+          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
           driver: 'docker'
 
       - name: Configure Minikube
@@ -444,14 +449,14 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'latest'
-          kubernetes-version: 'stable'
+          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
+          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
           driver: 'docker'
 
       - name: Check Kubernetes connection
@@ -494,14 +499,14 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'latest'
-          kubernetes-version: 'stable'
+          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
+          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
           driver: 'docker'
 
       - name: Check Kubernetes connection
@@ -581,14 +586,14 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'latest'
-          kubernetes-version: 'stable'
+          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
+          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
           driver: 'docker'
 
       - name: Check Kubernetes connection and create namespace
@@ -659,14 +664,14 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'latest'
+          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'latest'
-          kubernetes-version: 'stable'
+          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
+          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
           driver: 'docker'
 
       - name: Check Kubernetes connection
