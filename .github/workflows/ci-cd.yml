@@ -810,16 +810,26 @@ jobs:
           AZURE_STORAGE_KEY="default-key-for-development-only"
           echo "INFO: Using a default AZURE_STORAGE_KEY for development purposes."
 
-          # Créer le secret avec --validate=false
+          # Créer le secret postgres-backup-secrets avec --validate=false
           echo "Création du secret postgres-backup-secrets..."
           kubectl create secret generic postgres-backup-secrets \
             --namespace=${{ env.KUBERNETES_NAMESPACE }} \
             --from-literal=AZURE_STORAGE_KEY="$AZURE_STORAGE_KEY" \
             --dry-run=client -o yaml | kubectl apply -f - --validate=false || true
 
-          # Vérifier que le secret a été créé
-          echo "Vérification que le secret a été créé:"
+          # Créer le secret postgres-secrets s'il n'existe pas déjà
+          echo "Création du secret postgres-secrets..."
+          if ! kubectl get secret postgres-secrets -n ${{ env.KUBERNETES_NAMESPACE }} &>/dev/null; then
+            kubectl create secret generic postgres-secrets \
+              --namespace=${{ env.KUBERNETES_NAMESPACE }} \
+              --from-literal=POSTGRES_PASSWORD="postgres" \
+              --dry-run=client -o yaml | kubectl apply -f - --validate=false || true
+          fi
+
+          # Vérifier que les secrets ont été créés
+          echo "Vérification que les secrets ont été créés:"
           kubectl get secret postgres-backup-secrets -n ${{ env.KUBERNETES_NAMESPACE }} || true
+          kubectl get secret postgres-secrets -n ${{ env.KUBERNETES_NAMESPACE }} || true
 
       - name: Deploy Backup CronJob
         run: |
@@ -858,6 +868,10 @@ jobs:
           echo "Contenu du fichier backup-management-pod.yaml:"
           cat kubernetes/backup/backup-management-pod.yaml || echo "Fichier non trouvé"
 
+          # Créer un répertoire temporaire pour les sauvegardes sur le nœud Minikube
+          echo "Création du répertoire temporaire pour les sauvegardes sur le nœud Minikube..."
+          minikube ssh "sudo mkdir -p /tmp/postgres-backup && sudo chmod 777 /tmp/postgres-backup" || true
+
           # Créer le Pod pour la gestion des sauvegardes avec --validate=false
           echo "Création du Pod pour la gestion des sauvegardes..."
           kubectl apply -f kubernetes/backup/backup-management-pod.yaml -n ${{ env.KUBERNETES_NAMESPACE }} --validate=false || true
@@ -878,11 +892,25 @@ jobs:
           echo "Détails du Pod:"
           kubectl describe pod postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} || true
 
+          # Vérifier les volumes montés dans le Pod
+          echo "Volumes montés dans le Pod:"
+          kubectl exec -it postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /backup || true
+          kubectl exec -it postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /scripts || true
+
       - name: Run Manual Backup
         run: |
           # Vérifier le contenu du fichier manual-backup-job.yaml
           echo "Contenu du fichier manual-backup-job.yaml:"
           cat kubernetes/backup/manual-backup-job.yaml || echo "Fichier non trouvé"
+
+          # Vérifier que le pod de gestion des sauvegardes est prêt
+          echo "Vérification que le pod de gestion des sauvegardes est prêt..."
+          POD_STATUS=$(kubectl get pod postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -o jsonpath='{.status.phase}' 2>/dev/null) || true
+          echo "Statut du pod: $POD_STATUS"
+
+          # Vérifier que les scripts de sauvegarde sont correctement montés
+          echo "Vérification que les scripts de sauvegarde sont correctement montés..."
+          kubectl exec -it postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /scripts || true
 
           # Exécuter une sauvegarde manuelle avec --validate=false
           echo "Exécution d'une sauvegarde manuelle..."
@@ -908,6 +936,10 @@ jobs:
           else
             echo "Aucun pod trouvé pour le job"
           fi
+
+          # Vérifier les sauvegardes créées
+          echo "Vérification des sauvegardes créées:"
+          kubectl exec -it postgres-backup-management -n ${{ env.KUBERNETES_NAMESPACE }} -- ls -la /backup || true
 
   deploy-security:
     needs: [deploy-kubernetes, deploy-https, deploy-backups]

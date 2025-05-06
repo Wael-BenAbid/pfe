@@ -2,7 +2,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: postgres-manual-backup
-  namespace: rh-system
 spec:
   template:
     spec:
@@ -19,15 +18,9 @@ spec:
           mountPath: /scripts
         env:
         - name: POSTGRES_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: postgres-secrets
-              key: POSTGRES_PASSWORD
+          value: "postgres"
         - name: AZURE_STORAGE_KEY
-          valueFrom:
-            secretKeyRef:
-              name: postgres-backup-secrets
-              key: AZURE_STORAGE_KEY
+          value: "default-key-for-development-only"
       restartPolicy: OnFailure
       volumes:
       - name: backup-volume
