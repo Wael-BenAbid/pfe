@@ -591,10 +591,16 @@ jobs:
           kubernetes-version: 'stable'
           driver: 'docker'
 
-      - name: Check Kubernetes connection
+      - name: Check Kubernetes connection and create namespace
         run: |
           kubectl cluster-info
           kubectl get nodes
+
+          # Créer le namespace s'il n'existe pas
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+          # Vérifier que le namespace existe
+          kubectl get namespace ${{ env.KUBERNETES_NAMESPACE }}
 
       - name: Create Backup Storage
         run: |
