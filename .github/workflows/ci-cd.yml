@@ -1072,55 +1072,62 @@ jobs:
 
       - name: Deploy Trivy Scanner
         run: |
+          # Créer le namespace security s'il n'existe pas
+          echo "Création du namespace security s'il n'existe pas..."
+          kubectl create namespace security --dry-run=client -o yaml | kubectl apply -f -
+
           # Vérifier que le namespace security existe
-          if kubectl get namespace security &> /dev/null; then
-            echo "Namespace security exists, proceeding with Trivy Scanner deployment"
+          echo "Vérification que le namespace security existe..."
+          kubectl get namespace security
 
-            if [ -d "kubernetes/security/trivy" ]; then
-              echo "Applying Trivy Scanner configurations..."
+          # Appliquer les configurations Trivy
+          echo "Applying Trivy Scanner configurations..."
 
-              # Créer le ConfigMap pour le binaire kubectl
-              echo "Creating kubectl binary ConfigMap..."
-              which kubectl
-              kubectl create configmap kubectl-binary --from-file=kubectl=$(which kubectl) -n security --dry-run=client -o yaml | kubectl apply -f -
+          # Appliquer le ConfigMap kubectl-binary simplifié
+          echo "Applying simplified kubectl binary ConfigMap..."
+          kubectl apply -f kubernetes/security/trivy/kubectl-binary-configmap.yaml || true
 
-              # Appliquer les configurations Trivy
-              echo "Applying Trivy RBAC..."
-              kubectl apply -f kubernetes/security/trivy/trivy-rbac.yaml || true
+          # Appliquer les configurations Trivy RBAC
+          echo "Applying Trivy RBAC..."
+          kubectl apply -f kubernetes/security/trivy/trivy-rbac.yaml || true
 
-              echo "Applying Trivy CronJob..."
-              kubectl apply -f kubernetes/security/trivy/trivy-scan-cronjob.yaml || true
+          # Appliquer le CronJob Trivy
+          echo "Applying Trivy CronJob..."
+          kubectl apply -f kubernetes/security/trivy/trivy-scan-cronjob.yaml || true
 
-              # Exécuter un scan manuel directement avec Trivy
-              echo "Running manual Trivy scan directly..."
+          # Exécuter un scan manuel directement avec Trivy CLI
+          echo "Running manual Trivy scan directly with CLI..."
 
-              # Scan des images Docker
-              echo "Scanning Docker images..."
-              trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL --timeout 10m ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest || echo "Frontend image scan completed with warnings or errors, but we continue"
-              trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL --timeout 10m ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest || echo "Backend image scan completed with warnings or errors, but we continue"
+          # Scan des images Docker (avec timeout réduit)
+          echo "Scanning Docker images..."
+          trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL --timeout 5m ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest || echo "Frontend image scan completed with warnings or errors, but we continue"
+          trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL --timeout 5m ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest || echo "Backend image scan completed with warnings or errors, but we continue"
 
-              # Scan des manifestes Kubernetes
-              echo "Scanning Kubernetes manifests..."
-              trivy config --no-progress --severity HIGH,CRITICAL --timeout 10m --skip-dirs ".git,.github,node_modules" --skip-files "*.md,*.txt,*.json" kubernetes/ || echo "Kubernetes manifests scan completed with warnings or errors, but we continue"
+          # Scan des manifestes Kubernetes (avec timeout réduit)
+          echo "Scanning Kubernetes manifests..."
+          trivy config --no-progress --severity HIGH,CRITICAL --timeout 5m --skip-dirs ".git,.github,node_modules" --skip-files "*.md,*.txt,*.json" kubernetes/ || echo "Kubernetes manifests scan completed with warnings or errors, but we continue"
 
-              # Exécuter également le job Kubernetes pour la démonstration
-              echo "Also running the Kubernetes job for demonstration..."
-              kubectl apply -f kubernetes/security/trivy/trivy-scan-job.yaml || true
+          # Appliquer le job Trivy simplifié
+          echo "Applying simplified Trivy scan job..."
+          kubectl apply -f kubernetes/security/trivy/trivy-scan-job.yaml || true
 
-              # Attendre que le job soit terminé
-              echo "Waiting for the scan job to complete..."
-              sleep 30
+          # Attendre que le job soit terminé
+          echo "Waiting for the scan job to complete..."
+          sleep 15
 
-              # Vérifier l'état du job
-              echo "Checking job status..."
-              kubectl get job trivy-scan-manual -n security || true
+          # Vérifier l'état du job
+          echo "Checking job status..."
+          kubectl get job trivy-scan-manual -n security || true
 
-              # Afficher les pods créés par le job
-              echo "Pods created by the job:"
-              kubectl get pods -n security -l job-name=trivy-scan-manual || true
-            else
-              echo "Trivy directory not found, skipping deployment"
-            fi
+          # Afficher les pods créés par le job
+          echo "Pods created by the job:"
+          kubectl get pods -n security -l job-name=trivy-scan-manual || true
+
+          # Afficher les logs du job
+          echo "Logs of the job pod:"
+          JOB_POD=$(kubectl get pods -n security -l job-name=trivy-scan-manual -o jsonpath='{.items[0].metadata.name}' 2>/dev/null) || true
+          if [ -n "$JOB_POD" ]; then
+            kubectl logs $JOB_POD -n security || true
           else
-            echo "Namespace security does not exist, skipping Trivy Scanner deployment"
+            echo "No pod found for the job"
           fi

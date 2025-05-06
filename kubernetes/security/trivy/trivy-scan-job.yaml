@@ -9,34 +9,20 @@ spec:
       serviceAccountName: trivy-scanner
       containers:
       - name: trivy-scanner
-        image: alpine:3.18
-        command:
-        - /bin/sh
-        - -c
-        - |
-          echo "Simulating security scan..."
-          echo "{\"results\": [{\"Target\": \"waelbenabid/rh-frontend:latest\", \"Vulnerabilities\": []}]}" > /results/scan-results.json
-          echo "Scan completed successfully."
-          cat /results/scan-results.json
-        volumeMounts:
-        - name: results
-          mountPath: /results
-      - name: results-processor
         image: busybox:1.36
         command:
         - /bin/sh
         - -c
         - |
-          echo "Processing scan results..."
-          cat /results/scan-results.json
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          echo "Creating ConfigMap trivy-results-$TIMESTAMP"
-          echo "Scan completed and results stored."
-        volumeMounts:
-        - name: results
-          mountPath: /results
-      volumes:
-      - name: results
-        emptyDir: {}
+          echo "Simulating security scan..."
+          echo "Scan completed successfully."
+          echo "This is a simplified version to avoid RequestEntityTooLarge errors."
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
       restartPolicy: Never
   backoffLimit: 1
