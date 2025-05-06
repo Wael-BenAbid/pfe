@@ -51,7 +51,7 @@ if ($minikubeStatus -match "host: Stopped") {
 $backupPod = kubectl get pod postgres-backup-management -n $namespace --ignore-not-found
 if (-not $backupPod) {
     Write-Message "Le pod de gestion des sauvegardes n'existe pas. Veuillez d'abord configurer les sauvegardes automatiques." -color $colorError
-    Write-Message "Exécutez: .\16-configurer-sauvegardes-automatiques.ps1" -color $colorInfo
+    Write-Message "Exécutez: .\08-configurer-sauvegardes-automatiques.ps1" -color $colorInfo
     exit 1
 }
 
