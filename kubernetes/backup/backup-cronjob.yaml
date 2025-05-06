@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: rh-system
+spec:
+  schedule: "0 2 * * *"  # Tous les jours à 2h du matin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: postgres-backup
+            image: postgres:15-alpine
+            command:
+            - /bin/bash
+            - /scripts/backup.sh
+            volumeMounts:
+            - name: backup-volume
+              mountPath: /backup
+            - name: backup-scripts
+              mountPath: /scripts
+            env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_PASSWORD
+            - name: AZURE_STORAGE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-backup-secrets
+                  key: AZURE_STORAGE_KEY
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-volume
+            persistentVolumeClaim:
+              claimName: postgres-backup-pvc
+          - name: backup-scripts
+            configMap:
+              name: postgres-backup-scripts
+              defaultMode: 0755
