@@ -2,7 +2,6 @@ apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: postgres-backup
-  namespace: rh-system
 spec:
   schedule: "0 2 * * *"  # Tous les jours à 2h du matin
   concurrencyPolicy: Forbid
@@ -25,15 +24,9 @@ spec:
               mountPath: /scripts
             env:
             - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secrets
-                  key: POSTGRES_PASSWORD
+              value: "postgres"
             - name: AZURE_STORAGE_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-backup-secrets
-                  key: AZURE_STORAGE_KEY
+              value: "default-key-for-development-only"
           restartPolicy: OnFailure
           volumes:
           - name: backup-volume
