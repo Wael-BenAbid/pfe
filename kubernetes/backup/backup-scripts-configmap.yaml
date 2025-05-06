@@ -5,7 +5,7 @@ metadata:
   namespace: rh-system
 data:
   backup.sh: |
-    #!/bin/bash
+    #!/bin/sh
     set -e
 
     # Configuration
@@ -32,15 +32,19 @@ data:
     # Vérifier si la sauvegarde a réussi
     if [ $? -eq 0 ]; then
       echo "Sauvegarde réussie: $BACKUP_FILE ($(du -h $BACKUP_FILE | cut -f1))"
-      
+
       # Télécharger la sauvegarde vers Azure Blob Storage si configuré
       if [ -n "$AZURE_STORAGE_KEY" ] && [ -n "$AZURE_STORAGE_ACCOUNT" ]; then
-        echo "Téléchargement de la sauvegarde vers Azure Blob Storage..."
-        az storage blob upload --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY --container-name $AZURE_CONTAINER --file $BACKUP_FILE --name $(basename $BACKUP_FILE)
-        if [ $? -eq 0 ]; then
-          echo "Téléchargement vers Azure Blob Storage réussi"
+        if command -v az >/dev/null 2>&1; then
+          echo "Téléchargement de la sauvegarde vers Azure Blob Storage..."
+          az storage blob upload --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY --container-name $AZURE_CONTAINER --file $BACKUP_FILE --name $(basename $BACKUP_FILE)
+          if [ $? -eq 0 ]; then
+            echo "Téléchargement vers Azure Blob Storage réussi"
+          else
+            echo "Échec du téléchargement vers Azure Blob Storage"
+          fi
         else
-          echo "Échec du téléchargement vers Azure Blob Storage"
+          echo "Azure CLI (az) n'est pas installé. Ignoré le téléchargement vers Azure Blob Storage."
         fi
       fi
     else
@@ -55,7 +59,7 @@ data:
     echo "Sauvegarde terminée à $(date)"
 
   restore.sh: |
-    #!/bin/bash
+    #!/bin/sh
     set -e
 
     # Configuration
@@ -79,10 +83,16 @@ data:
 
     # Vérifier si le fichier existe localement, sinon essayer de le télécharger depuis Azure
     if [ ! -f "$BACKUP_FILE" ] && [ -n "$AZURE_STORAGE_KEY" ] && [ -n "$AZURE_STORAGE_ACCOUNT" ]; then
-      echo "Le fichier $BACKUP_FILE n'existe pas localement. Tentative de téléchargement depuis Azure Blob Storage..."
-      az storage blob download --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY --container-name $AZURE_CONTAINER --name "$1" --file "$BACKUP_FILE"
-      if [ $? -ne 0 ]; then
-        echo "Échec du téléchargement depuis Azure Blob Storage"
+      if command -v az >/dev/null 2>&1; then
+        echo "Le fichier $BACKUP_FILE n'existe pas localement. Tentative de téléchargement depuis Azure Blob Storage..."
+        az storage blob download --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY --container-name $AZURE_CONTAINER --name "$1" --file "$BACKUP_FILE"
+        if [ $? -ne 0 ]; then
+          echo "Échec du téléchargement depuis Azure Blob Storage"
+          exit 1
+        fi
+      else
+        echo "Azure CLI (az) n'est pas installé. Impossible de télécharger depuis Azure Blob Storage."
+        echo "Veuillez installer Azure CLI ou utiliser une sauvegarde locale."
         exit 1
       fi
     fi
@@ -109,7 +119,7 @@ data:
     echo "Restauration terminée à $(date)"
 
   list-backups.sh: |
-    #!/bin/bash
+    #!/bin/sh
     set -e
 
     # Configuration
@@ -122,6 +132,10 @@ data:
 
     # Lister les sauvegardes dans Azure Blob Storage si configuré
     if [ -n "$AZURE_STORAGE_KEY" ] && [ -n "$AZURE_STORAGE_ACCOUNT" ]; then
-      echo -e "\nSauvegardes dans Azure Blob Storage:"
-      az storage blob list --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY --container-name $AZURE_CONTAINER --output table
+      if command -v az >/dev/null 2>&1; then
+        echo -e "\nSauvegardes dans Azure Blob Storage:"
+        az storage blob list --account-name $AZURE_STORAGE_ACCOUNT --account-key $AZURE_STORAGE_KEY --container-name $AZURE_CONTAINER --output table
+      else
+        echo -e "\nAzure CLI (az) n'est pas installé. Impossible de lister les sauvegardes dans Azure Blob Storage."
+      fi
     fi
