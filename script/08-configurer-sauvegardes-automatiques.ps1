@@ -147,5 +147,5 @@ if ($azureStorageKey) {
     Write-Message "Conteneur: $azureContainer" -color $colorInfo
 } else {
     Write-Message "Pour configurer le stockage externe sur Azure Blob Storage, exécutez ce script avec les paramètres suivants:" -color $colorWarning
-    Write-Message ".\16-configurer-sauvegardes-automatiques.ps1 -azureStorageKey <votre_clé> -azureStorageAccount <votre_compte> -azureContainer <votre_conteneur>" -color $colorWarning
+    Write-Message ".\08-configurer-sauvegardes-automatiques.ps1 -azureStorageKey <votre_clé> -azureStorageAccount <votre_compte> -azureContainer <votre_conteneur>" -color $colorWarning
 }

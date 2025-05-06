@@ -34,7 +34,7 @@ if ($minikubeStatus -match "host: Stopped") {
 $certManagerPods = kubectl get pods -n cert-manager -l app=cert-manager --ignore-not-found
 if (-not $certManagerPods) {
     Write-Message "cert-manager n'est pas installé. Installation..." -color $colorWarning
-    & .\script\19-installer-cert-manager-sans-helm.ps1
+    & .\script\10-installer-cert-manager.ps1
 } else {
     Write-Message "cert-manager est déjà installé." -color $colorInfo
 }
