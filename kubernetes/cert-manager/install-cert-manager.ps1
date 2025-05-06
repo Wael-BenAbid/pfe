@@ -15,11 +15,11 @@ function Write-Message {
     param(
         [Parameter(Mandatory=$true)]
         [string]$message,
-        
+
         [Parameter(Mandatory=$false)]
         [string]$color = "White"
     )
-    
+
     Write-Host $message -ForegroundColor $color
 }
 
@@ -43,19 +43,20 @@ if ($minikubeStatus -match "host: Stopped") {
 Write-Message "Création du namespace cert-manager..." -color $colorInfo
 kubectl create namespace cert-manager --dry-run=client -o yaml | kubectl apply -f -
 
-# Ajouter le repo Helm de cert-manager
-Write-Message "Ajout du repo Helm de cert-manager..." -color $colorInfo
-helm repo add jetstack https://charts.jetstack.io
-helm repo update
+# Installer cert-manager en utilisant les manifestes YAML
+Write-Message "Installation de cert-manager en utilisant les manifestes YAML..." -color $colorInfo
 
-# Installer cert-manager avec les CRDs
-Write-Message "Installation de cert-manager..." -color $colorInfo
-helm install cert-manager jetstack/cert-manager `
-    --namespace cert-manager `
-    --version v1.14.3 `
-    --set installCRDs=true `
-    --set prometheus.enabled=true `
-    --set webhook.timeoutSeconds=30
+# Télécharger le manifeste cert-manager
+$certManagerVersion = "v1.14.3"
+$certManagerUrl = "https://github.com/cert-manager/cert-manager/releases/download/$certManagerVersion/cert-manager.yaml"
+$certManagerYaml = "cert-manager.yaml"
+
+Write-Message "Téléchargement du manifeste cert-manager $certManagerVersion..." -color $colorInfo
+Invoke-WebRequest -Uri $certManagerUrl -OutFile $certManagerYaml
+
+# Appliquer le manifeste
+Write-Message "Application du manifeste cert-manager..." -color $colorInfo
+kubectl apply -f $certManagerYaml
 
 # Attendre que cert-manager soit prêt
 Write-Message "Attente que cert-manager soit prêt..." -color $colorInfo
