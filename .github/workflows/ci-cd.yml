@@ -195,7 +195,7 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
+          version: 'v1.26.3'  # Utiliser la même version que Kubernetes dans Minikube
 
       - name: Verify kubectl installation
         run: |
@@ -206,12 +206,15 @@ jobs:
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
-          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
+          minikube-version: 'v1.30.1'  # Utiliser une version plus stable
+          kubernetes-version: 'v1.26.3'  # Utiliser une version plus stable
           driver: 'docker'
+          start-args: '--alsologtostderr -v=8'  # Ajouter des logs détaillés pour le débogage
 
-      - name: Check Kubernetes connection
+      - name: Check Minikube and Kubernetes versions
         run: |
+          minikube version
+          kubectl version
           kubectl cluster-info
           kubectl get nodes
 
@@ -359,15 +362,21 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
+          version: 'v1.26.3'  # Utiliser la même version que Kubernetes dans Minikube
+
+      - name: Verify kubectl installation
+        run: |
+          kubectl version --client
+          which kubectl || echo "kubectl not found in PATH"
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
-          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
+          minikube-version: 'v1.30.1'  # Utiliser une version plus stable
+          kubernetes-version: 'v1.26.3'  # Utiliser une version plus stable
           driver: 'docker'
+          start-args: '--alsologtostderr -v=8'  # Ajouter des logs détaillés pour le débogage
 
       - name: Configure Minikube
         run: |
@@ -449,18 +458,26 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
+          version: 'v1.26.3'  # Utiliser la même version que Kubernetes dans Minikube
+
+      - name: Verify kubectl installation
+        run: |
+          kubectl version --client
+          which kubectl || echo "kubectl not found in PATH"
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
-          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
+          minikube-version: 'v1.30.1'  # Utiliser une version plus stable
+          kubernetes-version: 'v1.26.3'  # Utiliser une version plus stable
           driver: 'docker'
+          start-args: '--alsologtostderr -v=8'  # Ajouter des logs détaillés pour le débogage
 
-      - name: Check Kubernetes connection
+      - name: Check Minikube and Kubernetes versions
         run: |
+          minikube version
+          kubectl version
           kubectl cluster-info
           kubectl get nodes
 
@@ -499,18 +516,26 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
+          version: 'v1.26.3'  # Utiliser la même version que Kubernetes dans Minikube
+
+      - name: Verify kubectl installation
+        run: |
+          kubectl version --client
+          which kubectl || echo "kubectl not found in PATH"
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
-          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
+          minikube-version: 'v1.30.1'  # Utiliser une version plus stable
+          kubernetes-version: 'v1.26.3'  # Utiliser une version plus stable
           driver: 'docker'
+          start-args: '--alsologtostderr -v=8'  # Ajouter des logs détaillés pour le débogage
 
-      - name: Check Kubernetes connection
+      - name: Check Minikube and Kubernetes versions
         run: |
+          minikube version
+          kubectl version
           kubectl cluster-info
           kubectl get nodes
 
@@ -586,18 +611,26 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
+          version: 'v1.26.3'  # Utiliser la même version que Kubernetes dans Minikube
+
+      - name: Verify kubectl installation
+        run: |
+          kubectl version --client
+          which kubectl || echo "kubectl not found in PATH"
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
-          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
+          minikube-version: 'v1.30.1'  # Utiliser une version plus stable
+          kubernetes-version: 'v1.26.3'  # Utiliser une version plus stable
           driver: 'docker'
+          start-args: '--alsologtostderr -v=8'  # Ajouter des logs détaillés pour le débogage
 
-      - name: Check Kubernetes connection and create namespace
+      - name: Check Minikube and Kubernetes versions
         run: |
+          minikube version
+          kubectl version
           kubectl cluster-info
           kubectl get nodes
 
@@ -664,18 +697,26 @@ jobs:
       - name: Set up kubectl
         uses: azure/setup-kubectl@v3
         with:
-          version: 'v1.28.0'  # Spécifier une version exacte au lieu de 'latest'
+          version: 'v1.26.3'  # Utiliser la même version que Kubernetes dans Minikube
+
+      - name: Verify kubectl installation
+        run: |
+          kubectl version --client
+          which kubectl || echo "kubectl not found in PATH"
 
       # Utilisation de minikube pour les tests locaux
       - name: Set up Minikube
         uses: medyagh/setup-minikube@master
         with:
-          minikube-version: 'v1.32.0'  # Spécifier une version exacte au lieu de 'latest'
-          kubernetes-version: 'v1.28.0'  # Spécifier une version exacte compatible avec kubectl
+          minikube-version: 'v1.30.1'  # Utiliser une version plus stable
+          kubernetes-version: 'v1.26.3'  # Utiliser une version plus stable
           driver: 'docker'
+          start-args: '--alsologtostderr -v=8'  # Ajouter des logs détaillés pour le débogage
 
-      - name: Check Kubernetes connection
+      - name: Check Minikube and Kubernetes versions
         run: |
+          minikube version
+          kubectl version
           kubectl cluster-info
           kubectl get nodes
 
