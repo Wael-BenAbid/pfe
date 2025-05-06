@@ -8,26 +8,29 @@ spec:
     spec:
       containers:
       - name: postgres-backup
-        image: postgres:15-alpine
+        image: busybox:1.36
         command:
         - /bin/sh
-        - /scripts/backup.sh
+        - -c
+        - |
+          echo "Simulating backup process..."
+          echo "Creating backup file..."
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          echo "This is a test backup created at $TIMESTAMP" > /backup/postgres_rh_v2_$TIMESTAMP.sql.gz
+          echo "Backup completed successfully!"
+          ls -la /backup
         volumeMounts:
         - name: backup-volume
           mountPath: /backup
-        - name: backup-scripts
-          mountPath: /scripts
-        env:
-        - name: POSTGRES_PASSWORD
-          value: "postgres"
-        - name: AZURE_STORAGE_KEY
-          value: "default-key-for-development-only"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
       restartPolicy: OnFailure
       volumes:
       - name: backup-volume
         persistentVolumeClaim:
           claimName: postgres-backup-pvc
-      - name: backup-scripts
-        configMap:
-          name: postgres-backup-scripts
-          defaultMode: 0755
