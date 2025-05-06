@@ -20,11 +20,11 @@ function Write-Message {
     param(
         [Parameter(Mandatory=$true)]
         [string]$message,
-        
+
         [Parameter(Mandatory=$false)]
         [string]$color = "White"
     )
-    
+
     Write-Host $message -ForegroundColor $color
 }
 
@@ -45,10 +45,7 @@ if ($minikubeStatus -match "host: Stopped") {
 }
 
 # Obtenir l'adresse IP locale
-$localIP = (Get-NetIPAddress | Where-Object { $_.AddressFamily -eq 'IPv4' -and $_.PrefixOrigin -eq 'Dhcp' }).IPAddress
-if (-not $localIP) {
-    $localIP = (Get-NetIPAddress | Where-Object { $_.AddressFamily -eq 'IPv4' -and $_.InterfaceAlias -match 'Ethernet|Wi-Fi' -and $_.IPAddress -notmatch '^169\.254\.' }).IPAddress | Select-Object -First 1
-}
+$localIP = "192.168.1.106"  # Adresse IP fixe pour éviter les problèmes de détection
 
 if (-not $localIP) {
     Write-Message "Impossible de déterminer l'adresse IP locale. Veuillez la spécifier manuellement." -color $colorError
@@ -82,24 +79,37 @@ if ($portForwardProcesses) {
     $portForwardProcesses | ForEach-Object { Stop-Process -Id $_.Id -Force }
 }
 
-# Exposer le backend
-Start-Process -FilePath "kubectl" -ArgumentList "port-forward -n rh-system svc/rh-backend 8000:8000 --address 0.0.0.0" -WindowStyle Hidden
+# Configurer les services NodePort
+Write-Message "Configuration des services NodePort..." -color $colorInfo
+kubectl patch service rh-frontend -n rh-system -p '{"spec": {"type": "NodePort", "ports": [{"port": 80, "nodePort": 30090}]}}' | Out-Null
+kubectl patch service rh-backend -n rh-system -p '{"spec": {"type": "NodePort", "ports": [{"port": 8000, "nodePort": 30091}]}}' | Out-Null
 
-# Exposer le frontend
-Start-Process -FilePath "kubectl" -ArgumentList "port-forward -n rh-system svc/rh-frontend 5173:80 --address 0.0.0.0" -WindowStyle Hidden
+# Démarrer le tunnel Minikube
+Write-Message "Démarrage du tunnel Minikube en arrière-plan..." -color $colorInfo
+Start-Process -FilePath "minikube" -ArgumentList "tunnel" -WindowStyle Hidden
 
 # Afficher les instructions pour accéder à l'application
 Write-Message "L'application est maintenant accessible sur le réseau externe!" -color $colorSuccess
+Write-Message "Adresse IP locale: $localIP" -color $colorInfo
+# Obtenir l'adresse IP de Minikube
+$minikubeIP = "192.168.49.2"  # Adresse IP fixe de Minikube
+Write-Message "Adresse IP de Minikube: $minikubeIP" -color $colorInfo
+
 if ($useHttps) {
-    Write-Message "Frontend: https://$localIP:5173/" -color $colorSuccess
-    Write-Message "Backend API: https://$localIP:8000/api/" -color $colorSuccess
-    Write-Message "Backend Admin: https://$localIP:8000/admin/" -color $colorSuccess
+    Write-Message "Frontend via adresse IP locale: https://$($localIP):30090/" -color $colorSuccess
+    Write-Message "Backend API via adresse IP locale: https://$($localIP):30091/api/" -color $colorSuccess
+    Write-Message "Backend Admin via adresse IP locale: https://$($localIP):30091/admin/" -color $colorSuccess
     Write-Message "Note: Comme nous utilisons un certificat auto-signé, votre navigateur affichera un avertissement de sécurité." -color $colorWarning
 } else {
-    Write-Message "Frontend: http://$localIP:5173/" -color $colorSuccess
-    Write-Message "Backend API: http://$localIP:8000/api/" -color $colorSuccess
-    Write-Message "Backend Admin: http://$localIP:8000/admin/" -color $colorSuccess
+    Write-Message "Frontend via adresse IP locale: http://$($localIP):30090/" -color $colorSuccess
+    Write-Message "Backend API via adresse IP locale: http://$($localIP):30091/api/" -color $colorSuccess
+    Write-Message "Backend Admin via adresse IP locale: http://$($localIP):30091/admin/" -color $colorSuccess
 }
+
+Write-Message "Vous pouvez également essayer d'accéder à l'application via l'adresse IP de Minikube:" -color $colorInfo
+Write-Message "Frontend via Minikube: http://$($minikubeIP):30090/" -color $colorSuccess
+Write-Message "Backend API via Minikube: http://$($minikubeIP):30091/api/" -color $colorSuccess
+Write-Message "Backend Admin via Minikube: http://$($minikubeIP):30091/admin/" -color $colorSuccess
 
 Write-Message "Pour accéder à l'application depuis un autre appareil sur le même réseau WiFi, utilisez les URLs ci-dessus." -color $colorInfo
 Write-Message "Pour arrêter l'exposition, fermez cette fenêtre ou exécutez:" -color $colorInfo
@@ -107,12 +117,19 @@ Write-Message "Get-Process | Where-Object { `$_.ProcessName -eq 'kubectl' -and `
 
 # Créer un QR code pour faciliter l'accès depuis un appareil mobile
 Write-Message "Création d'un QR code pour faciliter l'accès depuis un appareil mobile..." -color $colorInfo
-$frontendUrl = if ($useHttps) { "https://$localIP:5173/" } else { "http://$localIP:5173/" }
+$frontendUrl = if ($useHttps) { "https://$($localIP):30090/" } else { "http://$($localIP):30090/" }
 $qrCodeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=$frontendUrl"
 
-Write-Message "Vous pouvez scanner ce QR code avec votre téléphone pour accéder à l'application:" -color $colorInfo
-Write-Message "Ouvrez ce lien dans votre navigateur pour voir le QR code:" -color $colorInfo
-Write-Message $qrCodeUrl -color $colorSuccess
+# Créer un QR code pour l'accès via Minikube
+$frontendMinikubeUrl = "http://$($minikubeIP):30090/"
+$qrCodeMinikubeUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=$frontendMinikubeUrl"
 
-# Ouvrir le QR code dans le navigateur
+Write-Message "Vous pouvez scanner ces QR codes avec votre téléphone pour accéder à l'application:" -color $colorInfo
+Write-Message "QR code pour l'adresse IP locale:" -color $colorInfo
+Write-Message $qrCodeUrl -color $colorSuccess
+Write-Message "QR code pour l'adresse IP de Minikube:" -color $colorInfo
+Write-Message $qrCodeMinikubeUrl -color $colorSuccess
+
+# Ouvrir les QR codes dans le navigateur
 Start-Process $qrCodeUrl
+Start-Process $qrCodeMinikubeUrl
