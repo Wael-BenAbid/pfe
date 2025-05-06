@@ -15,11 +15,11 @@ function Write-Message {
     param(
         [Parameter(Mandatory=$true)]
         [string]$message,
-        
+
         [Parameter(Mandatory=$false)]
         [string]$color = "White"
     )
-    
+
     Write-Host $message -ForegroundColor $color
 }
 
@@ -31,10 +31,24 @@ if ($minikubeStatus -match "host: Stopped") {
 }
 
 # Vérifier si cert-manager est installé
-$certManagerPods = kubectl get pods -n cert-manager -l app.kubernetes.io/instance=cert-manager --ignore-not-found
+$certManagerPods = kubectl get pods -n cert-manager -l app=cert-manager --ignore-not-found
 if (-not $certManagerPods) {
     Write-Message "cert-manager n'est pas installé. Installation..." -color $colorWarning
+
+    # Vérifier si Helm est installé
+    try {
+        $helmVersion = helm version --short
+        Write-Message "Helm est installé: $helmVersion" -color $colorInfo
+    } catch {
+        Write-Message "Helm n'est pas installé. Installation de Helm..." -color $colorWarning
+        & .\script\18-installer-helm.ps1
+    }
+
     & .\kubernetes\cert-manager\install-cert-manager.ps1
+
+    # Attendre que cert-manager soit complètement initialisé
+    Write-Message "Attente supplémentaire pour s'assurer que cert-manager est complètement initialisé..." -color $colorInfo
+    Start-Sleep -Seconds 30
 } else {
     Write-Message "cert-manager est déjà installé." -color $colorInfo
 }
