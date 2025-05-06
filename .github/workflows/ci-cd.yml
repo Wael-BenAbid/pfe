@@ -544,6 +544,20 @@ jobs:
 
       - name: Update Ingress for HTTPS
         run: |
+          # Créer le namespace s'il n'existe pas
+          kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+          # Vérifier que le namespace existe
+          kubectl get namespace ${{ env.KUBERNETES_NAMESPACE }}
+
+          # Vérifier que l'ingress-controller est installé
+          kubectl get pods -n ingress-nginx || (
+            echo "Ingress controller not found, installing..."
+            kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.8.2/deploy/static/provider/cloud/deploy.yaml
+            # Attendre que l'ingress-controller soit prêt
+            sleep 30
+          )
+
           # Appliquer l'ingress avec TLS
           kubectl apply -f kubernetes/ingress/ingress-tls.yaml -n ${{ env.KUBERNETES_NAMESPACE }}
 
