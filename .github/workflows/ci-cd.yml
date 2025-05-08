@@ -372,7 +372,7 @@ jobs:
           kubectl rollout status deployment/rh-frontend -n ${{ env.KUBERNETES_NAMESPACE }} --timeout=600s
 
       - name: Deploy Ingress
-        run: kubectl apply -f kubernetes/ingress/
+        run: kubectl apply -f kubernetes/ingress/ingress.yaml
 
       - name: Deploy Autoscaling
         run: kubectl apply -f kubernetes/autoscaling/
@@ -704,13 +704,13 @@ jobs:
           # Vérifier l'état des pods ingress-nginx
           kubectl get pods -n ingress-nginx
 
-          # Vérifier le contenu du fichier ingress-tls.yaml
-          echo "Contenu du fichier ingress-tls.yaml:"
-          cat kubernetes/ingress/ingress-tls.yaml || echo "Fichier non trouvé"
+          # Vérifier le contenu du fichier ingress.yaml
+          echo "Contenu du fichier ingress.yaml:"
+          cat kubernetes/ingress/ingress.yaml || echo "Fichier non trouvé"
 
           # Appliquer l'ingress avec TLS (avec --validate=false pour contourner les webhooks)
           echo "Application de l'ingress avec TLS..."
-          kubectl apply -f kubernetes/ingress/ingress-tls.yaml -n ${{ env.KUBERNETES_NAMESPACE }} --validate=false || true
+          kubectl apply -f kubernetes/ingress/ingress.yaml -n ${{ env.KUBERNETES_NAMESPACE }} --validate=false || true
 
           # Attendre que l'ingress soit créé
           echo "Attente que l'ingress soit créé..."

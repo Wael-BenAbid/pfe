@@ -9,10 +9,17 @@ metadata:
         add_header Cache-Control "public, max-age=31536000";
         try_files $uri $uri/ =404;
       }
+    # Annotation pour cert-manager
+    cert-manager.io/cluster-issuer: "selfsigned-issuer"
   name: rh-system-ingress
   namespace: rh-system
 spec:
   ingressClassName: nginx
+  # Configuration TLS
+  tls:
+  - hosts:
+    - rh-system.local
+    secretName: rh-system-tls
   rules:
   - host: rh-system.local  # Remplacez par votre domaine réel en production
     http:
