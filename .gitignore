@@ -46,7 +46,18 @@ project/.env
 */secrets.py
 # Fichiers spécifiques contenant des informations sensibles
 back-end/env.py
-kubernetes/secrets/backend-secrets.yaml
+
+# Tous les fichiers de secrets Kubernetes
+kubernetes/secrets/*.yaml
+!kubernetes/secrets/*-template.yaml
+kubernetes/monitoring/exporters/*-secret.yaml
+!kubernetes/monitoring/exporters/*-secret-template.yaml
+kubernetes/monitoring/grafana/*-secret.yaml
+!kubernetes/monitoring/grafana/*-secret-template.yaml
+kubernetes/logging/elasticsearch/*-secret.yaml
+!kubernetes/logging/elasticsearch/*-secret-template.yaml
+kubernetes/backup/*-secrets.yaml
+!kubernetes/backup/*-secrets-template.yaml
 
 # Fichiers de sauvegarde de base de données
 db_backups/

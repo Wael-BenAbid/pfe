@@ -25,7 +25,6 @@ data:
     echo "Démarrage de la sauvegarde de la base de données $POSTGRES_DB à $(date)"
 
     # Exécuter la sauvegarde et la compresser
-    echo "Tentative de sauvegarde avec PGPASSWORD=$POSTGRES_PASSWORD pg_dump -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB"
 
     # Créer un fichier de test pour simuler une sauvegarde réussie
     echo "Ceci est une sauvegarde de test" > $BACKUP_FILE

@@ -52,7 +52,7 @@ jobs:
         env:
           POSTGRES_DB: rh_v2
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: "12345"
+          POSTGRES_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
         ports:
           - "5432:5432"
         options: >-
@@ -81,7 +81,7 @@ jobs:
           echo "ALLOWED_HOSTS=localhost,127.0.0.1,rh-backend,rh-frontend" >> .env
           echo "DATABASE_NAME=rh_v2" >> .env
           echo "DATABASE_USER=postgres" >> .env
-          echo "DATABASE_PASSWORD=12345" >> .env
+          echo "DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}" >> .env
           echo "DATABASE_HOST=localhost" >> .env
           echo "DATABASE_PORT=5432" >> .env
           echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER }}" >> .env
@@ -93,7 +93,7 @@ jobs:
         run: python manage.py test
         working-directory: ./back-end
         env:
-          DATABASE_URL: "postgresql://postgres:12345@localhost:5432/rh_v2"
+          DATABASE_URL: "postgresql://postgres:${{ secrets.DATABASE_PASSWORD }}@localhost:5432/rh_v2"
 
   security-scan:
     runs-on: ubuntu-latest
@@ -193,7 +193,7 @@ jobs:
             EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD }}
             SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}
           secrets: |
-            "DATABASE_URL=postgresql://postgres:12345@postgres-db:5432/rh_v2"
+            "DATABASE_URL=postgresql://postgres:${{ secrets.DATABASE_PASSWORD }}@postgres-db:5432/rh_v2"
 
   deploy-kubernetes:
     needs: [build-push]
@@ -273,13 +273,13 @@ jobs:
           # Créer les secrets Kubernetes
           kubectl create secret generic postgres-secrets \
             --namespace=${{ env.KUBERNETES_NAMESPACE }} \
-            --from-literal=POSTGRES_PASSWORD="12345" \
+            --from-literal=POSTGRES_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" \
             --dry-run=client -o yaml | kubectl apply -f -
 
           kubectl create secret generic rh-backend-secrets \
             --namespace=${{ env.KUBERNETES_NAMESPACE }} \
             --from-literal=SECRET_KEY="$SECRET_KEY" \
-            --from-literal=DATABASE_PASSWORD="12345" \
+            --from-literal=DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" \
             --from-literal=EMAIL_HOST_USER="$EMAIL_HOST_USER" \
             --from-literal=EMAIL_HOST_PASSWORD="$EMAIL_HOST_PASSWORD" \
             --from-literal=SENDGRID_API_KEY="$SENDGRID_API_KEY" \
@@ -833,7 +833,7 @@ jobs:
           if ! kubectl get secret postgres-secrets -n ${{ env.KUBERNETES_NAMESPACE }} &>/dev/null; then
             kubectl create secret generic postgres-secrets \
               --namespace=${{ env.KUBERNETES_NAMESPACE }} \
-              --from-literal=POSTGRES_PASSWORD="postgres" \
+              --from-literal=POSTGRES_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" \
               --dry-run=client -o yaml | kubectl apply -f - --validate=false || true
           fi
 

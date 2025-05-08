@@ -139,7 +139,6 @@ const ApplicationForm: React.FC = () => {
 
   const handleChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when field is changed
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
@@ -147,7 +146,6 @@ const ApplicationForm: React.FC = () => {
 
   const handleFileChange = (file: File | null) => {
     setFormData((prev) => ({ ...prev, cv_file: file }));
-    // Clear error when file is changed
     if (errors.cv_file) {
       setErrors((prev) => ({ ...prev, cv_file: undefined }));
     }
@@ -155,15 +153,10 @@ const ApplicationForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateStep(currentStep)) {
-      return;
-    }
+    if (!validateStep(currentStep)) return;
 
     setIsSubmitting(true);
-
     try {
-      // Create form data for file upload
       const submitData = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (key === "cv_file" && value) {
@@ -183,13 +176,10 @@ const ApplicationForm: React.FC = () => {
         throw new Error(errorData.detail || "Submission failed");
       }
 
-      // Navigate to success page
       navigate("/application-success");
     } catch (error) {
       console.error("Submission error:", error);
-      alert(
-        "There was an error submitting your application. Please try again."
-      );
+      alert("There was an error submitting your application. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
