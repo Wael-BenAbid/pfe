@@ -27,7 +27,7 @@ const ApplicationsReview: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] =
     useState<Application | null>(null);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("pending");
   const [processingId, setProcessingId] = useState<number | null>(null);
 
   // Fonction pour récupérer les applications
@@ -188,7 +188,7 @@ const ApplicationsReview: React.FC = () => {
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <h2 className="text-lg font-medium text-gray-900 mb-2 sm:mb-0">
-              All Applications
+              Pending Applications
             </h2>
             <div className="flex space-x-2">
               <Button
