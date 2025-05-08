@@ -8,7 +8,6 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import InternDashboard from './pages/intern/InternDashboard';
 import PendingApproval from './pages/auth/PendingApproval';
-import ApplicationPending from './pages/ApplicationPending';
 import Login from './pages/auth/Login';
 import ApplicationSuccess from './pages/ApplicationSuccess';
 import ForgotPassword from './pages/ForgotPassword';
@@ -22,7 +21,7 @@ function App() {
         <NotificationProvider>
           <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <Routes>
-            {/* Public routes */}
+            {/* Routes publiques */}
             <Route path="/" element={<Home />} />
             <Route path="/apply" element={<ApplicationForm />} />
             <Route path="/login" element={<Login />} />
@@ -32,37 +31,11 @@ function App() {
             <Route path="/pending-approval" element={<PendingApproval />} />
             <Route path="/not-found" element={<NotFound />} />
 
-            {/* Protected routes - Admin only */}
-            <Route
-              path="/admin/*"
-              element={
-                <ProtectedRoute userType="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
+            {/* Routes protégées */}
+            <Route path="/admin/*" element={<ProtectedRoute userType="admin"><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/employee/*" element={<ProtectedRoute userType="employee"><EmployeeDashboard /></ProtectedRoute>} />
+            <Route path="/intern/*" element={<ProtectedRoute userType="intern"><InternDashboard /></ProtectedRoute>} />
 
-            {/* Protected routes - Employee only */}
-            <Route
-              path="/employee/*"
-              element={
-                <ProtectedRoute userType="employee">
-                  <EmployeeDashboard />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Protected routes - Intern only */}
-            <Route
-              path="/intern/*"
-              element={
-                <ProtectedRoute userType="intern">
-                  <InternDashboard />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* 404 page */}
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Router>

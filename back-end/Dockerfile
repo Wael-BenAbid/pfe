@@ -22,8 +22,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Supprimer le dossier staticfiles_v2 s'il existe
-RUN rm -rf staticfiles_v2
+# Nettoyer les fichiers statiques
+RUN rm -rf staticfiles_v2 static
 
 # Expose port
 EXPOSE 8000

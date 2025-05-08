@@ -15,6 +15,9 @@ import os
 import re
 from dotenv import load_dotenv
 from datetime import timedelta
+
+# Charger les variables d'environnement depuis le fichier .env
+load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -176,22 +179,7 @@ SIMPLE_JWT = {
 }
 
 # Email Configuration
-# Configuration des emails
-# En développement, on peut utiliser le backend de console pour voir les emails dans la console
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-# Configuration SendGrid pour l'envoi d'emails
-SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY', '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')
-
-# Désactiver le backend d'email standard de Django
-# Nous utiliserons uniquement l'API SendGrid directement
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
 EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'
-
-# Adresse d'expéditeur par défaut (vérifiée dans SendGrid)
-DEFAULT_FROM_EMAIL = 'RH System <waelbenabid1@gmail.com>'
-
-# Log des informations de configuration
-print(f"SendGrid configuré: {'Oui' if SENDGRID_API_KEY else 'Non'}")
-
-# URL du frontend pour les liens dans les emails
-FRONTEND_URL = 'http://localhost:5173'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'RH System <noreply@example.com>')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
