@@ -2,5 +2,10 @@ apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
   name: selfsigned-issuer
+  annotations:
+    cert-manager.io/description: "Émetteur auto-signé pour le développement"
 spec:
-  selfSigned: {}
+  selfSigned:
+    # Points de distribution de CRL (Certificate Revocation List)
+    crlDistributionPoints:
+      - http://rh-system.local/crl
