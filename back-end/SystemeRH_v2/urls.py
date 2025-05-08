@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.shortcuts import redirect
 from rest_framework.routers import DefaultRouter
 from Rh_app.views import (
@@ -39,7 +39,7 @@ router.register(r'notifications', NotificationViewSet)
 
 
 def redirect_to_react(request):
-    return redirect('http://127.0.0.1:5000/')
+    return redirect('/')
 
 urlpatterns = [
     path('', redirect_to_react, name='home'),  # This will redirect the root URL

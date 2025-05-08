@@ -12,8 +12,8 @@ RUN npm ci
 # Copy project files
 COPY . .
 
-# Create .env file for production
-RUN echo "VITE_API_BASE_URL=http://localhost:8000/api" > .env.production
+# Configuration pour la production
+RUN echo "VITE_API_BASE_URL=/api" > .env.production
 
 # Build the app
 RUN npm run build

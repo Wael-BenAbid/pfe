@@ -23,28 +23,33 @@ Le projet est configuré pour utiliser une base de données PostgreSQL locale au
    ```
 3. Assurez-vous que l'utilisateur `postgres` avec le mot de passe `12345` a les droits nécessaires sur la base de données `rh_v2`.
 
-### Variables d'environnement
+### Variables d'environnement et informations sensibles
 
-Utilisez le script `setup-env.ps1` pour configurer automatiquement les variables d'environnement :
+#### Configuration des variables d'environnement
 
-```powershell
-./script/setup-env.ps1
+1. Copiez le fichier modèle pour créer votre fichier de configuration :
+
+```bash
+# Pour le backend
+cp back-end/.env.template back-end/.env
+
+# Pour le frontend
+cp project/.env.template project/.env
 ```
 
-Ce script :
-1. Crée un fichier `.env` dans le dossier `back-end` à partir du modèle `.env.template` s'il n'existe pas déjà
-2. Crée un fichier `.env` dans le dossier `project` s'il n'existe pas déjà
-3. Configure Git pour ignorer les modifications des fichiers `.env`
+2. Modifiez les fichiers `.env` avec vos propres valeurs :
 
-Après avoir exécuté le script, modifiez les fichiers `.env` avec vos propres valeurs :
-
-```powershell
+```bash
 # Ouvrez le fichier .env du backend dans votre éditeur préféré
 notepad back-end/.env
 
 # Ouvrez le fichier .env du frontend dans votre éditeur préféré
 notepad project/.env
 ```
+
+#### Gestion des informations sensibles
+
+Les fichiers `.env` contiennent des informations sensibles et ne doivent jamais être commités dans Git. Ils sont déjà ajoutés au fichier `.gitignore`.
 
 Le fichier `.env` du backend doit contenir les variables suivantes :
 - `SECRET_KEY` : Clé secrète Django
@@ -57,6 +62,13 @@ Le fichier `.env` du backend doit contenir les variables suivantes :
 - `DATABASE_PORT` : Port de la base de données
 - `SENDGRID_API_KEY` : Clé API SendGrid pour l'envoi d'emails
 - `DEFAULT_FROM_EMAIL` : Adresse email d'expéditeur par défaut
+
+#### Sécurité des clés API
+
+Pour des raisons de sécurité, il est recommandé de :
+1. Ne jamais partager vos clés API ou les inclure dans le code source
+2. Changer régulièrement vos clés API (tous les 3-6 mois)
+3. Utiliser des clés API différentes pour les environnements de développement et de production
 
 ### Configuration des emails
 
@@ -128,7 +140,7 @@ L'application sera accessible à :
 
 ```bash
 cd back-end
-pip insquitall -r rerements.txt
+pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```

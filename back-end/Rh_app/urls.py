@@ -52,7 +52,7 @@ urlpatterns = [
     path('auth/forgot-password/', forgot_password, name='forgot_password'),
     path('auth/reset-password/', reset_password, name='reset_password'),
 
-    # API Authentication endpoints (duplicated for compatibility)
+    # Endpoints d'authentification API
     path('api/auth/signup/', api_signup, name='api_signup_v2'),
     path('api/auth/login/', login_view, name='login_v2'),
     path('api/auth/logout/', api_logout, name='api_logout_v2'),
