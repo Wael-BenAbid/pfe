@@ -33,10 +33,11 @@ services:
       - DEBUG=True
       - DATABASE_NAME=rh_v2
       - DATABASE_USER=postgres
-      - DATABASE_PASSWORD=12345
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
       - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+      # Les informations sensibles comme DATABASE_PASSWORD, SECRET_KEY et SENDGRID_API_KEY
+      # doivent être définies dans le fichier .env, pas ici
     volumes:
       - ./back-end:/app
     networks:

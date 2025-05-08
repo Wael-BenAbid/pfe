@@ -25,9 +25,15 @@ spec:
               mountPath: /scripts
             env:
             - name: POSTGRES_PASSWORD
-              value: "postgres"
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_PASSWORD
             - name: AZURE_STORAGE_KEY
-              value: "default-key-for-development-only"
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-backup-secrets
+                  key: AZURE_STORAGE_KEY
           restartPolicy: OnFailure
           volumes:
           - name: backup-volume
