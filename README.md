@@ -25,17 +25,28 @@ Le projet est configuré pour utiliser une base de données PostgreSQL locale au
 
 ### Variables d'environnement
 
-Vous devez créer un fichier `.env` dans le dossier `back-end` pour configurer l'application. Un fichier d'exemple `.env.example` est fourni comme modèle :
+Utilisez le script `setup-env.ps1` pour configurer automatiquement les variables d'environnement :
 
-```bash
-# Copiez le fichier d'exemple
-cp back-end/.env.example back-end/.env
-
-# Modifiez le fichier avec vos propres valeurs
-nano back-end/.env  # ou utilisez votre éditeur préféré
+```powershell
+./script/setup-env.ps1
 ```
 
-Le fichier `.env` doit contenir les variables suivantes :
+Ce script :
+1. Crée un fichier `.env` dans le dossier `back-end` à partir du modèle `.env.template` s'il n'existe pas déjà
+2. Crée un fichier `.env` dans le dossier `project` s'il n'existe pas déjà
+3. Configure Git pour ignorer les modifications des fichiers `.env`
+
+Après avoir exécuté le script, modifiez les fichiers `.env` avec vos propres valeurs :
+
+```powershell
+# Ouvrez le fichier .env du backend dans votre éditeur préféré
+notepad back-end/.env
+
+# Ouvrez le fichier .env du frontend dans votre éditeur préféré
+notepad project/.env
+```
+
+Le fichier `.env` du backend doit contenir les variables suivantes :
 - `SECRET_KEY` : Clé secrète Django
 - `DEBUG` : Mode de débogage (True/False)
 - `ALLOWED_HOSTS` : Hôtes autorisés
@@ -44,8 +55,8 @@ Le fichier `.env` doit contenir les variables suivantes :
 - `DATABASE_PASSWORD` : Mot de passe de la base de données
 - `DATABASE_HOST` : Hôte de la base de données
 - `DATABASE_PORT` : Port de la base de données
-- `EMAIL_HOST_USER` : Adresse email pour l'envoi d'emails
-- `EMAIL_HOST_PASSWORD` : Mot de passe d'application pour l'envoi d'emails
+- `SENDGRID_API_KEY` : Clé API SendGrid pour l'envoi d'emails
+- `DEFAULT_FROM_EMAIL` : Adresse email d'expéditeur par défaut
 
 ### Configuration des emails
 

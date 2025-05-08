@@ -41,6 +41,8 @@ back-end/.env
 project/.env
 */settings_local.py
 */.env.*
+!*.env.template
+!*.env.example
 */secrets.py
 # Fichiers spécifiques contenant des informations sensibles
 back-end/env.py
