@@ -15,11 +15,11 @@ function Write-Message {
     param(
         [Parameter(Mandatory=$true)]
         [string]$message,
-        
+
         [Parameter(Mandatory=$false)]
         [string]$color = "White"
     )
-    
+
     Write-Host $message -ForegroundColor $color
 }
 
@@ -38,12 +38,12 @@ if (-not (Test-Path $backendEnvPath)) {
 $frontendEnvPath = "project/.env"
 if (-not (Test-Path $frontendEnvPath)) {
     Write-Message "Le fichier $frontendEnvPath n'existe pas. Création..." -color $colorInfo
-    
+
     # Créer le fichier .env pour le frontend
     @"
 VITE_API_BASE_URL=http://localhost:8000/api
 "@ | Out-File -FilePath $frontendEnvPath -Encoding utf8
-    
+
     Write-Message "Fichier $frontendEnvPath créé avec succès." -color $colorSuccess
 } else {
     Write-Message "Le fichier $frontendEnvPath existe déjà." -color $colorInfo
@@ -51,8 +51,23 @@ VITE_API_BASE_URL=http://localhost:8000/api
 
 # Configurer Git pour ignorer les modifications des fichiers .env
 Write-Message "Configuration de Git pour ignorer les modifications des fichiers .env..." -color $colorInfo
-git update-index --assume-unchanged back-end/.env
-git update-index --assume-unchanged project/.env
+
+# Vérifier si les fichiers sont suivis par Git avant d'appliquer assume-unchanged
+$backendEnvTracked = git ls-files --error-unmatch back-end/.env 2>$null
+if ($?) {
+    git update-index --assume-unchanged back-end/.env
+    Write-Message "Le fichier back-end/.env est maintenant ignoré par Git." -color $colorSuccess
+} else {
+    Write-Message "Le fichier back-end/.env n'est pas suivi par Git." -color $colorInfo
+}
+
+$frontendEnvTracked = git ls-files --error-unmatch project/.env 2>$null
+if ($?) {
+    git update-index --assume-unchanged project/.env
+    Write-Message "Le fichier project/.env est maintenant ignoré par Git." -color $colorSuccess
+} else {
+    Write-Message "Le fichier project/.env n'est pas suivi par Git." -color $colorInfo
+}
 
 Write-Message "Configuration terminée avec succès!" -color $colorSuccess
 Write-Message "Vous pouvez maintenant utiliser 'git add .' sans risquer de commiter vos fichiers .env" -color $colorSuccess
