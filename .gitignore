@@ -37,6 +37,17 @@ back-end/docker-entrypoint.sh
 .env.development.local
 .env.test.local
 .env.production.local
+back-end/.env
+project/.env
+*/settings_local.py
+*/.env.*
+*/secrets.py
+# Fichiers spécifiques contenant des informations sensibles
+back-end/env.py
+kubernetes/secrets/backend-secrets.yaml
+
+# Fichiers de sauvegarde de base de données
+db_backups/
 
 # Node
 node_modules/
