@@ -25,22 +25,27 @@ Le projet est configuré pour utiliser une base de données PostgreSQL locale au
 
 ### Variables d'environnement
 
-Le fichier `.env` dans le dossier `back-end` est déjà configuré pour utiliser la base de données locale :
+Vous devez créer un fichier `.env` dans le dossier `back-end` pour configurer l'application. Un fichier d'exemple `.env.example` est fourni comme modèle :
 
-```
-SECRET_KEY=django-insecure-4!@e#some$%random^&characters
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-DATABASE_NAME=rh_v2
-DATABASE_USER=postgres
-DATABASE_PASSWORD=12345
-DATABASE_HOST=host.docker.internal
-DATABASE_PORT=5433
+```bash
+# Copiez le fichier d'exemple
+cp back-end/.env.example back-end/.env
 
-# Configuration des emails
-EMAIL_HOST_USER=waelbenabid1@gmail.com
-EMAIL_HOST_PASSWORD=voct gluk oifw jcpo
+# Modifiez le fichier avec vos propres valeurs
+nano back-end/.env  # ou utilisez votre éditeur préféré
 ```
+
+Le fichier `.env` doit contenir les variables suivantes :
+- `SECRET_KEY` : Clé secrète Django
+- `DEBUG` : Mode de débogage (True/False)
+- `ALLOWED_HOSTS` : Hôtes autorisés
+- `DATABASE_NAME` : Nom de la base de données
+- `DATABASE_USER` : Utilisateur de la base de données
+- `DATABASE_PASSWORD` : Mot de passe de la base de données
+- `DATABASE_HOST` : Hôte de la base de données
+- `DATABASE_PORT` : Port de la base de données
+- `EMAIL_HOST_USER` : Adresse email pour l'envoi d'emails
+- `EMAIL_HOST_PASSWORD` : Mot de passe d'application pour l'envoi d'emails
 
 ### Configuration des emails
 

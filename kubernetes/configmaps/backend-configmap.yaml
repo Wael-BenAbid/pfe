@@ -9,6 +9,8 @@ data:
   DATABASE_NAME: "rh_v2"
   DATABASE_USER: "postgres"
   DATABASE_HOST: "postgres-db"
-  DATABASE_PORT: "5432"
+  DATABASE_PORT: "5433"
   EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
-  FRONTEND_URL: "http://rh-system.local"
+  FRONTEND_URL: "https://rh-system.local"
+  # Note: Les informations sensibles comme DATABASE_PASSWORD, SECRET_KEY et SENDGRID_API_KEY
+  # doivent être stockées dans un Secret Kubernetes, pas dans un ConfigMap
