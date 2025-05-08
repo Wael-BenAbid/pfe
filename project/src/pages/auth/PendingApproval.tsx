@@ -148,12 +148,6 @@ const PendingApproval: React.FC = () => {
         </div>
 
         <div className="space-y-3">
-          <Link to="/track-application">
-            <Button variant="outline" fullWidth>
-              Track Your Application
-            </Button>
-          </Link>
-
           <Link to="/">
             <Button variant="primary" fullWidth>
               Return to Home

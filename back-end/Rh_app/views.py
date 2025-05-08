@@ -1239,7 +1239,7 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ['create', 'track', 'get_credentials']:
+        if self.action in ['create']:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
@@ -1416,69 +1416,7 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
 
         return Response({'status': 'application rejected and data deleted'})
 
-    @action(detail=False, methods=['get'])
-    def track(self, request):
-        """
-        Suivre une candidature par email et ID
-        """
-        email = request.query_params.get('email')
-        application_id = request.query_params.get('id')
 
-        if not email or not application_id:
-            return Response({'error': 'Email and application ID are required'},
-                          status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            application = JobApplication.objects.get(id=application_id, email=email)
-            serializer = self.get_serializer(application)
-
-            # Ajouter un champ pour indiquer si l'utilisateur s'est déjà connecté
-            data = serializer.data
-            if application.user:
-                data['user_has_logged_in'] = application.user.last_login is not None
-            else:
-                data['user_has_logged_in'] = False
-
-            return Response(data)
-        except JobApplication.DoesNotExist:
-            return Response({'error': 'Application not found'},
-                          status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=True, methods=['post'])
-    def get_credentials(self, request, pk=None):
-        """
-        Récupérer les informations de connexion temporaires pour une candidature approuvée
-        """
-        try:
-            application = self.get_object()
-
-            # Vérifier que la candidature est approuvée et a un utilisateur associé
-            if application.status != 'approved' or not application.user:
-                return Response({'error': 'Application not approved or no user account'},
-                              status=status.HTTP_400_BAD_REQUEST)
-
-            # Vérifier que l'utilisateur ne s'est pas encore connecté
-            if application.user.last_login:
-                return Response({'error': 'User has already logged in'},
-                              status=status.HTTP_400_BAD_REQUEST)
-
-            # Générer un nouveau mot de passe temporaire
-            import random
-            import string
-            temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-
-            # Mettre à jour le mot de passe de l'utilisateur
-            application.user.set_password(temp_password)
-            application.user.save()
-
-            return Response({
-                'username': application.user.username,
-                'password': temp_password
-            })
-
-        except JobApplication.DoesNotExist:
-            return Response({'error': 'Application not found'},
-                          status=status.HTTP_404_NOT_FOUND)
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
