@@ -321,7 +321,13 @@ const UserManagement: React.FC = () => {
                       {getUserTypeBadge(user.user_type)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.leave_balance} days
+                      {user.user_type === "intern" ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          N/A
+                        </span>
+                      ) : (
+                        `${user.leave_balance} days`
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
@@ -335,19 +341,21 @@ const UserManagement: React.FC = () => {
                         >
                           View
                         </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={<ClockIcon className="h-4 w-4" />}
-                          onClick={() =>
-                            window.open(
-                              `/admin/user/${user.id}/work-hours`,
-                              "_blank"
-                            )
-                          }
-                        >
-                          Hours
-                        </Button>
+                        {user.user_type !== "intern" && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={<ClockIcon className="h-4 w-4" />}
+                            onClick={() =>
+                              window.open(
+                                `/admin/user/${user.id}/work-hours`,
+                                "_blank"
+                              )
+                            }
+                          >
+                            Hours
+                          </Button>
+                        )}
                         <Button
                           variant="danger"
                           size="sm"
