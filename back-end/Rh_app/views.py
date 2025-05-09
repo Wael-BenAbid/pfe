@@ -348,16 +348,19 @@ def forgot_password(request):
 
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}&email={email}"
 
-        subject = "Réinitialisation de votre mot de passe"
+        subject = "Réinitialisation de votre mot de passe - RH System"
         message = (
             f"Bonjour {user.first_name} {user.last_name},\n\n"
-            f"Vous avez demandé la réinitialisation de votre mot de passe. "
-            f"Veuillez cliquer sur le lien ci-dessous pour définir un nouveau mot de passe :\n\n"
+            f"Vous avez demandé la réinitialisation de votre mot de passe sur RH System. "
+            f"Veuillez cliquer sur le lien ci-dessous (ou le copier dans votre navigateur) pour définir un nouveau mot de passe :\n\n"
+            f"LIEN DE RÉINITIALISATION :\n"
             f"{reset_url}\n\n"
-            f"Ce lien est valable pendant 24 heures.\n\n"
-            f"Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet email.\n\n"
+            f"IMPORTANT :\n"
+            f"- Ce lien est valable pendant 24 heures seulement\n"
+            f"- Si vous n'avez pas demandé cette réinitialisation, veuillez ignorer cet email\n"
+            f"- Pour toute question, contactez l'administrateur système\n\n"
             f"Cordialement,\n"
-            f"L'équipe RH"
+            f"L'équipe RH System"
         )
 
         send_email_notification(subject, message, [email])
