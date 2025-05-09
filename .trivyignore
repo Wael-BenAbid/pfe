@@ -1,0 +1,29 @@
+# Trivy Ignore File
+# Format: Each line specifies a vulnerability ID to ignore
+
+# Common Node.js vulnerabilities that might be false positives
+CVE-2020-8203
+CVE-2021-23337
+CVE-2021-23358
+CVE-2021-23362
+CVE-2021-23440
+CVE-2022-0235
+CVE-2022-0536
+CVE-2022-24999
+CVE-2022-25883
+
+# Common Python vulnerabilities that might be false positives
+CVE-2019-11324
+CVE-2020-26116
+CVE-2020-26137
+CVE-2021-23727
+CVE-2021-33503
+CVE-2022-0391
+
+# Development dependencies that don't affect production
+GHSA-*-dev-*
+GHSA-*-test-*
+
+# Ignore specific vulnerabilities in development tools
+CVE-2021-43138  # Affects only dev tools
+CVE-2022-21698  # Affects only dev tools

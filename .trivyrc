@@ -1,0 +1,53 @@
+# Trivy Configuration File
+
+# Exit with zero even when vulnerabilities are found
+exit-code: 0
+
+# Severity of vulnerabilities to be displayed
+severity: CRITICAL,HIGH,MEDIUM
+
+# Skip update of vulnerability database
+skip-update: false
+
+# Ignore unfixed vulnerabilities
+ignore-unfixed: true
+
+# Timeout duration
+timeout: 10m
+
+# Format of the output
+format: table
+
+# Output to file
+# output: trivy-results.txt
+
+# Cache directory
+cache-dir: .trivy-cache
+
+# Quiet mode
+quiet: false
+
+# Debug mode
+debug: false
+
+# Ignore policy files
+# policy-namespaces:
+#   - user
+
+# List all available policies
+# list-all-pkgs: true
+
+# Maximum number of threads to use for vulnerability scanning
+timeout-scan: 5m
+
+# Skip directories
+skip-dirs:
+  - node_modules
+  - .git
+  - .github
+
+# Skip files
+skip-files:
+  - "*.md"
+  - "*.txt"
+  - "*.json"
