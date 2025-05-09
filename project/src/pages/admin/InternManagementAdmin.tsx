@@ -14,6 +14,16 @@ interface User {
   user_type: string;
   leave_balance: number;
   profile_image?: string;
+  total_hours_worked?: number;
+}
+
+interface WorkHour {
+  id: number;
+  date: string;
+  hours_worked: number;
+  description?: string;
+  created_at: string;
+  user: number;
 }
 
 const InternManagementAdmin: React.FC = () => {
@@ -56,7 +66,44 @@ const InternManagementAdmin: React.FC = () => {
       }
 
       const data = await response.json();
-      setUsers(data);
+
+      // Récupérer les heures de travail pour chaque utilisateur
+      const usersWithWorkHours = await Promise.all(
+        data.map(async (user: User) => {
+          try {
+            const workHoursResponse = await fetch(
+              `${API_BASE_URL}/work-hours/?user=${user.id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (workHoursResponse.ok) {
+              const workHoursData = await workHoursResponse.json();
+
+              // Calculer le total des heures travaillées
+              const totalHours = workHoursData.reduce(
+                (sum: number, entry: WorkHour) =>
+                  sum + parseFloat(entry.hours_worked.toString()),
+                0
+              );
+
+              return {
+                ...user,
+                total_hours_worked: parseFloat(totalHours.toFixed(2))
+              };
+            }
+            return user;
+          } catch (error) {
+            console.error(`Error fetching work hours for user ${user.id}:`, error);
+            return user;
+          }
+        })
+      );
+
+      setUsers(usersWithWorkHours);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -152,7 +199,7 @@ const InternManagementAdmin: React.FC = () => {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Leave Balance
+                    Status
                   </th>
                   <th
                     scope="col"
@@ -205,8 +252,10 @@ const InternManagementAdmin: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getUserTypeBadge(user.user_type)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.leave_balance} days
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        Active
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
@@ -219,18 +268,6 @@ const InternManagementAdmin: React.FC = () => {
                           }
                         >
                           View Profile
-                        </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() =>
-                            window.open(
-                              `/admin/user/${user.id}/work-hours`,
-                              "_blank"
-                            )
-                          }
-                        >
-                          Work Hours
                         </Button>
                       </div>
                     </td>
