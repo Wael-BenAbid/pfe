@@ -16,7 +16,7 @@ import {
 } from "../config/constants";
 
 import logoImage from "../assets/images/logo.png";
-import BackButton from "../components/ui/BackButton";
+
 
 interface FormData {
   application_type: string;
@@ -456,14 +456,10 @@ const ApplicationForm: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <BackButton to="/" label="Back to Home" />
-            <div className="flex justify-center flex-grow">
-              <Link to="/">
-                <img src={logoImage} alt="RH Management" className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
-              </Link>
-            </div>
-            <div className="w-24"></div> {/* Espace pour équilibrer le bouton de retour */}
+          <div className="flex justify-center mb-4">
+            <Link to="/">
+              <img src={logoImage} alt="RH Management" className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+            </Link>
           </div>
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
