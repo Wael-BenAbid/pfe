@@ -11,7 +11,7 @@ import {
   Calendar as CalendarIcon,
   Bell as BellIcon,
 } from "lucide-react";
-import logoImage from "../../assets/images/logo.svg";
+import logoImage from "../../assets/images/logo.png";
 import InternMissions from "./InternMissions";
 import InternMeetings from "./InternMeetings";
 import NotificationsPage from "./NotificationsPage";
