@@ -6,10 +6,10 @@ import Button from "../../components/ui/Button";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import UserProfileDropdown from "../../components/ui/UserProfileDropdown";
 import {
-  LogOutIcon,
-  BriefcaseIcon,
-  CalendarIcon,
-  BellIcon,
+  LogOut as LogOutIcon,
+  Briefcase as BriefcaseIcon,
+  Calendar as CalendarIcon,
+  Bell as BellIcon,
 } from "lucide-react";
 import logoImage from "../../assets/images/logo.svg";
 import InternMissions from "./InternMissions";

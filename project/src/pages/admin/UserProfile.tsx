@@ -14,6 +14,8 @@ import {
   ImageIcon,
 } from "lucide-react";
 import TextInput from "../../components/ui/TextInput";
+import AlertModal from "../../components/ui/AlertModal";
+import Modal from "../../components/ui/Modal";
 
 interface User {
   id: number;
@@ -37,6 +39,13 @@ const UserProfile: React.FC = () => {
   const [formData, setFormData] = useState<Partial<User>>({});
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'info' | 'warning'
+  });
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
 
   useEffect(() => {
     if (token && userId) {
@@ -134,25 +143,32 @@ const UserProfile: React.FC = () => {
       setUser(updatedUser);
       setProfileImage(null);
       setEditing(false);
-      alert("User updated successfully");
+      setAlertModal({
+        isOpen: true,
+        title: 'Success',
+        message: 'User updated successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("Failed to update user");
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to update user',
+        type: 'error'
+      });
     }
+  };
+
+  const handleDeleteConfirmation = () => {
+    if (!user) return;
+    setConfirmDeleteModal(true);
   };
 
   const handleDelete = async () => {
     if (!token || !user) return;
-
-    if (
-      !window.confirm(
-        `Are you sure you want to delete ${user.first_name} ${user.last_name}?`
-      )
-    ) {
-      return;
-    }
-
     setDeleting(true);
+    setConfirmDeleteModal(false);
 
     try {
       const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
@@ -166,11 +182,25 @@ const UserProfile: React.FC = () => {
         throw new Error("Failed to delete user");
       }
 
-      alert("User deleted successfully");
-      navigate("/admin/employees");
+      setAlertModal({
+        isOpen: true,
+        title: 'Success',
+        message: 'User deleted successfully',
+        type: 'success'
+      });
+
+      // Navigate after a short delay to allow the user to see the success message
+      setTimeout(() => {
+        navigate("/admin/employees");
+      }, 1500);
     } catch (error) {
       console.error("Error deleting user:", error);
-      alert("Failed to delete user");
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to delete user',
+        type: 'error'
+      });
       setDeleting(false);
     }
   };
@@ -199,6 +229,44 @@ const UserProfile: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6">
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
+
+      {/* Confirm Delete Modal */}
+      <Modal
+        isOpen={confirmDeleteModal}
+        onClose={() => setConfirmDeleteModal(false)}
+        title="Confirm Deletion"
+        size="sm"
+        footer={
+          <div className="flex justify-end space-x-2 w-full">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDeleteModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-gray-500">
+          Are you sure you want to delete {user?.first_name} {user?.last_name}? This action cannot be undone.
+        </p>
+      </Modal>
+
       <div className="flex items-center mb-6">
         <Button
           variant="outline"
@@ -255,7 +323,7 @@ const UserProfile: React.FC = () => {
                   variant="danger"
                   size="sm"
                   icon={<TrashIcon className="h-4 w-4" />}
-                  onClick={handleDelete}
+                  onClick={handleDeleteConfirmation}
                   disabled={deleting}
                 >
                   {deleting ? "Deleting..." : "Delete"}

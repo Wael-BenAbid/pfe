@@ -17,7 +17,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView
-from django.shortcuts import redirect
 from rest_framework.routers import DefaultRouter
 from django.conf import settings
 from django.conf.urls.static import static
@@ -40,11 +39,17 @@ router.register(r'meetings', MeetingViewSet)
 router.register(r'notifications', NotificationViewSet)
 
 
-def redirect_to_react(request):
-    return redirect('/')
+from django.http import JsonResponse
+
+def api_root(request):
+    return JsonResponse({
+        'message': 'RH System API',
+        'version': '1.0',
+        'status': 'running'
+    })
 
 urlpatterns = [
-    path('', redirect_to_react, name='home'),  # This will redirect the root URL
+    path('', api_root, name='api_root'),  # API root endpoint
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

@@ -14,7 +14,7 @@ import {
   ACCEPTED_FILE_TYPES,
   MAX_FILE_SIZE,
 } from "../config/constants";
-import { BriefcaseIcon, GraduationCapIcon, UserIcon } from "lucide-react";
+import { Briefcase as BriefcaseIcon, GraduationCap as GraduationCapIcon, User as UserIcon } from "lucide-react";
 import logoImage from "../assets/images/logo.svg";
 
 interface FormData {

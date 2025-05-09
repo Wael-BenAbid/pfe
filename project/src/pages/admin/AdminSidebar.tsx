@@ -1,13 +1,14 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
 import {
-  XIcon,
-  HomeIcon,
-  UsersIcon,
-  FileTextIcon,
-  BriefcaseIcon,
-  GraduationCapIcon,
-  CalendarIcon,
+  X as XIcon,
+  Home as HomeIcon,
+  Users as UsersIcon,
+  FileText as FileTextIcon,
+  Briefcase as BriefcaseIcon,
+  GraduationCap as GraduationCapIcon,
+  Calendar as CalendarIcon,
+  User as UserIcon,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -40,6 +41,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       icon: GraduationCapIcon,
     },
     { name: "Leave Requests", href: "/admin/leaves", icon: CalendarIcon },
+    { name: "My Profile", href: "/admin/profile", icon: UserIcon },
   ];
 
   const renderNavLinks = () => {

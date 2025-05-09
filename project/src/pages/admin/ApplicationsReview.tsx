@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import { FileTextIcon, CheckIcon, XIcon, EyeIcon } from "lucide-react";
+import AlertModal from "../../components/ui/AlertModal";
 
 interface Application {
   id: number;
@@ -29,6 +30,12 @@ const ApplicationsReview: React.FC = () => {
     useState<Application | null>(null);
   const [filter, setFilter] = useState("pending");
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'info' | 'warning'
+  });
 
   // Fonction pour récupérer les applications
   const fetchApplications = async () => {
@@ -115,14 +122,22 @@ const ApplicationsReview: React.FC = () => {
       }
 
       // Show success message
-      alert(
-        `Application ${
+      setAlertModal({
+        isOpen: true,
+        title: 'Success',
+        message: `Application ${
           status === APPLICATION_STATUSES.APPROVED ? "approved" : "rejected"
-        } successfully.`
-      );
+        } successfully.`,
+        type: 'success'
+      });
     } catch (error) {
       console.error("Error updating application status:", error);
-      alert("Failed to update application status. Please try again.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: "Failed to update application status. Please try again.",
+        type: 'error'
+      });
     } finally {
       setProcessingId(null);
     }
@@ -189,6 +204,15 @@ const ApplicationsReview: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6">
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
+
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">
         Applications Review
       </h1>

@@ -1,0 +1,11 @@
+Ce fichier est un test pour vérifier si le téléchargement d'images fonctionne correctement.
+
+Pour résoudre le problème d'affichage des images de profil, vous devez :
+
+1. Vous connecter à l'application
+2. Accéder à votre profil (Employee Profile ou Intern Profile selon votre type d'utilisateur)
+3. Cliquer sur le bouton "Edit"
+4. Télécharger à nouveau votre image de profil
+5. Cliquer sur "Save"
+
+Une fois que vous aurez fait cela, l'image sera à nouveau téléchargée dans le dossier `media_v2/profile_images/` et devrait s'afficher correctement.

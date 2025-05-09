@@ -5,7 +5,7 @@ import Button from '../../components/ui/Button';
 import TextInput from '../../components/ui/TextInput';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import InternMissionManagement from './InternMissionManagement';
-import { CalendarIcon, BriefcaseIcon, GraduationCapIcon, XIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Briefcase as BriefcaseIcon, GraduationCap as GraduationCapIcon, X as XIcon } from 'lucide-react';
 
 interface Internship {
   id: number;

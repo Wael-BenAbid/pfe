@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { MenuIcon, LogOutIcon } from "lucide-react";
+import { Menu as MenuIcon, LogOut as LogOutIcon, User as UserIcon } from "lucide-react";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import { useNotifications } from "../../hooks/useNotifications";
 import { useAuth } from "../../contexts/AuthContext";
@@ -12,6 +12,9 @@ interface User {
   username: string;
   email: string;
   user_type: string;
+  first_name?: string;
+  last_name?: string;
+  profile_image?: string;
 }
 
 interface AdminHeaderProps {
@@ -122,14 +125,27 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
             <div className="ml-3 relative">
               <div className="flex items-center">
-                <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <span className="text-blue-800 font-semibold text-sm">
-                    {user.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
+                {user.profile_image ? (
+                  <img
+                    src={user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
+                    alt={`${user.first_name || user.username}'s profile`}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-blue-800 font-semibold text-sm">
+                      {user.first_name
+                        ? user.first_name.charAt(0)
+                        : user.username.charAt(0).toUpperCase()}
+                      {user.last_name ? user.last_name.charAt(0) : ''}
+                    </span>
+                  </div>
+                )}
                 <div className="ml-3 hidden md:block">
                   <div className="text-sm font-medium text-gray-700">
-                    {user.username}
+                    {user.first_name && user.last_name
+                      ? `${user.first_name} ${user.last_name}`
+                      : user.username}
                   </div>
                   <div className="text-xs text-gray-500">{user.email}</div>
                 </div>
@@ -137,6 +153,16 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
             </div>
 
             <div className="ml-3">
+              <Link
+                to="/admin/profile"
+                className="flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-2"
+              >
+                <UserIcon className="h-4 w-4 mr-1" />
+                <span className="hidden md:inline">Profile</span>
+              </Link>
+            </div>
+
+            <div className="ml-1">
               <button
                 type="button"
                 onClick={onLogout}

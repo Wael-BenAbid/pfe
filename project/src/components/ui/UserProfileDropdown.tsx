@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserIcon, LogOutIcon, ChevronDownIcon } from 'lucide-react';
-import { API_BASE_URL } from '../../config/constants';
+import { MEDIA_BASE_URL } from '../../config/constants';
 
 interface User {
   id: number;
@@ -39,7 +39,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ user, onLogou
 
   const handleViewProfile = () => {
     setIsOpen(false);
-    
+
     // Redirect to the appropriate profile page based on user type
     if (user?.user_type === 'employee') {
       navigate('/employee/profile');
@@ -65,15 +65,15 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ user, onLogou
         <div className="flex items-center">
           {user.profile_image ? (
             <img
-              src={`${API_BASE_URL}${user.profile_image}`}
+              src={user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
               alt={`${user.first_name || user.username}'s profile`}
               className="h-8 w-8 rounded-full object-cover"
             />
           ) : (
             <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
               <span className="text-blue-800 font-semibold text-sm">
-                {user.first_name 
-                  ? user.first_name.charAt(0) 
+                {user.first_name
+                  ? user.first_name.charAt(0)
                   : user.username.charAt(0).toUpperCase()}
                 {user.last_name ? user.last_name.charAt(0) : ''}
               </span>
@@ -81,8 +81,8 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ user, onLogou
           )}
           <div className="ml-2 hidden md:block">
             <p className="text-sm font-medium">
-              {user.first_name && user.last_name 
-                ? `${user.first_name} ${user.last_name}` 
+              {user.first_name && user.last_name
+                ? `${user.first_name} ${user.last_name}`
                 : user.username}
             </p>
             <p className="text-xs text-gray-500">{user.email}</p>
