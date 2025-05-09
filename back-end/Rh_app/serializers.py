@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification, SystemActivity
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -161,3 +161,23 @@ class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = ['id', 'user', 'user_name', 'title', 'message', 'type', 'read', 'created_at']
+
+
+class SystemActivitySerializer(serializers.ModelSerializer):
+    user_email = serializers.ReadOnlyField(source='user.email')
+    user_name = serializers.SerializerMethodField()
+    action_display = serializers.ReadOnlyField(source='get_action_type_display')
+    formatted_date = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SystemActivity
+        fields = ['id', 'action_type', 'action_display', 'action', 'user', 'user_email', 'user_name',
+                 'ip_address', 'details', 'resource_type', 'resource_id', 'created_at', 'formatted_date']
+
+    def get_user_name(self, obj):
+        if obj.user:
+            return f"{obj.user.first_name} {obj.user.last_name}"
+        return "System"
+
+    def get_formatted_date(self, obj):
+        return obj.created_at.strftime("%d/%m/%Y %H:%M")

@@ -114,7 +114,12 @@ const EmployeeDashboard: React.FC = () => {
                   <h2 className="text-lg font-medium text-gray-900 mb-4">
                     Dashboard Overview
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                  {/* Statistiques personnelles */}
+                  <h3 className="text-md font-medium text-gray-800 mb-3">
+                    Personal Statistics
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <div className="bg-white p-6 rounded-lg border border-gray-200">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 bg-blue-100 rounded-md p-3">
@@ -126,6 +131,131 @@ const EmployeeDashboard: React.FC = () => {
                           </h3>
                           <p className="text-2xl font-semibold text-gray-700">
                             {user?.leave_balance} days
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Missions terminées */}
+                    <div className="bg-white p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 bg-green-100 rounded-md p-3">
+                          <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Completed Missions
+                          </h3>
+                          <p className="text-2xl font-semibold text-gray-700">
+                            {missionStats.completed} / {missionStats.total}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Missions en attente */}
+                    <div className="bg-white p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 bg-yellow-100 rounded-md p-3">
+                          <PendingIcon className="h-6 w-6 text-yellow-600" />
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Pending Missions
+                          </h3>
+                          <p className="text-2xl font-semibold text-gray-700">
+                            {missionStats.pending}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Missions en retard */}
+                    <div className="bg-white p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 bg-red-100 rounded-md p-3">
+                          <AlertCircleIcon className="h-6 w-6 text-red-600" />
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Late Missions
+                          </h3>
+                          <p className="text-2xl font-semibold text-gray-700">
+                            {missionStats.late}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Statistiques des missions assignées */}
+                  <h3 className="text-md font-medium text-gray-800 mb-3">
+                    Assigned Missions Statistics
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Missions totales assignées */}
+                    <div className="bg-white p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 bg-indigo-100 rounded-md p-3">
+                          <BriefcaseIcon className="h-6 w-6 text-indigo-600" />
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Total Assigned
+                          </h3>
+                          <p className="text-2xl font-semibold text-gray-700">
+                            {missionStats.assignedMissions.total}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Missions assignées terminées */}
+                    <div className="bg-white p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 bg-green-100 rounded-md p-3">
+                          <CheckCircleIcon className="h-6 w-6 text-green-600" />
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Completed
+                          </h3>
+                          <p className="text-2xl font-semibold text-gray-700">
+                            {missionStats.assignedMissions.completed}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Missions assignées en attente */}
+                    <div className="bg-white p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 bg-yellow-100 rounded-md p-3">
+                          <PendingIcon className="h-6 w-6 text-yellow-600" />
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Pending
+                          </h3>
+                          <p className="text-2xl font-semibold text-gray-700">
+                            {missionStats.assignedMissions.pending}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Missions assignées en retard */}
+                    <div className="bg-white p-6 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 bg-red-100 rounded-md p-3">
+                          <AlertCircleIcon className="h-6 w-6 text-red-600" />
+                        </div>
+                        <div className="ml-4">
+                          <h3 className="text-sm font-medium text-gray-900">
+                            Late
+                          </h3>
+                          <p className="text-2xl font-semibold text-gray-700">
+                            {missionStats.assignedMissions.late}
                           </p>
                         </div>
                       </div>

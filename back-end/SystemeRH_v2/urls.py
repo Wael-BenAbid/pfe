@@ -24,7 +24,7 @@ from Rh_app.views import (
     UserViewSet, LeaveViewSet, MissionViewSet,
     WorkHoursViewSet, InternshipViewSet, JobApplicationViewSet,
     UserSessionViewSet, MeetingViewSet, NotificationViewSet,
-    login_view, api_logout
+    SystemActivityViewSet, login_view, api_logout
 )
 from rest_framework_simplejwt.views import TokenVerifyView
 router = DefaultRouter()
@@ -37,6 +37,7 @@ router.register(r'job-applications', JobApplicationViewSet)
 router.register(r'user-sessions', UserSessionViewSet)
 router.register(r'meetings', MeetingViewSet)
 router.register(r'notifications', NotificationViewSet)
+router.register(r'system-activities', SystemActivityViewSet)
 
 
 from django.http import JsonResponse
