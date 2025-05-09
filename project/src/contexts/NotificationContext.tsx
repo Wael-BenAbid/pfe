@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Notification } from '../components/ui/NotificationDropdown';
 import { API_BASE_URL } from '../config/constants';
 import { useAuth } from './AuthContext';
@@ -18,54 +18,13 @@ interface NotificationProviderProps {
 }
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  // Récupérer les notifications du localStorage au démarrage
-  const getInitialNotifications = (): Notification[] => {
-    if (typeof window === 'undefined') return [];
-
-    const savedNotifications = localStorage.getItem('notifications');
-    if (savedNotifications) {
-      try {
-        return JSON.parse(savedNotifications);
-      } catch (error) {
-        console.error('Failed to parse notifications from localStorage:', error);
-        return [];
-      }
-    }
-    return [];
-  };
-
-  const [notifications, setNotifications] = useState<Notification[]>(getInitialNotifications());
-  const notificationsRef = useRef<Notification[]>(notifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const { token, user } = useAuth();
 
-  // Mettre à jour la référence lorsque les notifications changent
-  useEffect(() => {
-    notificationsRef.current = notifications;
-  }, [notifications]);
-
-  // Sauvegarder les notifications dans le localStorage à chaque changement
-  useEffect(() => {
-    if (notifications.length > 0) {
-      localStorage.setItem('notifications', JSON.stringify(notifications));
-    }
-  }, [notifications]);
-
   // Définir fetchNotifications avec useCallback pour éviter les recréations inutiles
-  const fetchNotifications = useCallback(async (force = false) => {
-    if (!token || !user) return;
-
-    // Vérifier si nous avons récupéré les notifications récemment (moins de 5 minutes)
-    const now = Date.now();
-    const fiveMinutesInMs = 5 * 60 * 1000;
-    const savedLastFetchTime = localStorage.getItem('lastNotificationFetchTime');
-    const lastFetch = savedLastFetchTime ? parseInt(savedLastFetchTime, 10) : 0;
-
-    // Si force est true, ignorer la vérification du temps
-    // Vérifier également si nous avons des notifications en mémoire
-    const currentNotifications = notificationsRef.current;
-    const hasNotifications = currentNotifications && currentNotifications.length > 0;
-    if (!force && now - lastFetch < fiveMinutesInMs && hasNotifications) {
-      // Si nous avons récupéré les notifications récemment, ne pas les récupérer à nouveau
+  const fetchNotifications = useCallback(async () => {
+    if (!token || !user) {
+      setNotifications([]);
       return;
     }
 
@@ -96,36 +55,21 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         }));
 
         setNotifications(formattedNotifications);
-
-        // Sauvegarder dans le localStorage
-        localStorage.setItem('notifications', JSON.stringify(formattedNotifications));
-        localStorage.setItem('lastNotificationFetchTime', now.toString());
       }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
-
-      // En cas d'erreur, utiliser les notifications du localStorage si disponibles
-      const savedNotifications = localStorage.getItem('notifications');
-      if (savedNotifications) {
-        try {
-          const parsedNotifications = JSON.parse(savedNotifications);
-          setNotifications(parsedNotifications);
-        } catch (parseError) {
-          console.error('Failed to parse saved notifications:', parseError);
-        }
-      }
     }
-  }, [token, user, notificationsRef]);
+  }, [token, user]);
 
   // Fetch notifications from API on mount and when user or token changes
   useEffect(() => {
     // Récupérer les notifications au montage du composant
     fetchNotifications();
 
-    // Configurer un intervalle pour récupérer les notifications toutes les 5 minutes
+    // Configurer un intervalle pour récupérer les notifications toutes les 30 secondes
     const intervalId = setInterval(() => {
-      fetchNotifications(true); // Force refresh every 5 minutes
-    }, 5 * 60 * 1000);
+      fetchNotifications();
+    }, 30 * 1000); // Rafraîchir toutes les 30 secondes
 
     // Nettoyer l'intervalle lors du démontage du composant
     return () => clearInterval(intervalId);
@@ -160,31 +104,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       });
 
       if (response.ok) {
-        const newNotification = await response.json();
-        // Convert API notification to our Notification format
-        const formattedNotification: Notification = {
-          id: newNotification.id,
-          title: newNotification.title,
-          message: newNotification.message,
-          type: newNotification.type,
-          read: newNotification.read,
-          date: newNotification.created_at,
-        };
-
-        setNotifications(prev => [formattedNotification, ...prev]);
+        // Après avoir créé une notification, rafraîchir la liste
+        fetchNotifications();
       }
     } catch (error) {
       console.error('Failed to create notification:', error);
-
-      // Fallback to local notification if API call fails
-      const uniqueId = Date.now() * 1000 + Math.floor(Math.random() * 1000);
-      const fallbackNotification: Notification = {
-        ...notification,
-        id: uniqueId,
-        date: new Date().toISOString(),
-        read: false,
-      };
-      setNotifications(prev => [fallbackNotification, ...prev]);
     }
   };
 
@@ -201,22 +125,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       });
 
       if (response.ok) {
-        // Supprimer la notification au lieu de la marquer comme lue
-        const updatedNotifications = notifications.filter(notification => notification.id !== id);
-        setNotifications(updatedNotifications);
-
-        // Mettre à jour le localStorage
-        localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+        // Rafraîchir les notifications après avoir marqué comme lu
+        fetchNotifications();
       }
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
-
-      // Fallback to local update if API call fails
-      const updatedNotifications = notifications.filter(notification => notification.id !== id);
-      setNotifications(updatedNotifications);
-
-      // Mettre à jour le localStorage même en cas d'échec de l'API
-      localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
     }
   };
 
@@ -233,20 +146,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       });
 
       if (response.ok) {
-        // Supprimer toutes les notifications
-        setNotifications([]);
-
-        // Mettre à jour le localStorage
-        localStorage.setItem('notifications', JSON.stringify([]));
+        // Rafraîchir les notifications après avoir tout marqué comme lu
+        fetchNotifications();
       }
     } catch (error) {
-      console.error('Failed to delete all notifications:', error);
-
-      // Fallback to local update if API call fails
-      setNotifications([]);
-
-      // Mettre à jour le localStorage même en cas d'échec de l'API
-      localStorage.setItem('notifications', JSON.stringify([]));
+      console.error('Failed to mark all notifications as read:', error);
     }
   };
 
@@ -262,22 +166,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       });
 
       if (response.ok) {
-        // Update local state
-        const updatedNotifications = notifications.filter(notification => notification.id !== id);
-        setNotifications(updatedNotifications);
-
-        // Mettre à jour le localStorage
-        localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+        // Rafraîchir les notifications après suppression
+        fetchNotifications();
       }
     } catch (error) {
       console.error('Failed to delete notification:', error);
-
-      // Fallback to local update if API call fails
-      const updatedNotifications = notifications.filter(notification => notification.id !== id);
-      setNotifications(updatedNotifications);
-
-      // Mettre à jour le localStorage même en cas d'échec de l'API
-      localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
     }
   };
 

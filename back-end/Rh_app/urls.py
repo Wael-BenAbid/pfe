@@ -6,7 +6,6 @@ from .views import (
     CustomTokenObtainPairView,
     UserViewSet,
     LeaveViewSet,
-    MissionViewSet,
     WorkHoursViewSet,
     InternshipViewSet,
     JobApplicationViewSet,
@@ -22,6 +21,7 @@ from .views import (
     forgot_password,
     reset_password,
 )
+from .views_mission import MissionViewSet
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)

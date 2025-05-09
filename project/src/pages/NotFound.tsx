@@ -9,7 +9,9 @@ const NotFound: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full text-center">
         <div className="flex justify-center mb-6">
-          <img src={logoImage} alt="RH Management" className="h-16 w-auto" />
+          <Link to="/">
+            <img src={logoImage} alt="RH Management" className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+          </Link>
         </div>
 
         <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-6">

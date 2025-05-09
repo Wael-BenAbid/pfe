@@ -31,6 +31,18 @@ interface User {
   leave_balance: number;
   github_profile?: string;
   profile_image?: string;
+  is_pending?: boolean;
+}
+
+interface Mission {
+  id: number;
+  title: string;
+  description: string;
+  deadline: string;
+  status: 'pending' | 'completed' | 'late';
+  assigned_to?: number;
+  supervisor?: number;
+  completed?: boolean;
 }
 
 interface SystemStats {
@@ -115,10 +127,10 @@ const AdminProfile: React.FC = () => {
       const missionsData = await missionsResponse.json();
 
       // Calculer les statistiques
-      const employees = usersData.filter((user: any) => user.user_type === 'employee');
-      const interns = usersData.filter((user: any) => user.user_type === 'intern');
-      const pendingUsers = usersData.filter((user: any) => user.is_pending);
-      const completedMissions = missionsData.filter((mission: any) => mission.status === 'completed');
+      const employees = usersData.filter((user: User) => user.user_type === 'employee');
+      const interns = usersData.filter((user: User) => user.user_type === 'intern');
+      const pendingUsers = usersData.filter((user: User) => user.is_pending);
+      const completedMissions = missionsData.filter((mission: Mission) => mission.status === 'completed');
 
       setSystemStats({
         totalUsers: usersData.length,
@@ -150,6 +162,7 @@ const AdminProfile: React.FC = () => {
       fetchUserDetails();
       fetchSystemStats();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, authUser]);
 
   // Charger les statistiques quand l'onglet statistiques est sélectionné
@@ -160,6 +173,7 @@ const AdminProfile: React.FC = () => {
     if (activeTab === 'activity' && token) {
       fetchSystemActivities();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, token]);
 
   // Fonction pour charger les activités du système

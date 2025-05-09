@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   TextInput,
   TextArea,
@@ -14,7 +14,7 @@ import {
   ACCEPTED_FILE_TYPES,
   MAX_FILE_SIZE,
 } from "../config/constants";
-import { Briefcase as BriefcaseIcon, GraduationCap as GraduationCapIcon, User as UserIcon } from "lucide-react";
+
 import logoImage from "../assets/images/logo.png";
 import BackButton from "../components/ui/BackButton";
 
@@ -450,16 +450,7 @@ const ApplicationForm: React.FC = () => {
     }
   };
 
-  const getIcon = () => {
-    switch (formData.application_type) {
-      case "employee":
-        return <BriefcaseIcon className="h-10 w-10 text-blue-600" />;
-      case "intern":
-        return <GraduationCapIcon className="h-10 w-10 text-blue-600" />;
-      default:
-        return <UserIcon className="h-10 w-10 text-blue-600" />;
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -468,7 +459,9 @@ const ApplicationForm: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
             <BackButton to="/" label="Back to Home" />
             <div className="flex justify-center flex-grow">
-              <img src={logoImage} alt="RH Management" className="h-16 w-auto" />
+              <Link to="/">
+                <img src={logoImage} alt="RH Management" className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+              </Link>
             </div>
             <div className="w-24"></div> {/* Espace pour équilibrer le bouton de retour */}
           </div>

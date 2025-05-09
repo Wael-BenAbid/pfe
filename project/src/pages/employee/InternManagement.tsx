@@ -94,6 +94,15 @@ const InternManagement: React.FC = () => {
         return;
       }
 
+      // Vérifier si la date du rendez-vous est dans le passé
+      const meetingDate = new Date(newMeeting.date_time);
+      const now = new Date();
+
+      if (meetingDate < now) {
+        alert("La date et l'heure du rendez-vous ne peuvent pas être dans le passé. Veuillez choisir une date et une heure futures.");
+        return;
+      }
+
       // Afficher les données qui seront envoyées pour le débogage
       const meetingData = {
         title: newMeeting.title,
