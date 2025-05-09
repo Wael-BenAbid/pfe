@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { UserPlus, LogIn, BriefcaseIcon } from "lucide-react";
+import { UserPlus, LogIn } from "lucide-react";
 import Button from "../components/ui/Button";
+import logoImage from "../assets/images/logo.svg";
 
 const Home: React.FC = () => {
   return (
@@ -11,9 +12,9 @@ const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
-              <BriefcaseIcon className="h-8 w-8 text-blue-600" />
+              <img src={logoImage} alt="RH Management" className="h-10 w-auto" />
               <span className="ml-2 text-xl font-bold text-gray-900">
-                HR System
+                RH Management
               </span>
             </div>
             <div className="flex items-center space-x-4">
@@ -45,7 +46,7 @@ const Home: React.FC = () => {
         <div className="max-w-4xl w-full space-y-8 text-center">
           <div className="animate-fade-in-up">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight">
-              Welcome to Our <span className="text-blue-600">HR System</span>
+              Welcome to Our <span className="text-blue-600">RH Management System</span>
             </h1>
             <p className="mt-6 text-xl text-gray-500 max-w-3xl mx-auto">
               Join our team and be part of something great. We offer exciting

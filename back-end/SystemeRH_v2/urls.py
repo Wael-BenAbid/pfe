@@ -19,6 +19,8 @@ from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.shortcuts import redirect
 from rest_framework.routers import DefaultRouter
+from django.conf import settings
+from django.conf.urls.static import static
 from Rh_app.views import (
     UserViewSet, LeaveViewSet, MissionViewSet,
     WorkHoursViewSet, InternshipViewSet, JobApplicationViewSet,
@@ -50,3 +52,7 @@ urlpatterns = [
     path('api/auth/login/', login_view, name='api_login'),
     path('api/auth/logout/', api_logout, name='api_logout'),
 ]
+
+# Ajouter les URLs pour servir les fichiers média en mode développement
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

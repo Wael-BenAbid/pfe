@@ -21,6 +21,8 @@ class User(AbstractUser):
     )
     leave_balance = models.FloatField(default=0.0)
     approved = models.BooleanField(default=False)
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
+    github_profile = models.URLField(max_length=255, null=True, blank=True, help_text="URL du profil GitHub")
 
     # Champs pour la réinitialisation de mot de passe
     password_reset_token = models.CharField(max_length=100, null=True, blank=True)
@@ -199,6 +201,8 @@ class JobApplication(models.Model):
     experience = models.TextField()
     motivation = models.TextField()
     cv_file = models.FileField(upload_to='cvs/')
+    github_profile = models.URLField(max_length=255, null=True, blank=True, help_text="URL du profil GitHub")
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
     # Champ pour stocker le mot de passe défini lors de la candidature
     password = models.CharField(max_length=128, null=True, blank=True)
     status = models.CharField(

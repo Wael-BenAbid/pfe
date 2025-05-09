@@ -67,6 +67,15 @@ const ApplicationsReview: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, filter]);
 
+  // Effet pour forcer le filtre à "pending" au chargement initial
+  useEffect(() => {
+    // Forcer le filtre à "pending" au chargement initial
+    if (filter === "all") {
+      setFilter("pending");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const updateApplicationStatus = async (id: number, status: string) => {
     if (!token) return;
 
@@ -188,13 +197,17 @@ const ApplicationsReview: React.FC = () => {
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
             <h2 className="text-lg font-medium text-gray-900 mb-2 sm:mb-0">
-              Pending Applications
+              {filter === "all" ? "All Applications" :
+               filter === "pending" ? "Pending Applications" :
+               filter === "approved" ? "Approved Applications" :
+               "Rejected Applications"}
             </h2>
             <div className="flex space-x-2">
               <Button
                 variant={filter === "all" ? "primary" : "outline"}
                 size="sm"
                 onClick={() => setFilter("all")}
+                className={filter === "all" ? "bg-blue-600 text-white" : ""}
               >
                 All
               </Button>
@@ -202,6 +215,7 @@ const ApplicationsReview: React.FC = () => {
                 variant={filter === "pending" ? "primary" : "outline"}
                 size="sm"
                 onClick={() => setFilter("pending")}
+                className={filter === "pending" ? "bg-blue-600 text-white" : ""}
               >
                 Pending
               </Button>
@@ -209,6 +223,7 @@ const ApplicationsReview: React.FC = () => {
                 variant={filter === "approved" ? "primary" : "outline"}
                 size="sm"
                 onClick={() => setFilter("approved")}
+                className={filter === "approved" ? "bg-blue-600 text-white" : ""}
               >
                 Approved
               </Button>
@@ -216,6 +231,7 @@ const ApplicationsReview: React.FC = () => {
                 variant={filter === "rejected" ? "primary" : "outline"}
                 size="sm"
                 onClick={() => setFilter("rejected")}
+                className={filter === "rejected" ? "bg-blue-600 text-white" : ""}
               >
                 Rejected
               </Button>

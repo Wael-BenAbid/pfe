@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate, logout
 from django.conf import settings
+from django.utils import timezone
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -1245,12 +1246,22 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Limiter les résultats en fonction du type d'utilisateur
+        Limiter les résultats en fonction du type d'utilisateur et filtrer par statut si spécifié
         """
         user = self.request.user
+
+        # Base queryset selon le type d'utilisateur
         if user.is_superuser or user.user_type == 'admin':
-            return JobApplication.objects.all()
-        return JobApplication.objects.filter(user=user)
+            queryset = JobApplication.objects.all()
+        else:
+            queryset = JobApplication.objects.filter(user=user)
+
+        # Filtrer par statut si spécifié dans les paramètres de requête
+        status_filter = self.request.query_params.get('status', None)
+        if status_filter and status_filter != 'all':
+            queryset = queryset.filter(status=status_filter)
+
+        return queryset
 
     def perform_create(self, serializer):
         # Récupérer le mot de passe du serializer
@@ -1452,24 +1463,24 @@ class NotificationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def mark_all_as_read(self, request):
         """
-        Marquer toutes les notifications de l'utilisateur comme lues
+        Supprimer toutes les notifications de l'utilisateur
         """
-        notifications = Notification.objects.filter(user=request.user, read=False)
-        notifications.update(read=True)
-        return Response({'status': 'all notifications marked as read'})
+        notifications = Notification.objects.filter(user=request.user)
+        notifications.delete()
+        return Response({'status': 'all notifications deleted'})
 
     @action(detail=True, methods=['post'])
     def mark_as_read(self, request, pk=None):
         """
-        Marquer une notification comme lue
+        Marquer une notification comme lue et la supprimer automatiquement
         """
         notification = self.get_object()
         if notification.user != request.user and not request.user.is_superuser and request.user.user_type != 'admin':
             return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
-        notification.read = True
-        notification.save()
-        return Response({'status': 'notification marked as read'})
+        # Supprimer la notification au lieu de la marquer comme lue
+        notification.delete()
+        return Response({'status': 'notification marked as read and deleted'})
 
 
 class MeetingViewSet(viewsets.ModelViewSet):

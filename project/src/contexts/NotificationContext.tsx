@@ -201,10 +201,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       });
 
       if (response.ok) {
-        // Update local state
-        const updatedNotifications = notifications.map(notification =>
-          notification.id === id ? { ...notification, read: true } : notification
-        );
+        // Supprimer la notification au lieu de la marquer comme lue
+        const updatedNotifications = notifications.filter(notification => notification.id !== id);
         setNotifications(updatedNotifications);
 
         // Mettre à jour le localStorage
@@ -214,9 +212,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.error('Failed to mark notification as read:', error);
 
       // Fallback to local update if API call fails
-      const updatedNotifications = notifications.map(notification =>
-        notification.id === id ? { ...notification, read: true } : notification
-      );
+      const updatedNotifications = notifications.filter(notification => notification.id !== id);
       setNotifications(updatedNotifications);
 
       // Mettre à jour le localStorage même en cas d'échec de l'API
@@ -237,22 +233,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       });
 
       if (response.ok) {
-        // Update local state
-        const updatedNotifications = notifications.map(notification => ({ ...notification, read: true }));
-        setNotifications(updatedNotifications);
+        // Supprimer toutes les notifications
+        setNotifications([]);
 
         // Mettre à jour le localStorage
-        localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+        localStorage.setItem('notifications', JSON.stringify([]));
       }
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      console.error('Failed to delete all notifications:', error);
 
       // Fallback to local update if API call fails
-      const updatedNotifications = notifications.map(notification => ({ ...notification, read: true }));
-      setNotifications(updatedNotifications);
+      setNotifications([]);
 
       // Mettre à jour le localStorage même en cas d'échec de l'API
-      localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
+      localStorage.setItem('notifications', JSON.stringify([]));
     }
   };
 

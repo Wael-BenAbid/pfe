@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200">
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8FE872" />
+      <stop offset="100%" stop-color="#00C4FF" />
+    </linearGradient>
+    <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5757" />
+      <stop offset="100%" stop-color="#FF00E5" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(0 0)">
+    <path fill="url(#gradient1)" d="M80 100c0-20 15-40 40-40s40 20 40 40c0 20-15 40-40 40s-40-20-40-40z" />
+    <path fill="#333" d="M120 60c-25 0-45 20-45 40s20 40 45 40c15 0 25-5 35-15l5-5c10-10 20-15 35-15 25 0 45 20 45 40s-20 40-45 40c-15 0-25-5-35-15" stroke="#333" stroke-width="5" fill="none" />
+    <path fill="url(#gradient2)" d="M180 100c0-20 15-40 40-40s40 20 40 40c0 20-15 40-40 40s-40-20-40-40z" />
+    <circle cx="100" cy="90" r="10" fill="#fff" />
+    <circle cx="200" cy="90" r="10" fill="#fff" />
+    <path fill="url(#gradient1)" d="M85 110c5 5 10 10 15 10 5 0 10-5 15-10" />
+    <path fill="url(#gradient2)" d="M185 110c5 5 10 10 15 10 5 0 10-5 15-10" />
+  </g>
+</svg>
