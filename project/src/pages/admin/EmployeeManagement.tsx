@@ -15,6 +15,16 @@ interface User {
   leave_balance: number;
   profile_image?: string;
   github_profile?: string;
+  total_hours_worked?: number;
+}
+
+interface WorkHour {
+  id: number;
+  date: string;
+  hours_worked: number;
+  description?: string;
+  created_at: string;
+  user: number;
 }
 
 const EmployeeManagement: React.FC = () => {
@@ -57,7 +67,44 @@ const EmployeeManagement: React.FC = () => {
       }
 
       const data = await response.json();
-      setUsers(data);
+
+      // Récupérer les heures de travail pour chaque utilisateur
+      const usersWithWorkHours = await Promise.all(
+        data.map(async (user: User) => {
+          try {
+            const workHoursResponse = await fetch(
+              `${API_BASE_URL}/work-hours/?user=${user.id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (workHoursResponse.ok) {
+              const workHoursData = await workHoursResponse.json();
+
+              // Calculer le total des heures travaillées
+              const totalHours = workHoursData.reduce(
+                (sum: number, entry: WorkHour) =>
+                  sum + parseFloat(entry.hours_worked.toString()),
+                0
+              );
+
+              return {
+                ...user,
+                total_hours_worked: parseFloat(totalHours.toFixed(2))
+              };
+            }
+            return user;
+          } catch (error) {
+            console.error(`Error fetching work hours for user ${user.id}:`, error);
+            return user;
+          }
+        })
+      );
+
+      setUsers(usersWithWorkHours);
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -157,6 +204,12 @@ const EmployeeManagement: React.FC = () => {
                   </th>
                   <th
                     scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Work Hours
+                  </th>
+                  <th
+                    scope="col"
                     className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     Actions
@@ -213,6 +266,16 @@ const EmployeeManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {user.leave_balance} days
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {user.total_hours_worked !== undefined ? (
+                        <div className="flex items-center">
+                          <span className="font-medium">{user.total_hours_worked}</span>
+                          <span className="ml-1">hours</span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">No data</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">

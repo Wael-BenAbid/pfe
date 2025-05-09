@@ -254,24 +254,26 @@ def api_logout(request):
             # Calculate hours worked
             hours_worked = user_session.calculate_duration()
 
-            # Create a work hours record for today
-            today = date.today()
+            # Ne pas enregistrer d'heures de travail pour les stagiaires
+            if request.user.user_type != 'intern':
+                # Create a work hours record for today
+                today = date.today()
 
-            # Check if there's already a record for today
-            existing_record = WorkHours.objects.filter(user=request.user, date=today).first()
+                # Check if there's already a record for today
+                existing_record = WorkHours.objects.filter(user=request.user, date=today).first()
 
-            if existing_record:
-                # Update existing record
-                existing_record.hours_worked += hours_worked
-                existing_record.save()
-            else:
-                # Create new record
-                WorkHours.objects.create(
-                    user=request.user,
-                    date=today,
-                    hours_worked=hours_worked,
-                    description=f"Automatic time tracking: {hours_worked} hours"
-                )
+                if existing_record:
+                    # Update existing record
+                    existing_record.hours_worked += hours_worked
+                    existing_record.save()
+                else:
+                    # Create new record
+                    WorkHours.objects.create(
+                        user=request.user,
+                        date=today,
+                        hours_worked=hours_worked,
+                        description=f"Automatic time tracking: {hours_worked} hours"
+                    )
 
         # Blacklist the refresh token
         refresh_token = request.data.get('refresh')
@@ -1064,13 +1066,34 @@ class WorkHoursViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Limiter les résultats en fonction du type d'utilisateur
+        Les stagiaires n'ont pas d'heures de travail
         """
         user = self.request.user
         if user.is_superuser or user.user_type == 'admin':
-            return WorkHours.objects.all()
+            # Exclure les stagiaires des résultats
+            return WorkHours.objects.exclude(user__user_type='intern')
+        if user.user_type == 'intern':
+            # Les stagiaires n'ont pas d'heures de travail
+            return WorkHours.objects.none()
         return WorkHours.objects.filter(user=user)
 
     def perform_create(self, serializer):
+        # Vérifier si l'utilisateur est un stagiaire
+        if self.request.user.user_type == 'intern':
+            return Response({'error': 'Les stagiaires ne peuvent pas enregistrer des heures de travail'},
+                          status=status.HTTP_403_FORBIDDEN)
+
+        # Vérifier si on essaie d'enregistrer des heures pour un stagiaire
+        user_id = self.request.data.get('user')
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+                if user.user_type == 'intern':
+                    return Response({'error': 'Les stagiaires ne peuvent pas avoir des heures de travail'},
+                                  status=status.HTTP_403_FORBIDDEN)
+            except User.DoesNotExist:
+                pass
+
         if 'user' not in self.request.data:
             serializer.save(user=self.request.user)
         else:
@@ -1373,6 +1396,9 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
                 password = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
 
             # Créer l'utilisateur
+            # Les stagiaires n'ont pas de solde de congés
+            leave_balance = 0.0 if application.application_type == 'intern' else 0.0
+
             user = User.objects.create_user(
                 username=username,
                 email=application.email,
@@ -1380,7 +1406,8 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
                 first_name=application.first_name,
                 last_name=application.last_name,
                 user_type=application.application_type,  # 'employee' ou 'intern'
-                approved=True  # L'utilisateur est déjà approuvé
+                approved=True,  # L'utilisateur est déjà approuvé
+                leave_balance=leave_balance  # Pas de solde de congés pour les stagiaires
             )
 
             # S'assurer que le champ approved est bien défini
