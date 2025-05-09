@@ -5,7 +5,6 @@ import Button from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
 import { UserIcon } from "lucide-react";
 import logoImage from "../../assets/images/logo.png";
-import BackButton from "../../components/ui/BackButton";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -67,12 +66,10 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <BackButton to="/" label="Back to Home" />
-          <div className="flex justify-center flex-grow">
-            <img src={logoImage} alt="RH Management" className="h-16 w-auto" />
-          </div>
-          <div className="w-24"></div> {/* Espace pour équilibrer le bouton de retour */}
+        <div className="flex justify-center mb-4">
+          <Link to="/">
+            <img src={logoImage} alt="RH Management" className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+          </Link>
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
           Sign in to your account

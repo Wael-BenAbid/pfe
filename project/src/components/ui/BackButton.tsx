@@ -15,10 +15,10 @@ interface BackButtonProps {
  * @param label - Texte du bouton (par défaut: "Retour")
  * @param className - Classes CSS supplémentaires
  */
-const BackButton: React.FC<BackButtonProps> = ({ 
-  to, 
-  label = "Retour", 
-  className = "" 
+const BackButton: React.FC<BackButtonProps> = ({
+  to,
+  label = "Retour",
+  className = ""
 }) => {
   const navigate = useNavigate();
 
@@ -32,11 +32,11 @@ const BackButton: React.FC<BackButtonProps> = ({
 
   return (
     <Button
-      variant="outline"
+      variant="primary"
       size="sm"
       icon={<ArrowLeftIcon className="h-4 w-4" />}
       onClick={handleClick}
-      className={className}
+      className={`shadow-sm ${className}`}
     >
       {label}
     </Button>

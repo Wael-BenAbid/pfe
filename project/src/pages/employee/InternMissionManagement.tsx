@@ -123,6 +123,16 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
     e.preventDefault();
     if (!token) return;
 
+    // Vérifier si la date limite est dans le passé
+    const deadlineDate = new Date(newMission.deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Réinitialiser l'heure pour comparer uniquement les dates
+
+    if (deadlineDate < today) {
+      alert("La date limite ne peut pas être dans le passé. Veuillez choisir une date future.");
+      return;
+    }
+
     try {
       const missionData = {
         title: newMission.title,
@@ -163,6 +173,16 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token || !editingMission) return;
+
+    // Vérifier si la date limite est dans le passé
+    const deadlineDate = new Date(editingMission.deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Réinitialiser l'heure pour comparer uniquement les dates
+
+    if (deadlineDate < today) {
+      alert("La date limite ne peut pas être dans le passé. Veuillez choisir une date future.");
+      return;
+    }
 
     try {
       // Récupérer d'abord les détails complets de la mission pour obtenir le supervisor_id

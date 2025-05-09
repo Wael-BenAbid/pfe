@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAlert } from "../../contexts/AlertContext";
 import Button from "../../components/ui/Button";
 import TextInput from "../../components/ui/TextInput";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import Modal from "../../components/ui/Modal";
 import { PlusIcon, CheckIcon, XIcon, ClipboardListIcon } from "lucide-react";
 
 interface User {
@@ -189,10 +191,22 @@ const MissionManagement: React.FC = () => {
     });
   };
 
+  const { showAlert } = useAlert();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!token) return;
+
+    // Vérifier si la date limite est dans le passé
+    const deadlineDate = new Date(newMission.deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Réinitialiser l'heure pour comparer uniquement les dates
+
+    if (deadlineDate < today) {
+      showAlert("La date limite ne peut pas être dans le passé. Veuillez choisir une date future.", "Erreur de date", "error");
+      return;
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/missions/`, {
@@ -220,23 +234,21 @@ const MissionManagement: React.FC = () => {
       fetchMissions();
     } catch (error) {
       console.error("Error creating mission:", error);
-      alert("Failed to create mission. Please try again.");
+      showAlert("Échec de la création de la mission. Veuillez réessayer.", "Erreur", "error");
     }
   };
+
+  const [viewingMission, setViewingMission] = useState<Mission | null>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
 
   const handleViewMission = (id: number) => {
     // Trouver la mission dans la liste
     const mission = missions.find((m) => m.id === id);
     if (!mission) return;
 
-    // Afficher les détails de la mission dans une alerte (à remplacer par une modale)
-    alert(`
-      Titre: ${mission.title}
-      Description: ${mission.description}
-      Date d'échéance: ${new Date(mission.deadline).toLocaleDateString()}
-      Statut: ${mission.status || 'En attente'}
-      Assigné à: ${mission.user_details ? `${mission.user_details.first_name} ${mission.user_details.last_name}` : 'Non assigné'}
-    `);
+    // Afficher les détails de la mission dans une modale
+    setViewingMission(mission);
+    setShowViewModal(true);
   };
 
   const [editingMission, setEditingMission] = useState<Mission | null>(null);
@@ -256,6 +268,16 @@ const MissionManagement: React.FC = () => {
 
   const handleUpdateMission = async () => {
     if (!token || !editingMission) return;
+
+    // Vérifier si la date limite est dans le passé
+    const deadlineDate = new Date(editingMission.deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Réinitialiser l'heure pour comparer uniquement les dates
+
+    if (deadlineDate < today) {
+      showAlert("La date limite ne peut pas être dans le passé. Veuillez choisir une date future.", "Erreur de date", "error");
+      return;
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/missions/${editingMission.id}/`, {
@@ -280,21 +302,29 @@ const MissionManagement: React.FC = () => {
       setShowEditForm(false);
       setEditingMission(null);
       fetchMissions();
-      alert("Mission mise à jour avec succès");
+      showAlert("Mission mise à jour avec succès", "Succès", "success");
     } catch (error) {
       console.error("Error updating mission:", error);
-      alert("Échec de la mise à jour de la mission. Veuillez réessayer.");
+      showAlert("Échec de la mise à jour de la mission. Veuillez réessayer.", "Erreur", "error");
     }
   };
 
-  const handleDeleteMission = async (id: number) => {
+  const [deletingMissionId, setDeletingMissionId] = useState<number | null>(null);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+
+  const handleDeleteMission = (id: number) => {
     if (!token) return;
 
-    // Demander confirmation avant de supprimer
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette mission ?")) return;
+    // Afficher la modale de confirmation
+    setDeletingMissionId(id);
+    setShowDeleteConfirmModal(true);
+  };
+
+  const confirmDeleteMission = async () => {
+    if (!token || !deletingMissionId) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/missions/${id}/`, {
+      const response = await fetch(`${API_BASE_URL}/missions/${deletingMissionId}/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -305,12 +335,14 @@ const MissionManagement: React.FC = () => {
         throw new Error("Failed to delete mission");
       }
 
-      // Fetch updated missions
+      // Fermer la modale et rafraîchir la liste
+      setShowDeleteConfirmModal(false);
+      setDeletingMissionId(null);
       fetchMissions();
-      alert("Mission supprimée avec succès");
+      showAlert("Mission supprimée avec succès", "Succès", "success");
     } catch (error) {
       console.error("Error deleting mission:", error);
-      alert("Échec de la suppression de la mission. Veuillez réessayer.");
+      showAlert("Échec de la suppression de la mission. Veuillez réessayer.", "Erreur", "error");
     }
   };
 
@@ -366,10 +398,10 @@ const MissionManagement: React.FC = () => {
         message += "\nUn jour de congé a été ajouté à votre solde.";
       }
 
-      alert(message);
+      showAlert(message, "Mission complétée", "success");
     } catch (error) {
       console.error("Error completing mission:", error);
-      alert("Failed to complete mission. Please try again.");
+      showAlert("Échec de la complétion de la mission. Veuillez réessayer.", "Erreur", "error");
     }
   };
 
@@ -418,10 +450,18 @@ const MissionManagement: React.FC = () => {
       fetchMissions();
 
       // Afficher un message de succès
-      alert(`Pénalité de ${data.penalty_days} jour(s) appliquée avec succès. Nouveau solde de congés : ${data.new_leave_balance} jour(s).`);
+      showAlert(
+        `Pénalité de ${data.penalty_days} jour(s) appliquée avec succès. Nouveau solde de congés : ${data.new_leave_balance} jour(s).`,
+        "Pénalité appliquée",
+        "success"
+      );
     } catch (error) {
       console.error("Error applying penalty:", error);
-      alert(error instanceof Error ? error.message : "Failed to apply penalty. Please try again.");
+      showAlert(
+        error instanceof Error ? error.message : "Échec de l'application de la pénalité. Veuillez réessayer.",
+        "Erreur",
+        "error"
+      );
     }
   };
 
@@ -1002,6 +1042,73 @@ const MissionManagement: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* View Mission Modal */}
+      {showViewModal && viewingMission && (
+        <Modal
+          isOpen={showViewModal}
+          onClose={() => setShowViewModal(false)}
+          title="Détails de la mission"
+          size="md"
+        >
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Titre</h4>
+              <p className="mt-1">{viewingMission.title}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Description</h4>
+              <p className="mt-1">{viewingMission.description}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Date d'échéance</h4>
+              <p className="mt-1">{new Date(viewingMission.deadline).toLocaleDateString()}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Statut</h4>
+              <p className="mt-1">{viewingMission.status || 'En attente'}</p>
+            </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Assigné à</h4>
+              <p className="mt-1">
+                {viewingMission.user_details
+                  ? `${viewingMission.user_details.first_name} ${viewingMission.user_details.last_name}`
+                  : 'Non assigné'}
+              </p>
+            </div>
+            <div className="pt-4 flex justify-end">
+              <Button variant="primary" onClick={() => setShowViewModal(false)}>
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirmModal && (
+        <Modal
+          isOpen={showDeleteConfirmModal}
+          onClose={() => setShowDeleteConfirmModal(false)}
+          title="Confirmer la suppression"
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p>Êtes-vous sûr de vouloir supprimer cette mission ?</p>
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirmModal(false)}
+              >
+                Annuler
+              </Button>
+              <Button variant="danger" onClick={confirmDeleteMission}>
+                Supprimer
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
