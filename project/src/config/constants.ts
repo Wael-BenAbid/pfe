@@ -1,5 +1,5 @@
 // API configuration
-export const API_BASE_URL = 'http://localhost:8000/api';
+export const API_BASE_URL = 'http://localhost:8000';
 
 // Media URL configuration (for images, files, etc.)
 export const MEDIA_BASE_URL = 'http://localhost:5173';
