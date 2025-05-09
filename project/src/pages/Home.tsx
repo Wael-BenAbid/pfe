@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { UserPlus, LogIn, Briefcase as BriefcaseIcon } from "lucide-react";
 import Button from "../components/ui/Button";
-import logoImage from "../assets/images/logo.svg";
+import logoImage from "../assets/images/logo.png";
 
 const Home: React.FC = () => {
   return (

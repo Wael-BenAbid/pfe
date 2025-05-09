@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { AlertCircleIcon } from "lucide-react";
-import logoImage from "../assets/images/logo.svg";
+import logoImage from "../assets/images/logo.png";
 
 const NotFound: React.FC = () => {
   return (

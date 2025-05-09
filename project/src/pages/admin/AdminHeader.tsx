@@ -5,7 +5,7 @@ import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import { useNotifications } from "../../hooks/useNotifications";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/constants";
-import logoImage from "../../assets/images/logo.svg";
+import logoImage from "../../assets/images/logo.png";
 
 interface User {
   id: number;

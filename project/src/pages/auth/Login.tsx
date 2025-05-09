@@ -4,7 +4,7 @@ import { TextInput } from "../../components/ui/FormElements";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
 import { UserIcon } from "lucide-react";
-import logoImage from "../../assets/images/logo.svg";
+import logoImage from "../../assets/images/logo.png";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();

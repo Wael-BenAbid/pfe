@@ -4,7 +4,7 @@ import Button from "../components/ui/Button";
 import { TextInput } from "../components/ui/FormElements";
 import { API_BASE_URL } from "../config/constants";
 import { KeyIcon, LockIcon, ShieldIcon } from "lucide-react";
-import logoImage from "../assets/images/logo.svg";
+import logoImage from "../assets/images/logo.png";
 
 const ResetPassword: React.FC = () => {
   const [password, setPassword] = useState("");
