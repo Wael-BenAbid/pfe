@@ -1,6 +1,9 @@
 // API configuration
 export const API_BASE_URL = 'http://localhost:8000/api';
 
+// Media URL configuration (for images, files, etc.)
+export const MEDIA_BASE_URL = 'http://localhost:5173';
+
 // Application types
 export const APPLICATION_TYPES = [
   { value: 'employee', label: 'Job Application (Employee)' },

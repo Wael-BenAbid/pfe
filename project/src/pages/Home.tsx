@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { UserPlus, LogIn } from "lucide-react";
+import { UserPlus, LogIn, Briefcase as BriefcaseIcon } from "lucide-react";
 import Button from "../components/ui/Button";
 import logoImage from "../assets/images/logo.svg";
 

@@ -476,7 +476,8 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         user = self.get_object()
-        if request.user.is_superuser or request.user.user_type == 'admin':
+        # Permettre aux utilisateurs de mettre à jour leur propre profil
+        if request.user.is_superuser or request.user.user_type == 'admin' or request.user.id == user.id:
             return super().update(request, *args, **kwargs)
         return Response({'detail': 'Not authorized'}, status=403)
 

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  UsersIcon,
-  BriefcaseIcon,
-  GraduationCapIcon,
-  AlertCircleIcon,
+  Users as UsersIcon,
+  Briefcase as BriefcaseIcon,
+  GraduationCap as GraduationCapIcon,
+  AlertCircle as AlertCircleIcon,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/constants";

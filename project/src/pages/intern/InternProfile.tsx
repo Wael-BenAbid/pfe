@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../../config/constants";
+import { API_BASE_URL, MEDIA_BASE_URL } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import Button from "../../components/ui/Button";
@@ -13,6 +13,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import TextInput from "../../components/ui/TextInput";
+import AlertModal from "../../components/ui/AlertModal";
 
 interface User {
   id: number;
@@ -34,6 +35,12 @@ const InternProfile: React.FC = () => {
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<User>>({});
   const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'info' | 'warning'
+  });
 
   useEffect(() => {
     if (token && authUser) {
@@ -43,7 +50,7 @@ const InternProfile: React.FC = () => {
 
   const fetchUserDetails = async () => {
     if (!authUser) return;
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/users/${authUser.id}/`, {
         headers: {
@@ -88,17 +95,17 @@ const InternProfile: React.FC = () => {
       // Si nous avons une nouvelle image de profil, nous devons utiliser FormData
       if (profileImage) {
         const formDataWithImage = new FormData();
-        
+
         // Ajouter les champs textuels
         Object.entries(formData).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             formDataWithImage.append(key, value.toString());
           }
         });
-        
+
         // Ajouter l'image
         formDataWithImage.append('profile_image', profileImage);
-        
+
         const response = await fetch(`${API_BASE_URL}/users/${user.id}/`, {
           method: "PATCH",
           headers: {
@@ -133,10 +140,20 @@ const InternProfile: React.FC = () => {
       setUser(updatedUser);
       setProfileImage(null);
       setEditing(false);
-      alert("Profile updated successfully");
+      setAlertModal({
+        isOpen: true,
+        title: 'Success',
+        message: 'Profile updated successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("Failed to update profile");
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to update profile',
+        type: 'error'
+      });
     }
   };
 
@@ -164,6 +181,15 @@ const InternProfile: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 px-4">
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
+
       <div className="flex items-center mb-6">
         <Button
           variant="outline"
@@ -232,11 +258,16 @@ const InternProfile: React.FC = () => {
                       className="h-40 w-40 object-cover rounded-full border-2 border-blue-200 mb-2"
                     />
                   ) : user.profile_image ? (
-                    <img
-                      src={`${API_BASE_URL}${user.profile_image}`}
-                      alt={`${user.first_name} ${user.last_name}`}
-                      className="h-40 w-40 object-cover rounded-full border-2 border-blue-200 mb-2"
-                    />
+                    <>
+                      <div className="text-xs text-gray-500 mb-2">
+                        Image URL: {user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
+                      </div>
+                      <img
+                        src={user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
+                        alt={`${user.first_name} ${user.last_name}`}
+                        className="h-40 w-40 object-cover rounded-full border-2 border-blue-200 mb-2"
+                      />
+                    </>
                   ) : (
                     <div className="h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center mb-2">
                       <UserIcon className="h-20 w-20 text-blue-500" />
@@ -257,7 +288,7 @@ const InternProfile: React.FC = () => {
                 <>
                   {user.profile_image ? (
                     <img
-                      src={`${API_BASE_URL}${user.profile_image}`}
+                      src={user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
                       alt={`${user.first_name} ${user.last_name}`}
                       className="h-40 w-40 object-cover rounded-full border-2 border-blue-200"
                     />

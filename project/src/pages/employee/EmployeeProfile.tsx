@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { API_BASE_URL } from "../../config/constants";
+import { API_BASE_URL, MEDIA_BASE_URL } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import Button from "../../components/ui/Button";
@@ -13,6 +13,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import TextInput from "../../components/ui/TextInput";
+import AlertModal from "../../components/ui/AlertModal";
 
 interface User {
   id: number;
@@ -34,6 +35,12 @@ const EmployeeProfile: React.FC = () => {
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<User>>({});
   const [profileImage, setProfileImage] = useState<File | null>(null);
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'info' | 'warning'
+  });
 
   useEffect(() => {
     if (token && authUser) {
@@ -43,7 +50,7 @@ const EmployeeProfile: React.FC = () => {
 
   const fetchUserDetails = async () => {
     if (!authUser) return;
-    
+
     try {
       const response = await fetch(`${API_BASE_URL}/users/${authUser.id}/`, {
         headers: {
@@ -88,17 +95,17 @@ const EmployeeProfile: React.FC = () => {
       // Si nous avons une nouvelle image de profil, nous devons utiliser FormData
       if (profileImage) {
         const formDataWithImage = new FormData();
-        
+
         // Ajouter les champs textuels
         Object.entries(formData).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
             formDataWithImage.append(key, value.toString());
           }
         });
-        
+
         // Ajouter l'image
         formDataWithImage.append('profile_image', profileImage);
-        
+
         const response = await fetch(`${API_BASE_URL}/users/${user.id}/`, {
           method: "PATCH",
           headers: {
@@ -133,10 +140,20 @@ const EmployeeProfile: React.FC = () => {
       setUser(updatedUser);
       setProfileImage(null);
       setEditing(false);
-      alert("Profile updated successfully");
+      setAlertModal({
+        isOpen: true,
+        title: 'Success',
+        message: 'Profile updated successfully',
+        type: 'success'
+      });
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("Failed to update profile");
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to update profile',
+        type: 'error'
+      });
     }
   };
 
@@ -164,6 +181,15 @@ const EmployeeProfile: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 px-4">
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
+
       <div className="flex items-center mb-6">
         <Button
           variant="outline"
@@ -233,7 +259,7 @@ const EmployeeProfile: React.FC = () => {
                     />
                   ) : user.profile_image ? (
                     <img
-                      src={`${API_BASE_URL}${user.profile_image}`}
+                      src={user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
                       alt={`${user.first_name} ${user.last_name}`}
                       className="h-40 w-40 object-cover rounded-full border-2 border-blue-200 mb-2"
                     />
@@ -257,7 +283,7 @@ const EmployeeProfile: React.FC = () => {
                 <>
                   {user.profile_image ? (
                     <img
-                      src={`${API_BASE_URL}${user.profile_image}`}
+                      src={user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
                       alt={`${user.first_name} ${user.last_name}`}
                       className="h-40 w-40 object-cover rounded-full border-2 border-blue-200"
                     />

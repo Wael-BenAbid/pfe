@@ -97,6 +97,12 @@ DATABASES = {
     }
 }
 
+# Détection automatique de l'environnement Docker
+# Si nous sommes dans Docker, la variable DATABASE_HOST sera 'db'
+if os.getenv('DATABASE_HOST') == 'db':
+    DATABASES['default']['HOST'] = 'db'
+    DATABASES['default']['PORT'] = '5432'
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -144,7 +150,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media_v2')
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOW_ALL_ORIGINS = True  # Temporairement pour le débogage
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -180,13 +186,13 @@ SIMPLE_JWT = {
 
 # Email Configuration
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.dummy.EmailBackend')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'RH System <noreply@example.com>')
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'RH System <waelbenabid1@gmail.com>')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
-# Configuration SMTP pour Gmail ou SendGrid
+# Configuration SMTP pour Gmail
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'waelbenabid1@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')

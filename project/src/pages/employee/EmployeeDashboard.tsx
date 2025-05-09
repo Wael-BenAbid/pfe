@@ -6,12 +6,12 @@ import Button from "../../components/ui/Button";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import UserProfileDropdown from "../../components/ui/UserProfileDropdown";
 import {
-  LogOutIcon,
-  CalendarIcon,
-  BriefcaseIcon,
-  GraduationCapIcon,
-  ClockIcon,
-  BellIcon,
+  LogOut as LogOutIcon,
+  Calendar as CalendarIcon,
+  Briefcase as BriefcaseIcon,
+  GraduationCap as GraduationCapIcon,
+  Clock as ClockIcon,
+  Bell as BellIcon,
 } from "lucide-react";
 import logoImage from "../../assets/images/logo.svg";
 import LeaveRequests from "./LeaveRequests";
