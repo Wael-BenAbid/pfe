@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Routes, Route } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../hooks/useNotifications";
+import { useMissionStats } from "../../hooks/useMissionStats";
 import Button from "../../components/ui/Button";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import UserProfileDropdown from "../../components/ui/UserProfileDropdown";
@@ -12,8 +13,11 @@ import {
   GraduationCap as GraduationCapIcon,
   Clock as ClockIcon,
   Bell as BellIcon,
+  CheckCircle as CheckCircleIcon,
+  AlertCircle as AlertCircleIcon,
+  Clock as PendingIcon,
 } from "lucide-react";
-import logoImage from "../../assets/images/logo.svg";
+import Logo from "../../components/ui/Logo";
 import LeaveRequests from "./LeaveRequests";
 import Missions from "./Missions";
 import SupervisedInterns from "./SupervisedInterns";
@@ -25,8 +29,8 @@ const EmployeeDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
+  const missionStats = useMissionStats();
 
-  // 👇 Simple useEffect usage to avoid ESLint warning
   useEffect(() => {
     console.log(`Active tab changed to: ${activeTab}`);
   }, [activeTab]);
@@ -45,8 +49,8 @@ const EmployeeDashboard: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <img src={logoImage} alt="RH Management" className="h-8 w-auto mr-3" />
-                  <h1 className="text-2xl font-bold text-gray-900">
+                  <Logo size="md" showText={false} />
+                  <h1 className="text-2xl font-bold text-gray-900 ml-3">
                     Employee Dashboard
                   </h1>
                 </div>

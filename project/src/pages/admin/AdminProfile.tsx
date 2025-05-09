@@ -5,20 +5,18 @@ import { useAuth } from "../../contexts/AuthContext";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import Button from "../../components/ui/Button";
 import {
-  ArrowLeft as ArrowLeftIcon,
   User as UserIcon,
   Pencil as PencilIcon,
   Save as SaveIcon,
   X as XIcon,
   Image as ImageIcon,
   BarChart as BarChartIcon,
-  Settings as SettingsIcon,
   Clock as ClockIcon,
-  Shield as ShieldIcon,
   Users as UsersIcon,
   Briefcase as BriefcaseIcon,
   GraduationCap as GraduationCapIcon,
 } from "lucide-react";
+import BackButton from "../../components/ui/BackButton";
 import TextInput from "../../components/ui/TextInput";
 import AlertModal from "../../components/ui/AlertModal";
 
@@ -46,9 +44,16 @@ interface SystemStats {
 interface SystemActivity {
   id: number;
   action: string;
-  user: string;
-  timestamp: string;
+  action_type: string;
+  action_display: string;
+  user_email: string;
+  user_name: string;
+  ip_address: string | null;
   details: string;
+  resource_type: string;
+  resource_id: number | null;
+  created_at: string;
+  formatted_date: string;
 }
 
 const AdminProfile: React.FC = () => {
@@ -65,7 +70,7 @@ const AdminProfile: React.FC = () => {
     message: '',
     type: 'info' as 'success' | 'error' | 'info' | 'warning'
   });
-  const [activeTab, setActiveTab] = useState<'profile' | 'stats' | 'settings' | 'activity'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'stats' | 'activity'>('profile');
 
   // État pour les statistiques du système
   const [systemStats, setSystemStats] = useState<SystemStats>({
@@ -136,44 +141,8 @@ const AdminProfile: React.FC = () => {
     }
   };
 
-  // Données fictives pour les activités du système
-  const [systemActivities] = useState<SystemActivity[]>([
-    {
-      id: 1,
-      action: "User Login",
-      user: "admin@example.com",
-      timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
-      details: "Admin logged in from 192.168.1.1"
-    },
-    {
-      id: 2,
-      action: "Application Approved",
-      user: "admin@example.com",
-      timestamp: new Date(Date.now() - 30 * 60000).toISOString(),
-      details: "Approved internship application for john.doe@example.com"
-    },
-    {
-      id: 3,
-      action: "Mission Created",
-      user: "employee1@example.com",
-      timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
-      details: "Created new mission: Database Migration"
-    },
-    {
-      id: 4,
-      action: "User Updated",
-      user: "admin@example.com",
-      timestamp: new Date(Date.now() - 5 * 3600000).toISOString(),
-      details: "Updated profile for employee2@example.com"
-    },
-    {
-      id: 5,
-      action: "System Backup",
-      user: "system",
-      timestamp: new Date(Date.now() - 24 * 3600000).toISOString(),
-      details: "Automatic daily backup completed"
-    }
-  ]);
+  // État pour les activités du système
+  const [systemActivities, setSystemActivities] = useState<SystemActivity[]>([]);
 
   useEffect(() => {
     if (token && authUser) {
@@ -187,7 +156,32 @@ const AdminProfile: React.FC = () => {
     if (activeTab === 'stats' && token) {
       fetchSystemStats();
     }
+    if (activeTab === 'activity' && token) {
+      fetchSystemActivities();
+    }
   }, [activeTab, token]);
+
+  // Fonction pour charger les activités du système
+  const fetchSystemActivities = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/system-activities/`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch system activities');
+      }
+
+      const data = await response.json();
+      setSystemActivities(data);
+    } catch (error) {
+      console.error('Error fetching system activities:', error);
+      console.error('Failed to load system activities');
+    }
+  };
 
   const fetchUserDetails = async () => {
     if (!authUser) return;
@@ -346,14 +340,7 @@ const AdminProfile: React.FC = () => {
       />
 
       <div className="flex items-center mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          icon={<ArrowLeftIcon className="h-4 w-4" />}
-          onClick={() => navigate("/admin")}
-        >
-          Back to Dashboard
-        </Button>
+        <BackButton to="/admin" label="Back to Dashboard" />
         <h1 className="text-2xl font-semibold text-gray-900 ml-4">
           Admin Control Panel
         </h1>
@@ -385,19 +372,6 @@ const AdminProfile: React.FC = () => {
           <div className="flex items-center">
             <BarChartIcon className="h-4 w-4 mr-2" />
             System Statistics
-          </div>
-        </button>
-        <button
-          className={`py-2 px-4 text-sm font-medium ${
-            activeTab === 'settings'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          }`}
-          onClick={() => setActiveTab('settings')}
-        >
-          <div className="flex items-center">
-            <SettingsIcon className="h-4 w-4 mr-2" />
-            System Settings
           </div>
         </button>
         <button
@@ -472,9 +446,22 @@ const AdminProfile: React.FC = () => {
                       />
                     ) : user.profile_image ? (
                       <img
-                        src={user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
+                        src={user.profile_image.startsWith('http') ? user.profile_image : `${API_BASE_URL}/media/${user.profile_image}`}
                         alt={`${user.first_name} ${user.last_name}`}
                         className="h-40 w-40 object-cover rounded-full border-2 border-blue-200 mb-2"
+                        onError={(e) => {
+                          // Fallback en cas d'erreur de chargement de l'image
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.style.display = 'none';
+                          // Afficher l'icône utilisateur à la place
+                          const iconContainer = document.createElement('div');
+                          iconContainer.className = 'h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center absolute top-0 left-0';
+                          iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent) {
+                            parent.appendChild(iconContainer);
+                          }
+                        }}
                       />
                     ) : (
                       <div className="h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center mb-2">
@@ -496,9 +483,22 @@ const AdminProfile: React.FC = () => {
                   <>
                     {user.profile_image ? (
                       <img
-                        src={user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
+                        src={user.profile_image.startsWith('http') ? user.profile_image : `${API_BASE_URL}/media/${user.profile_image}`}
                         alt={`${user.first_name} ${user.last_name}`}
                         className="h-40 w-40 object-cover rounded-full border-2 border-blue-200"
+                        onError={(e) => {
+                          // Fallback en cas d'erreur de chargement de l'image
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.style.display = 'none';
+                          // Afficher l'icône utilisateur à la place
+                          const iconContainer = document.createElement('div');
+                          iconContainer.className = 'h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center absolute top-0 left-0';
+                          iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+                          const parent = e.currentTarget.parentElement;
+                          if (parent) {
+                            parent.appendChild(iconContainer);
+                          }
+                        }}
                       />
                     ) : (
                       <div className="h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center">
@@ -533,7 +533,7 @@ const AdminProfile: React.FC = () => {
                     <TextInput
                       label="GitHub Profile"
                       name="github_profile"
-                      type="url"
+                      type="text"
                       placeholder="https://github.com/username"
                       value={formData.github_profile || ""}
                       onChange={handleInputChange}
@@ -755,13 +755,13 @@ const AdminProfile: React.FC = () => {
                   {systemActivities.map((activity) => (
                     <tr key={activity.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {activity.action}
+                        {activity.action_display || activity.action}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {activity.user}
+                        {activity.user_name || activity.user_email || "System"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(activity.timestamp)}
+                        {activity.formatted_date || formatDate(activity.created_at)}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {activity.details}
@@ -773,7 +773,7 @@ const AdminProfile: React.FC = () => {
             </div>
             <div className="mt-4 flex justify-between items-center">
               <div className="text-sm text-gray-500">
-                Showing 5 of 125 activities
+                Showing {systemActivities.length} activities
               </div>
               <div className="flex space-x-2">
                 <Button
@@ -795,188 +795,7 @@ const AdminProfile: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'settings' && (
-        <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          <div className="p-4 border-b border-gray-200 bg-gray-50">
-            <h2 className="text-lg font-medium text-gray-900">
-              System Settings
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-md font-medium text-gray-900 mb-3">Email Configuration</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <TextInput
-                    label="SMTP Server"
-                    name="smtp_server"
-                    value="smtp.sendgrid.net"
-                    disabled
-                  />
-                  <TextInput
-                    label="SMTP Port"
-                    name="smtp_port"
-                    value="587"
-                    disabled
-                  />
-                  <TextInput
-                    label="From Email"
-                    name="from_email"
-                    value="waelbenabid1@gmail.com"
-                    disabled
-                  />
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      API Key
-                    </label>
-                    <div className="flex">
-                      <input
-                        type="password"
-                        value="••••••••••••••••••••••"
-                        disabled
-                        className="flex-1 shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md bg-gray-50"
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="ml-2"
-                      >
-                        Change
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              <div className="pt-4 border-t border-gray-200">
-                <h3 className="text-md font-medium text-gray-900 mb-3">Security Settings</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">Two-Factor Authentication</p>
-                      <p className="text-xs text-gray-500">Require 2FA for admin accounts</p>
-                    </div>
-                    <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                      <input
-                        type="checkbox"
-                        name="toggle"
-                        id="toggle-2fa"
-                        className="sr-only"
-                        defaultChecked
-                      />
-                      <label
-                        htmlFor="toggle-2fa"
-                        className="block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
-                      >
-                        <span className="block h-6 w-6 rounded-full bg-white shadow transform translate-x-4"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">Password Policy</p>
-                      <p className="text-xs text-gray-500">Require strong passwords</p>
-                    </div>
-                    <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                      <input
-                        type="checkbox"
-                        name="toggle"
-                        id="toggle-password"
-                        className="sr-only"
-                        defaultChecked
-                      />
-                      <label
-                        htmlFor="toggle-password"
-                        className="block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
-                      >
-                        <span className="block h-6 w-6 rounded-full bg-white shadow transform translate-x-4"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">Session Timeout</p>
-                      <p className="text-xs text-gray-500">Automatically log out inactive users</p>
-                    </div>
-                    <select
-                      className="block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                      defaultValue="never"
-                    >
-                      <option value="15">15 minutes</option>
-                      <option value="30">30 minutes</option>
-                      <option value="60">1 hour</option>
-                      <option value="never">Never</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <h3 className="text-md font-medium text-gray-900 mb-3">Backup Settings</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">Automatic Backups</p>
-                      <p className="text-xs text-gray-500">Schedule regular database backups</p>
-                    </div>
-                    <div className="relative inline-block w-10 mr-2 align-middle select-none">
-                      <input
-                        type="checkbox"
-                        name="toggle"
-                        id="toggle-backup"
-                        className="sr-only"
-                        defaultChecked
-                      />
-                      <label
-                        htmlFor="toggle-backup"
-                        className="block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"
-                      >
-                        <span className="block h-6 w-6 rounded-full bg-white shadow transform translate-x-4"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">Backup Frequency</p>
-                    </div>
-                    <select
-                      className="block w-32 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                      defaultValue="daily"
-                    >
-                      <option value="hourly">Hourly</option>
-                      <option value="daily">Daily</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="monthly">Monthly</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      className="mt-2"
-                    >
-                      Backup Now
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end pt-4 border-t border-gray-200">
-                <Button
-                  variant="primary"
-                  size="md"
-                >
-                  Save Settings
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

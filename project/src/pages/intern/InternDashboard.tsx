@@ -11,7 +11,7 @@ import {
   Calendar as CalendarIcon,
   Bell as BellIcon,
 } from "lucide-react";
-import logoImage from "../../assets/images/logo.png";
+import Logo from "../../components/ui/Logo";
 import InternMissions from "./InternMissions";
 import InternMeetings from "./InternMeetings";
 import NotificationsPage from "./NotificationsPage";
@@ -77,8 +77,8 @@ const InternDashboard: React.FC = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
               <div className="flex justify-between items-center">
                 <div className="flex items-center">
-                  <img src={logoImage} alt="RH Management" className="h-8 w-auto mr-3" />
-                  <h1 className="text-2xl font-bold text-gray-900">
+                  <Logo size="md" showText={false} />
+                  <h1 className="text-2xl font-bold text-gray-900 ml-3">
                     Intern Dashboard
                   </h1>
                 </div>

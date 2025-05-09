@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { UserPlus, LogIn, Briefcase as BriefcaseIcon } from "lucide-react";
 import Button from "../components/ui/Button";
-import logoImage from "../assets/images/logo.png";
+import Logo from "../components/ui/Logo";
 
 const Home: React.FC = () => {
   return (
@@ -12,10 +12,7 @@ const Home: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
-              <img src={logoImage} alt="RH Management" className="h-10 w-auto" />
-              <span className="ml-2 text-xl font-bold text-gray-900">
-                RH Management
-              </span>
+              <Logo size="lg" showText={true} textClassName="text-xl" />
             </div>
             <div className="flex items-center space-x-4">
               <Link to="/login">
