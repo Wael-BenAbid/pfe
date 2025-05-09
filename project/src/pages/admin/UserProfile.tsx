@@ -346,9 +346,22 @@ const UserProfile: React.FC = () => {
                     />
                   ) : user.profile_image ? (
                     <img
-                      src={`${API_BASE_URL}${user.profile_image}`}
+                      src={user.profile_image.startsWith('http') ? user.profile_image : `${API_BASE_URL}/media/${user.profile_image}`}
                       alt={`${user.first_name} ${user.last_name}`}
                       className="h-40 w-40 object-cover rounded-full border-2 border-blue-200 mb-2"
+                      onError={(e) => {
+                        // Fallback en cas d'erreur de chargement de l'image
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.style.display = 'none';
+                        // Afficher l'icône utilisateur à la place
+                        const iconContainer = document.createElement('div');
+                        iconContainer.className = 'h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center absolute top-0 left-0';
+                        iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          parent.appendChild(iconContainer);
+                        }
+                      }}
                     />
                   ) : (
                     <div className="h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center mb-2">
@@ -370,9 +383,22 @@ const UserProfile: React.FC = () => {
                 <>
                   {user.profile_image ? (
                     <img
-                      src={`${API_BASE_URL}${user.profile_image}`}
+                      src={user.profile_image.startsWith('http') ? user.profile_image : `${API_BASE_URL}/media/${user.profile_image}`}
                       alt={`${user.first_name} ${user.last_name}`}
                       className="h-40 w-40 object-cover rounded-full border-2 border-blue-200"
+                      onError={(e) => {
+                        // Fallback en cas d'erreur de chargement de l'image
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.style.display = 'none';
+                        // Afficher l'icône utilisateur à la place
+                        const iconContainer = document.createElement('div');
+                        iconContainer.className = 'h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center absolute top-0 left-0';
+                        iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          parent.appendChild(iconContainer);
+                        }
+                      }}
                     />
                   ) : (
                     <div className="h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center">

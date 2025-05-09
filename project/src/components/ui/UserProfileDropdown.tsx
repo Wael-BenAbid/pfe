@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserIcon, LogOutIcon, ChevronDownIcon } from 'lucide-react';
-import { MEDIA_BASE_URL } from '../../config/constants';
+import { API_BASE_URL } from '../../config/constants';
 
 interface User {
   id: number;
@@ -65,9 +65,25 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ user, onLogou
         <div className="flex items-center">
           {user.profile_image ? (
             <img
-              src={user.profile_image.startsWith('http') ? user.profile_image : `/media/${user.profile_image}`}
+              src={user.profile_image.startsWith('http') ? user.profile_image : `${API_BASE_URL}/media/${user.profile_image}`}
               alt={`${user.first_name || user.username}'s profile`}
               className="h-8 w-8 rounded-full object-cover"
+              onError={(e) => {
+                // Fallback en cas d'erreur de chargement de l'image
+                e.currentTarget.onerror = null;
+                e.currentTarget.style.display = 'none';
+                // Afficher l'avatar par défaut
+                const parent = e.currentTarget.parentElement;
+                if (parent) {
+                  const fallbackDiv = document.createElement('div');
+                  fallbackDiv.className = 'h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center';
+                  fallbackDiv.innerHTML = `<span class="text-blue-800 font-semibold text-sm">
+                    ${user.first_name ? user.first_name.charAt(0) : user.username.charAt(0).toUpperCase()}
+                    ${user.last_name ? user.last_name.charAt(0) : ''}
+                  </span>`;
+                  parent.appendChild(fallbackDiv);
+                }
+              }}
             />
           ) : (
             <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
@@ -94,6 +110,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ user, onLogou
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
           <button
+            type="button"
             onClick={handleViewProfile}
             className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
@@ -101,6 +118,7 @@ const UserProfileDropdown: React.FC<UserProfileDropdownProps> = ({ user, onLogou
             View Profile
           </button>
           <button
+            type="button"
             onClick={handleLogout}
             className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >

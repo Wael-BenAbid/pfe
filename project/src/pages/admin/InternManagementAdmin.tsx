@@ -13,6 +13,7 @@ interface User {
   last_name: string;
   user_type: string;
   leave_balance: number;
+  profile_image?: string;
 }
 
 const InternManagementAdmin: React.FC = () => {
@@ -166,14 +167,29 @@ const InternManagementAdmin: React.FC = () => {
                   <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-blue-800 font-semibold">
-                            {user.first_name
-                              ? user.first_name.charAt(0)
-                              : user.username.charAt(0)}
-                            {user.last_name ? user.last_name.charAt(0) : ""}
-                          </span>
-                        </div>
+                        {user.profile_image ? (
+                          <img
+                            src={user.profile_image.startsWith('http') ? user.profile_image : `${API_BASE_URL}/media/${user.profile_image}`}
+                            alt={`${user.first_name || user.username}'s profile`}
+                            className="h-10 w-10 rounded-full object-cover"
+                            onError={(e) => {
+                              // Fallback en cas d'erreur de chargement de l'image
+                              e.currentTarget.onerror = null;
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.parentElement!.querySelector('.fallback-avatar')!.style.display = 'flex';
+                            }}
+                          />
+                        ) : (
+                          <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center fallback-avatar">
+                            <span className="text-blue-800 font-semibold">
+                              {user.first_name
+                                ? user.first_name.charAt(0)
+                                : user.username.charAt(0)}
+                              {user.last_name ? user.last_name.charAt(0) : ""}
+                            </span>
+                          </div>
+                        )}
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
                             {user.first_name && user.last_name

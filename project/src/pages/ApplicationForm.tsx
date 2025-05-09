@@ -15,7 +15,8 @@ import {
   MAX_FILE_SIZE,
 } from "../config/constants";
 import { Briefcase as BriefcaseIcon, GraduationCap as GraduationCapIcon, User as UserIcon } from "lucide-react";
-import logoImage from "../assets/images/logo.svg";
+import logoImage from "../assets/images/logo.png";
+import BackButton from "../components/ui/BackButton";
 
 interface FormData {
   application_type: string;
@@ -463,20 +464,26 @@ const ApplicationForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <img src={logoImage} alt="RH Management" className="h-16 w-auto" />
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <BackButton to="/" label="Back to Home" />
+            <div className="flex justify-center flex-grow">
+              <img src={logoImage} alt="RH Management" className="h-16 w-auto" />
+            </div>
+            <div className="w-24"></div> {/* Espace pour équilibrer le bouton de retour */}
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {formData.application_type === "employee"
-              ? "Job Application"
-              : formData.application_type === "intern"
-              ? "Internship Application"
-              : "RH Management Application"}
-          </h1>
-          <p className="text-gray-600">
-            Submit your application for review by our HR team
-          </p>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {formData.application_type === "employee"
+                ? "Job Application"
+                : formData.application_type === "intern"
+                ? "Internship Application"
+                : "RH Management Application"}
+            </h1>
+            <p className="text-gray-600">
+              Submit your application for review by our HR team
+            </p>
+          </div>
         </div>
 
         {renderStepIndicator()}
