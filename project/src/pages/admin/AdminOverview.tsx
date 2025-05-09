@@ -187,7 +187,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </Link>
           </li>
           <li>
-            <Link to="/admin/employees" className="block hover:bg-gray-50">
+            <Link to="/admin/users" className="block hover:bg-gray-50">
               <div className="px-4 py-4 sm:px-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">

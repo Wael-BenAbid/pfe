@@ -58,14 +58,14 @@ const NotificationsPage: React.FC = () => {
     <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Notifications</h1>
-        {notifications.filter(n => !n.read).length > 0 && (
+        {notifications.length > 0 && (
           <Button
-            variant="primary"
+            variant="danger"
             size="sm"
             onClick={handleMarkAllAsRead}
-            icon={<CheckIcon className="h-4 w-4" />}
+            icon={<TrashIcon className="h-4 w-4" />}
           >
-            Marquer tout comme lu
+            Supprimer toutes les notifications
           </Button>
         )}
       </div>
@@ -112,19 +112,17 @@ const NotificationsPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex space-x-2">
-                      {!notification.read && (
-                        <Button
-                          variant="outline"
-                          size="xs"
-                          onClick={() => handleMarkAsRead(notification.id)}
-                          icon={<CheckIcon className="h-4 w-4" />}
-                        >
-                          Marquer comme lu
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMarkAsRead(notification.id)}
+                        icon={<CheckIcon className="h-4 w-4" />}
+                      >
+                        Marquer comme lu
+                      </Button>
                       <Button
                         variant="danger"
-                        size="xs"
+                        size="sm"
                         onClick={() => handleRemoveNotification(notification.id)}
                         icon={<TrashIcon className="h-4 w-4" />}
                       >

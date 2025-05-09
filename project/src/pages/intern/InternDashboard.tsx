@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Routes, Route } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../hooks/useNotifications";
 import Button from "../../components/ui/Button";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
+import UserProfileDropdown from "../../components/ui/UserProfileDropdown";
 import {
   LogOutIcon,
   BriefcaseIcon,
   CalendarIcon,
   BellIcon,
 } from "lucide-react";
+import logoImage from "../../assets/images/logo.svg";
 import InternMissions from "./InternMissions";
 import InternMeetings from "./InternMeetings";
 import NotificationsPage from "./NotificationsPage";
+import InternProfile from "./InternProfile";
 
 const InternDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -66,98 +69,95 @@ const InternDashboard: React.FC = () => {
   }, [missions]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Intern Dashboard
-            </h1>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <NotificationDropdown
-                  notifications={useNotifications().notifications}
-                  onMarkAsRead={useNotifications().markAsRead}
-                  onMarkAllAsRead={useNotifications().markAllAsRead}
-                  userType="intern"
-                />
-              </div>
-              <div className="flex items-center">
-                <div className="mr-4">
-                  <p className="text-sm text-gray-600">
-                    Welcome, {user?.username}
-                  </p>
+    <Routes>
+      <Route path="profile" element={<InternProfile />} />
+      <Route path="*" element={
+        <div className="min-h-screen bg-gray-50">
+          <header className="bg-white shadow">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <img src={logoImage} alt="RH Management" className="h-8 w-auto mr-3" />
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Intern Dashboard
+                  </h1>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  icon={<LogOutIcon className="h-4 w-4" />}
-                  onClick={handleLogout}
-                >
-                  Sign out
-                </Button>
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <NotificationDropdown
+                      notifications={useNotifications().notifications}
+                      onMarkAsRead={useNotifications().markAsRead}
+                      onMarkAllAsRead={useNotifications().markAllAsRead}
+                      userType="intern"
+                    />
+                  </div>
+                  <UserProfileDropdown
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </header>
+          </header>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        {/* Navigation Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              type="button"
-              onClick={() => setActiveTab("missions")}
-              className={`${
-                activeTab === "missions"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-            >
-              <BriefcaseIcon className="h-4 w-4 mr-2" />
-              Missions
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("meetings")}
-              className={`${
-                activeTab === "meetings"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-            >
-              <CalendarIcon className="h-4 w-4 mr-2" />
-              Meetings
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("notifications")}
-              className={`${
-                activeTab === "notifications"
-                  ? "border-blue-500 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-            >
-              <BellIcon className="h-4 w-4 mr-2" />
-              Notifications
-              {unreadNotifications > 0 && (
-                <span className="ml-2 bg-red-100 text-red-600 text-xs rounded-full px-2 py-0.5">
-                  {unreadNotifications}
-                </span>
-              )}
-            </button>
-          </nav>
-        </div>
+          <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+            {/* Navigation Tabs */}
+            <div className="border-b border-gray-200 mb-6">
+              <nav className="-mb-px flex space-x-8">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("missions")}
+                  className={`${
+                    activeTab === "missions"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+                >
+                  <BriefcaseIcon className="h-4 w-4 mr-2" />
+                  Missions
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("meetings")}
+                  className={`${
+                    activeTab === "meetings"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+                >
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  Meetings
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("notifications")}
+                  className={`${
+                    activeTab === "notifications"
+                      ? "border-blue-500 text-blue-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+                >
+                  <BellIcon className="h-4 w-4 mr-2" />
+                  Notifications
+                  {unreadNotifications > 0 && (
+                    <span className="ml-2 bg-red-100 text-red-600 text-xs rounded-full px-2 py-0.5">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </button>
+              </nav>
+            </div>
 
-        {/* Content */}
-        <div className="bg-white shadow rounded-lg p-6">
-          {activeTab === "missions" && <InternMissions />}
-          {activeTab === "meetings" && <InternMeetings />}
-          {activeTab === "notifications" && <NotificationsPage />}
+            {/* Content */}
+            <div className="bg-white shadow rounded-lg p-6">
+              {activeTab === "missions" && <InternMissions />}
+              {activeTab === "meetings" && <InternMeetings />}
+              {activeTab === "notifications" && <NotificationsPage />}
+            </div>
+          </main>
         </div>
-      </main>
-    </div>
+      } />
+    </Routes>
   );
 };
 

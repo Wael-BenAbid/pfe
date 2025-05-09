@@ -5,6 +5,7 @@ import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import { useNotifications } from "../../hooks/useNotifications";
 import { useAuth } from "../../contexts/AuthContext";
 import { API_BASE_URL } from "../../config/constants";
+import logoImage from "../../assets/images/logo.svg";
 
 interface User {
   id: number;
@@ -108,8 +109,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
               <MenuIcon className="h-6 w-6" aria-hidden="true" />
             </button>
             <div className="flex-shrink-0 flex items-center">
-              <Link to="/admin" className="text-xl font-bold text-blue-600">
-                HR Admin
+              <Link to="/admin" className="flex items-center">
+                <img src={logoImage} alt="RH Management" className="h-8 w-auto" />
+                <span className="ml-2 text-xl font-bold text-blue-600">RH Admin</span>
               </Link>
             </div>
           </div>

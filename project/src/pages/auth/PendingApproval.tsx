@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "../../components/ui/Button";
 import { ClockIcon, AlertCircleIcon } from "lucide-react";
 import { API_BASE_URL } from "../../config/constants";
+import logoImage from "../../assets/images/logo.svg";
 
 interface ApplicationInfo {
   id: number;
@@ -80,6 +81,10 @@ const PendingApproval: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
+        <div className="flex justify-center mb-6">
+          <img src={logoImage} alt="RH Management" className="h-16 w-auto" />
+        </div>
+
         <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-yellow-100 mb-6">
           <ClockIcon className="h-10 w-10 text-yellow-600" />
         </div>

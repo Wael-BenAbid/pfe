@@ -11,6 +11,7 @@ import {
   PencilIcon,
   SaveIcon,
   XIcon,
+  ImageIcon,
 } from "lucide-react";
 import TextInput from "../../components/ui/TextInput";
 
@@ -22,6 +23,8 @@ interface User {
   last_name: string;
   user_type: string;
   leave_balance: number;
+  github_profile?: string;
+  profile_image?: string;
 }
 
 const UserProfile: React.FC = () => {
@@ -32,6 +35,7 @@ const UserProfile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<User>>({});
+  const [profileImage, setProfileImage] = useState<File | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -70,25 +74,65 @@ const UserProfile: React.FC = () => {
     });
   };
 
+  const handleProfileImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProfileImage(e.target.files[0]);
+    }
+  };
+
   const handleSave = async () => {
     if (!token || !user) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      let updatedUser;
 
-      if (!response.ok) {
-        throw new Error("Failed to update user");
+      // Si nous avons une nouvelle image de profil, nous devons utiliser FormData
+      if (profileImage) {
+        const formDataWithImage = new FormData();
+
+        // Ajouter les champs textuels
+        Object.entries(formData).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            formDataWithImage.append(key, value.toString());
+          }
+        });
+
+        // Ajouter l'image
+        formDataWithImage.append('profile_image', profileImage);
+
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formDataWithImage,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update user");
+        }
+
+        updatedUser = await response.json();
+      } else {
+        // Pas de nouvelle image, on peut utiliser JSON
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update user");
+        }
+
+        updatedUser = await response.json();
       }
 
-      const updatedUser = await response.json();
       setUser(updatedUser);
+      setProfileImage(null);
       setEditing(false);
       alert("User updated successfully");
     } catch (error) {
@@ -223,10 +267,52 @@ const UserProfile: React.FC = () => {
 
         <div className="p-6">
           <div className="flex flex-col md:flex-row">
-            <div className="md:w-1/3 mb-6 md:mb-0 flex justify-center">
-              <div className="h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center">
-                <UserIcon className="h-20 w-20 text-blue-500" />
-              </div>
+            <div className="md:w-1/3 mb-6 md:mb-0 flex flex-col items-center">
+              {editing ? (
+                <div className="text-center">
+                  {profileImage ? (
+                    <img
+                      src={URL.createObjectURL(profileImage)}
+                      alt="Profile preview"
+                      className="h-40 w-40 object-cover rounded-full border-2 border-blue-200 mb-2"
+                    />
+                  ) : user.profile_image ? (
+                    <img
+                      src={`${API_BASE_URL}${user.profile_image}`}
+                      alt={`${user.first_name} ${user.last_name}`}
+                      className="h-40 w-40 object-cover rounded-full border-2 border-blue-200 mb-2"
+                    />
+                  ) : (
+                    <div className="h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center mb-2">
+                      <UserIcon className="h-20 w-20 text-blue-500" />
+                    </div>
+                  )}
+                  <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    Change Image
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/jpeg,image/png,image/jpg"
+                      onChange={handleProfileImageChange}
+                    />
+                  </label>
+                </div>
+              ) : (
+                <>
+                  {user.profile_image ? (
+                    <img
+                      src={`${API_BASE_URL}${user.profile_image}`}
+                      alt={`${user.first_name} ${user.last_name}`}
+                      className="h-40 w-40 object-cover rounded-full border-2 border-blue-200"
+                    />
+                  ) : (
+                    <div className="h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center">
+                      <UserIcon className="h-20 w-20 text-blue-500" />
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <div className="md:w-2/3">
               {editing ? (
@@ -286,6 +372,14 @@ const UserProfile: React.FC = () => {
                     name="leave_balance"
                     type="number"
                     value={formData.leave_balance?.toString() || "0"}
+                    onChange={handleInputChange}
+                  />
+                  <TextInput
+                    label="GitHub Profile"
+                    name="github_profile"
+                    type="url"
+                    placeholder="https://github.com/username"
+                    value={formData.github_profile || ""}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -349,6 +443,23 @@ const UserProfile: React.FC = () => {
                         {user.leave_balance} days
                       </p>
                     </div>
+                    {user.github_profile && (
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">
+                          GitHub Profile
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-900">
+                          <a
+                            href={user.github_profile}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            {user.github_profile}
+                          </a>
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="mt-6">
                     <Button

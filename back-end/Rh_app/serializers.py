@@ -6,7 +6,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'password', 'user_type', 'leave_balance', 'first_name', 'last_name','approved')
+        fields = ('id', 'username', 'email', 'password', 'user_type', 'leave_balance',
+                 'first_name', 'last_name', 'approved', 'profile_image', 'github_profile')
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -17,7 +18,9 @@ class UserSerializer(serializers.ModelSerializer):
             user_type=validated_data.get('user_type', 'employee'),
             leave_balance=validated_data.get('leave_balance', 30),
             first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', '')
+            last_name=validated_data.get('last_name', ''),
+            profile_image=validated_data.get('profile_image', None),
+            github_profile=validated_data.get('github_profile', None)
         )
         return user
 
@@ -98,9 +101,11 @@ class JobApplicationSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'application_type', 'position', 'first_name', 'last_name',
             'email', 'phone', 'education', 'experience', 'motivation', 'cv_file',
-            'status', 'created_at', 'user', 'password'
+            'github_profile', 'profile_image', 'status', 'created_at', 'user', 'password'
         ]
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {'password': {'write_only': True},
+                       'github_profile': {'required': False},
+                       'profile_image': {'required': False}}
 
 class UserSessionSerializer(serializers.ModelSerializer):
     duration_hours = serializers.SerializerMethodField()

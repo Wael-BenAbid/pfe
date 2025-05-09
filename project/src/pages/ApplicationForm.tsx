@@ -15,6 +15,7 @@ import {
   MAX_FILE_SIZE,
 } from "../config/constants";
 import { BriefcaseIcon, GraduationCapIcon, UserIcon } from "lucide-react";
+import logoImage from "../assets/images/logo.svg";
 
 interface FormData {
   application_type: string;
@@ -27,6 +28,8 @@ interface FormData {
   experience: string;
   motivation: string;
   cv_file: File | null;
+  github_profile: string;
+  profile_image: File | null;
   password: string;
 }
 
@@ -41,6 +44,8 @@ interface FormErrors {
   experience?: string;
   motivation?: string;
   cv_file?: string;
+  github_profile?: string;
+  profile_image?: string;
   password?: string;
 }
 
@@ -57,6 +62,8 @@ const ApplicationForm: React.FC = () => {
     experience: "",
     motivation: "",
     cv_file: null,
+    github_profile: "",
+    profile_image: null,
     password: "",
   });
 
@@ -91,6 +98,9 @@ const ApplicationForm: React.FC = () => {
       if (!formData.phone) {
         newErrors.phone = VALIDATION_MESSAGES.REQUIRED;
       }
+      if (formData.github_profile && !/^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9_-]+\/?$/.test(formData.github_profile)) {
+        newErrors.github_profile = "Please enter a valid GitHub profile URL";
+      }
       if (!formData.password) {
         newErrors.password = VALIDATION_MESSAGES.REQUIRED;
       } else if (formData.password.length < 8) {
@@ -119,6 +129,15 @@ const ApplicationForm: React.FC = () => {
         }
         if (!ACCEPTED_FILE_TYPES.includes(formData.cv_file.type)) {
           newErrors.cv_file = VALIDATION_MESSAGES.FILE_TYPE_INVALID;
+        }
+      }
+
+      if (formData.profile_image) {
+        if (formData.profile_image.size > MAX_FILE_SIZE) {
+          newErrors.profile_image = VALIDATION_MESSAGES.FILE_SIZE_EXCEEDED;
+        }
+        if (!["image/jpeg", "image/png", "image/jpg"].includes(formData.profile_image.type)) {
+          newErrors.profile_image = "Please upload a valid image file (JPEG, PNG)";
         }
       }
     }
@@ -151,6 +170,13 @@ const ApplicationForm: React.FC = () => {
     }
   };
 
+  const handleProfileImageChange = (file: File | null) => {
+    setFormData((prev) => ({ ...prev, profile_image: file }));
+    if (errors.profile_image) {
+      setErrors((prev) => ({ ...prev, profile_image: undefined }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep(currentStep)) return;
@@ -159,9 +185,9 @@ const ApplicationForm: React.FC = () => {
     try {
       const submitData = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        if (key === "cv_file" && value) {
+        if ((key === "cv_file" || key === "profile_image") && value) {
           submitData.append(key, value);
-        } else if (key !== "cv_file") {
+        } else if (key !== "cv_file" && key !== "profile_image") {
           submitData.append(key, value as string);
         }
       });
@@ -317,6 +343,16 @@ const ApplicationForm: React.FC = () => {
             />
 
             <TextInput
+              label="GitHub Profile"
+              type="url"
+              placeholder="Enter your GitHub profile URL (e.g., https://github.com/username)"
+              value={formData.github_profile}
+              onChange={(e) => handleChange("github_profile", e.target.value)}
+              error={errors.github_profile}
+              helper="Share your GitHub profile to showcase your projects"
+            />
+
+            <TextInput
               label="Password"
               type="password"
               placeholder="Create a password for your account"
@@ -377,7 +413,7 @@ const ApplicationForm: React.FC = () => {
           <div className="space-y-4">
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-800">Documents</h2>
-              <p className="text-gray-600">Upload your resume/CV</p>
+              <p className="text-gray-600">Upload your resume/CV and profile image</p>
             </div>
 
             <FileInput
@@ -386,6 +422,14 @@ const ApplicationForm: React.FC = () => {
               onChange={handleFileChange}
               error={errors.cv_file}
               helper="Upload your CV in PDF, DOC, or DOCX format (max 5MB)"
+            />
+
+            <FileInput
+              label="Profile Image"
+              acceptedFileTypes={["image/jpeg", "image/png", "image/jpg"]}
+              onChange={handleProfileImageChange}
+              error={errors.profile_image}
+              helper="Upload a profile image (JPEG, PNG format, max 5MB)"
             />
 
             <div className="mt-6 p-4 bg-blue-50 rounded-md border border-blue-100">
@@ -420,13 +464,15 @@ const ApplicationForm: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">{getIcon()}</div>
+          <div className="flex justify-center mb-4">
+            <img src={logoImage} alt="RH Management" className="h-16 w-auto" />
+          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {formData.application_type === "employee"
               ? "Job Application"
               : formData.application_type === "intern"
               ? "Internship Application"
-              : "HR System Application"}
+              : "RH Management Application"}
           </h1>
           <p className="text-gray-600">
             Submit your application for review by our HR team
