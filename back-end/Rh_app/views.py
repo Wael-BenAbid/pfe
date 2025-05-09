@@ -22,6 +22,7 @@ from .serializers import (
     UserSessionSerializer, MeetingSerializer, NotificationSerializer,
     SystemActivitySerializer
 )
+from .views_mission import MissionViewSet
 from .activity_logger import log_login, log_logout
 
 logger = logging.getLogger(__name__)
