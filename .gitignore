@@ -25,7 +25,8 @@ var/
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-media
+media/
+media_v2/
 staticfiles_v2/
 static/
 back-end/entrypoint.sh
@@ -93,3 +94,18 @@ docker-compose.override.yml
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Images et médias
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+*.webp
+back-end/media_v2/profile_images/
+back-end/project/src/assets/images/
+project/src/assets/images/
+# Exception pour les templates et les fichiers de configuration
+!*.svg.template
+!*.png.template

@@ -56,6 +56,9 @@ urlpatterns = [
     path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
     path('api/auth/login/', login_view, name='api_login'),
     path('api/auth/logout/', api_logout, name='api_logout'),
+
+    # Inclure toutes les URLs de l'application Rh_app
+    path('', include('Rh_app.urls')),
 ]
 
 # Ajouter les URLs pour servir les fichiers média en mode développement
