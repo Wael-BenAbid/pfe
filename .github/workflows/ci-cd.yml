@@ -136,30 +136,54 @@ jobs:
       - name: Scan frontend image with Trivy
         run: |
           echo "Scanning frontend image..."
-          # Utiliser le fichier de configuration .trivyrc
-          trivy image --config .trivyrc ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} || echo "Trivy scan completed with warnings or errors, but we continue"
+          # Check if .trivyrc exists and use it if it does
+          if [ -f ".trivyrc" ]; then
+            trivy image --config .trivyrc ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} || echo "Trivy scan completed with warnings or errors, but we continue"
+          else
+            # Use default parameters if .trivyrc doesn't exist
+            trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} || echo "Trivy scan completed with warnings or errors, but we continue"
+          fi
         continue-on-error: true
 
       - name: Scan backend image with Trivy
         run: |
           echo "Scanning backend image..."
-          # Utiliser le fichier de configuration .trivyrc
-          trivy image --config .trivyrc ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }} || echo "Trivy scan completed with warnings or errors, but we continue"
+          # Check if .trivyrc exists and use it if it does
+          if [ -f ".trivyrc" ]; then
+            trivy image --config .trivyrc ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }} || echo "Trivy scan completed with warnings or errors, but we continue"
+          else
+            # Use default parameters if .trivyrc doesn't exist
+            trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }} || echo "Trivy scan completed with warnings or errors, but we continue"
+          fi
         continue-on-error: true
 
       - name: Scan repository with Trivy
         run: |
           echo "Scanning repository..."
-          # Utiliser le fichier de configuration .trivyrc
-          trivy fs --config .trivyrc . || echo "Trivy scan completed with warnings or errors, but we continue"
+          # Check if .trivyrc exists and use it if it does
+          if [ -f ".trivyrc" ]; then
+            trivy fs --config .trivyrc . || echo "Trivy scan completed with warnings or errors, but we continue"
+          else
+            # Use default parameters if .trivyrc doesn't exist
+            trivy fs --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 --skip-dirs ".git,.github,node_modules" . || echo "Trivy scan completed with warnings or errors, but we continue"
+          fi
         continue-on-error: true
 
       - name: Scan Kubernetes manifests with Trivy
         run: |
           echo "Scanning Kubernetes manifests..."
-          # Utiliser le fichier de configuration .trivyrc
-          # Limiter le scan au répertoire kubernetes pour éviter les problèmes
-          trivy config --config .trivyrc kubernetes/ || echo "Trivy scan completed with warnings or errors, but we continue"
+          # Check if kubernetes directory exists
+          if [ -d "kubernetes" ]; then
+            # Check if .trivyrc exists and use it if it does
+            if [ -f ".trivyrc" ]; then
+              trivy config --config .trivyrc kubernetes/ || echo "Trivy scan completed with warnings or errors, but we continue"
+            else
+              # Use default parameters if .trivyrc doesn't exist
+              trivy config --severity HIGH,CRITICAL --exit-code 0 kubernetes/ || echo "Trivy scan completed with warnings or errors, but we continue"
+            fi
+          else
+            echo "Kubernetes directory not found, skipping scan"
+          fi
         continue-on-error: true
 
   build-push:
@@ -1106,12 +1130,30 @@ jobs:
 
           # Scan des images Docker (avec timeout réduit)
           echo "Scanning Docker images..."
-          trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL --timeout 5m ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest || echo "Frontend image scan completed with warnings or errors, but we continue"
-          trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL --timeout 5m ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest || echo "Backend image scan completed with warnings or errors, but we continue"
+          # Check if .trivyrc exists and use it if it does
+          if [ -f ".trivyrc" ]; then
+            trivy image --config .trivyrc ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest || echo "Frontend image scan completed with warnings or errors, but we continue"
+            trivy image --config .trivyrc ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest || echo "Backend image scan completed with warnings or errors, but we continue"
+          else
+            # Use default parameters if .trivyrc doesn't exist
+            trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL --timeout 5m --exit-code 0 ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest || echo "Frontend image scan completed with warnings or errors, but we continue"
+            trivy image --no-progress --ignore-unfixed --severity HIGH,CRITICAL --timeout 5m --exit-code 0 ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest || echo "Backend image scan completed with warnings or errors, but we continue"
+          fi
 
           # Scan des manifestes Kubernetes (avec timeout réduit)
           echo "Scanning Kubernetes manifests..."
-          trivy config --no-progress --severity HIGH,CRITICAL --timeout 5m --skip-dirs ".git,.github,node_modules" --skip-files "*.md,*.txt,*.json" kubernetes/ || echo "Kubernetes manifests scan completed with warnings or errors, but we continue"
+          # Check if kubernetes directory exists
+          if [ -d "kubernetes" ]; then
+            # Check if .trivyrc exists and use it if it does
+            if [ -f ".trivyrc" ]; then
+              trivy config --config .trivyrc kubernetes/ || echo "Kubernetes manifests scan completed with warnings or errors, but we continue"
+            else
+              # Use default parameters if .trivyrc doesn't exist
+              trivy config --no-progress --severity HIGH,CRITICAL --timeout 5m --exit-code 0 --skip-dirs ".git,.github,node_modules" --skip-files "*.md,*.txt,*.json" kubernetes/ || echo "Kubernetes manifests scan completed with warnings or errors, but we continue"
+            fi
+          else
+            echo "Kubernetes directory not found, skipping scan"
+          fi
 
           # Appliquer le job Trivy simplifié
           echo "Applying simplified Trivy scan job..."
