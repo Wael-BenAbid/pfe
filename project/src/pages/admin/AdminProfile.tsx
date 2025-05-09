@@ -17,8 +17,9 @@ import {
   GraduationCap as GraduationCapIcon,
 } from "lucide-react";
 import BackButton from "../../components/ui/BackButton";
-import TextInput from "../../components/ui/TextInput";
+import { TextInput } from "../../components/ui/FormElements";
 import AlertModal from "../../components/ui/AlertModal";
+import "../../styles/ProgressBar.css";
 
 interface User {
   id: number;
@@ -349,6 +350,7 @@ const AdminProfile: React.FC = () => {
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">
         <button
+          type="button"
           className={`py-2 px-4 text-sm font-medium ${
             activeTab === 'profile'
               ? 'text-blue-600 border-b-2 border-blue-600'
@@ -362,6 +364,7 @@ const AdminProfile: React.FC = () => {
           </div>
         </button>
         <button
+          type="button"
           className={`py-2 px-4 text-sm font-medium ${
             activeTab === 'stats'
               ? 'text-blue-600 border-b-2 border-blue-600'
@@ -375,6 +378,7 @@ const AdminProfile: React.FC = () => {
           </div>
         </button>
         <button
+          type="button"
           className={`py-2 px-4 text-sm font-medium ${
             activeTab === 'activity'
               ? 'text-blue-600 border-b-2 border-blue-600'
@@ -452,15 +456,11 @@ const AdminProfile: React.FC = () => {
                         onError={(e) => {
                           // Fallback en cas d'erreur de chargement de l'image
                           e.currentTarget.onerror = null;
-                          e.currentTarget.style.display = 'none';
-                          // Afficher l'icône utilisateur à la place
-                          const iconContainer = document.createElement('div');
-                          iconContainer.className = 'h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center absolute top-0 left-0';
-                          iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
-                          const parent = e.currentTarget.parentElement;
-                          if (parent) {
-                            parent.appendChild(iconContainer);
-                          }
+                          e.currentTarget.src = '';
+                          setFormData(prev => ({
+                            ...prev,
+                            profile_image: undefined
+                          }));
                         }}
                       />
                     ) : (
@@ -489,15 +489,11 @@ const AdminProfile: React.FC = () => {
                         onError={(e) => {
                           // Fallback en cas d'erreur de chargement de l'image
                           e.currentTarget.onerror = null;
-                          e.currentTarget.style.display = 'none';
-                          // Afficher l'icône utilisateur à la place
-                          const iconContainer = document.createElement('div');
-                          iconContainer.className = 'h-40 w-40 bg-blue-100 rounded-full flex items-center justify-center absolute top-0 left-0';
-                          iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>';
-                          const parent = e.currentTarget.parentElement;
-                          if (parent) {
-                            parent.appendChild(iconContainer);
-                          }
+                          e.currentTarget.src = '';
+                          setUser(prev => prev ? {
+                            ...prev,
+                            profile_image: undefined
+                          } : null);
                         }}
                       />
                     ) : (
@@ -656,7 +652,7 @@ const AdminProfile: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500">Completion Rate</p>
-                    <p className="text-sm font-medium">{Math.round((systemStats.completedMissions / systemStats.totalMissions) * 100)}%</p>
+                    <p className="text-sm font-medium">{systemStats.totalMissions > 0 ? Math.round((systemStats.completedMissions / systemStats.totalMissions) * 100) : 0}%</p>
                   </div>
                 </div>
               </div>
@@ -678,10 +674,9 @@ const AdminProfile: React.FC = () => {
                     const capacityPercentage = Math.min(100, Math.round((systemStats.activeInterns / maxCapacity) * 100));
                     return (
                       <>
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div className="progress-bar-container">
                           <div
-                            className="bg-purple-600 h-2.5 rounded-full"
-                            style={{ width: `${capacityPercentage}%` }}
+                            className={`progress-bar progress-bar-${Math.round(capacityPercentage / 5) * 5}`}
                           ></div>
                         </div>
                         <div className="flex justify-between mt-2">

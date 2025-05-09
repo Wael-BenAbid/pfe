@@ -1,0 +1,36 @@
+.progress-bar-container {
+  width: 100%;
+  background-color: #e5e7eb; /* bg-gray-200 */
+  border-radius: 9999px; /* rounded-full */
+  height: 0.625rem; /* h-2.5 */
+}
+
+.progress-bar {
+  background-color: #9333ea; /* bg-purple-600 */
+  height: 0.625rem; /* h-2.5 */
+  border-radius: 9999px; /* rounded-full */
+  transition: width 0.3s ease-in-out;
+}
+
+/* Classes pour différentes largeurs de progression */
+.progress-bar-0 { width: 0%; }
+.progress-bar-5 { width: 5%; }
+.progress-bar-10 { width: 10%; }
+.progress-bar-15 { width: 15%; }
+.progress-bar-20 { width: 20%; }
+.progress-bar-25 { width: 25%; }
+.progress-bar-30 { width: 30%; }
+.progress-bar-35 { width: 35%; }
+.progress-bar-40 { width: 40%; }
+.progress-bar-45 { width: 45%; }
+.progress-bar-50 { width: 50%; }
+.progress-bar-55 { width: 55%; }
+.progress-bar-60 { width: 60%; }
+.progress-bar-65 { width: 65%; }
+.progress-bar-70 { width: 70%; }
+.progress-bar-75 { width: 75%; }
+.progress-bar-80 { width: 80%; }
+.progress-bar-85 { width: 85%; }
+.progress-bar-90 { width: 90%; }
+.progress-bar-95 { width: 95%; }
+.progress-bar-100 { width: 100%; }
