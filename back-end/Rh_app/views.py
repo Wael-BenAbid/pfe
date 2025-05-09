@@ -15,12 +15,14 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification, SystemActivity
 from .serializers import (
     UserSerializer, LeaveSerializer, MissionSerializer,
     WorkHoursSerializer, InternshipSerializer, JobApplicationSerializer,
-    UserSessionSerializer, MeetingSerializer, NotificationSerializer
+    UserSessionSerializer, MeetingSerializer, NotificationSerializer,
+    SystemActivitySerializer
 )
+from .activity_logger import log_login, log_logout
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +88,10 @@ class CustomTokenObtainPairView(TokenObtainPairView):
             login_time=timezone.now(),
             is_active=True
         )
+
+        # Enregistrer l'activité de connexion
+        ip_address = request.META.get('REMOTE_ADDR')
+        log_login(user, request, f"Login via API from {ip_address}")
 
         response_data = {
             'refresh': str(serializer.validated_data['refresh']),
@@ -184,6 +190,22 @@ def login_view(request):
         from .models import UserSession
         user_session = UserSession.objects.create(user=user)
 
+        # Enregistrer l'activité de connexion directement
+        ip_address = request.META.get('REMOTE_ADDR')
+        try:
+            SystemActivity.objects.create(
+                action_type="login",
+                action="User Login",
+                user=user,
+                ip_address=ip_address,
+                details=f"Login via web from {ip_address}"
+            )
+            logger.info(f"Login activity recorded for user {user.email}")
+        except Exception as e:
+            logger.error(f"Error recording login activity: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+
         refresh = RefreshToken.for_user(user)
         return Response({
             'refresh': str(refresh),
@@ -259,6 +281,9 @@ def api_logout(request):
             except Exception as token_error:
                 logger.warning(f"Error blacklisting token: {str(token_error)}")
                 # Continue with logout even if token blacklisting fails
+
+        # Enregistrer l'activité de déconnexion
+        log_logout(request.user, request)
 
         return Response({
             'message': 'Successfully logged out',
@@ -1637,3 +1662,57 @@ class MeetingViewSet(viewsets.ModelViewSet):
         meeting.status = status_value
         meeting.save()
         return Response({'status': f'meeting status changed to {status_value}'})
+
+
+class SystemActivityViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet pour afficher les activités du système.
+    Lecture seule - les activités sont créées par le système, pas par les utilisateurs.
+    """
+    queryset = SystemActivity.objects.all().order_by('-created_at')
+    serializer_class = SystemActivitySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        """
+        Seuls les administrateurs peuvent voir les activités du système.
+        """
+        if self.request.user.is_authenticated and (self.request.user.is_superuser or self.request.user.user_type == 'admin'):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAdminUser()]
+
+    def get_queryset(self):
+        """
+        Filtrer les activités par type, utilisateur, date, etc.
+        """
+        queryset = SystemActivity.objects.all().order_by('-created_at')
+
+        # Filtrer par type d'action
+        action_type = self.request.query_params.get('action_type', None)
+        if action_type:
+            queryset = queryset.filter(action_type=action_type)
+
+        # Filtrer par utilisateur
+        user_id = self.request.query_params.get('user_id', None)
+        if user_id:
+            queryset = queryset.filter(user_id=user_id)
+
+        # Filtrer par date (début)
+        start_date = self.request.query_params.get('start_date', None)
+        if start_date:
+            try:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(created_at__date__gte=start_date)
+            except ValueError:
+                pass
+
+        # Filtrer par date (fin)
+        end_date = self.request.query_params.get('end_date', None)
+        if end_date:
+            try:
+                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+                queryset = queryset.filter(created_at__date__lte=end_date)
+            except ValueError:
+                pass
+
+        return queryset

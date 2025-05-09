@@ -13,6 +13,7 @@ from .views import (
     UserSessionViewSet,
     MeetingViewSet,
     NotificationViewSet,
+    SystemActivityViewSet,
     api_logout,
     api_signup,
     login_view,
@@ -32,6 +33,7 @@ router.register(r'job-applications', JobApplicationViewSet)
 router.register(r'user-sessions', UserSessionViewSet)
 router.register(r'meetings', MeetingViewSet)
 router.register(r'notifications', NotificationViewSet)
+router.register(r'system-activities', SystemActivityViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
