@@ -3,11 +3,14 @@ FROM node:20-alpine as build
 
 WORKDIR /app
 
+# Install necessary build tools
+RUN apk add --no-cache python3 make g++ git
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with more verbose output and without audit
+RUN npm ci --verbose --no-audit || (echo "npm ci failed, trying npm install" && npm install --verbose --no-audit)
 
 # Copy project files
 COPY . .
@@ -15,8 +18,11 @@ COPY . .
 # Configuration pour la production
 RUN echo "VITE_API_BASE_URL=/api" > .env.production
 
-# Build the app
-RUN npm run build
+# Check if node_modules exists and is not empty
+RUN ls -la && ls -la node_modules || echo "node_modules not found or empty"
+
+# Build the app with more verbose output
+RUN npm run build --verbose || (echo "Build failed, showing more details" && npm run build --verbose -- --debug)
 
 # Production stage
 FROM nginx:alpine
@@ -26,6 +32,9 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Create a simple health check file
+RUN echo "OK" > /usr/share/nginx/html/health.txt
 
 # Expose port
 EXPOSE 80

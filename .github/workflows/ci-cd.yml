@@ -106,7 +106,15 @@ jobs:
 
       - name: Build frontend image for scanning
         run: |
-          docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} ./project
+          echo "Building frontend image with detailed output..."
+          docker build --progress=plain --no-cache -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} ./project || (
+            echo "Frontend build failed, trying with alternative approach..."
+            cd ./project &&
+            npm ci &&
+            npm run build || npm run build:debug &&
+            cd .. &&
+            docker build --progress=plain -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} ./project
+          )
 
       - name: Build backend image for scanning
         run: |
@@ -199,13 +207,20 @@ jobs:
           echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ env.DOCKER_HUB_USERNAME }}" --password-stdin
 
       - name: Build and push Frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./project
-          push: true
-          tags: |
-            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+        run: |
+          echo "Building and pushing frontend image with detailed output..."
+          cd ./project
+
+          # Ensure node_modules is properly installed
+          npm ci || npm install
+
+          # Try to build the application
+          npm run build || npm run build:debug
+
+          # Build and push the Docker image
+          docker build --progress=plain -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }} .
+          docker push ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
+          docker push ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
 
       - name: Build and push Backend
         uses: docker/build-push-action@v5
