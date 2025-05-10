@@ -23,7 +23,7 @@ spec:
       containers:
       - name: rh-backend
         image: waelbenabid/rh-backend:latest
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8000
           name: http

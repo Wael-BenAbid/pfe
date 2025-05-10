@@ -51,7 +51,7 @@ def api_root(request):
 
 urlpatterns = [
     path('', api_root, name='api_root'),  # API root endpoint
-    path('admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),  # Ajout du chemin alternatif pour l'admin Django
     path('api/', include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),

@@ -9,8 +9,9 @@ data:
   DATABASE_NAME: "rh_v2"
   DATABASE_USER: "postgres"
   DATABASE_HOST: "postgres-db"
-  DATABASE_PORT: "5433"
+  DATABASE_PORT: "5432"
   EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
   FRONTEND_URL: "https://rh-system.local"
-
+  CORS_ALLOWED_ORIGINS: "https://rh-system.local,http://rh-system.local"
+  CSRF_TRUSTED_ORIGINS: "https://rh-system.local,http://rh-system.local"
 

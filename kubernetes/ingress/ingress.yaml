@@ -3,19 +3,17 @@ kind: Ingress
 metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
-    # Annotation pour cert-manager
     cert-manager.io/cluster-issuer: "selfsigned-issuer"
   name: rh-system-ingress
   namespace: rh-system
 spec:
   ingressClassName: nginx
-  # Configuration TLS
   tls:
   - hosts:
     - rh-system.local
     secretName: rh-system-tls
   rules:
-  - host: rh-system.local  # Remplacez par votre domaine réel en production
+  - host: rh-system.local
     http:
       paths:
       - backend:
@@ -31,6 +29,13 @@ spec:
             port:
               number: 8000
         path: /admin
+        pathType: Prefix
+      - backend:
+          service:
+            name: rh-backend
+            port:
+              number: 8000
+        path: /django-admin
         pathType: Prefix
       - backend:
           service:
