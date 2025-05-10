@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node fix-paths-cjs.js",
     "build": "vite build --emptyOutDir",
     "build:debug": "vite build --debug --emptyOutDir",
     "lint": "eslint .",
