@@ -25,19 +25,19 @@ fi
 if [ -f "src/pages/ResetPassword.tsx" ]; then
   cp src/pages/ResetPassword.tsx src/
 
-  # Update imports in the copied file to use absolute paths
-  sed -i 's|"../components/ui/Button"|"@/components/ui/Button"|g' src/ResetPassword.tsx
-  sed -i 's|"./components/ui/Button"|"@/components/ui/Button"|g' src/ResetPassword.tsx
-  sed -i 's|"../components/ui/FormElements"|"@/components/ui/FormElements"|g' src/ResetPassword.tsx
-  sed -i 's|"./components/ui/FormElements"|"@/components/ui/FormElements"|g' src/ResetPassword.tsx
-  sed -i 's|"../config/constants"|"@/config/constants"|g' src/ResetPassword.tsx
-  sed -i 's|"./config/constants"|"@/config/constants"|g' src/ResetPassword.tsx
-  sed -i 's|"../../assets/images/logo.png"|"@/assets/images/logo.png"|g' src/ResetPassword.tsx
-  sed -i 's|"./assets/images/logo.png"|"@/assets/images/logo.png"|g' src/ResetPassword.tsx
+  # Update imports in the copied file to use relative paths
+  sed -i 's|"../components/ui/Button"|"./components/ui/Button"|g' src/ResetPassword.tsx
+  sed -i 's|"@/components/ui/Button"|"./components/ui/Button"|g' src/ResetPassword.tsx
+  sed -i 's|"../components/ui/FormElements"|"./components/ui/FormElements"|g' src/ResetPassword.tsx
+  sed -i 's|"@/components/ui/FormElements"|"./components/ui/FormElements"|g' src/ResetPassword.tsx
+  sed -i 's|"../config/constants"|"./config/constants"|g' src/ResetPassword.tsx
+  sed -i 's|"@/config/constants"|"./config/constants"|g' src/ResetPassword.tsx
+  sed -i 's|"../../assets/images/logo.png"|"./assets/images/logo.png"|g' src/ResetPassword.tsx
+  sed -i 's|"@/assets/images/logo.png"|"./assets/images/logo.png"|g' src/ResetPassword.tsx
   sed -i 's|import { KeyIcon, LockIcon, ShieldIcon } from "lucide-react";|import { LockIcon } from "lucide-react";|g' src/ResetPassword.tsx
   sed -i 's|icon={<ShieldIcon className="h-5 w-5 text-gray-400" />}|icon={<LockIcon className="h-5 w-5 text-gray-400" />}|g' src/ResetPassword.tsx
 
-  echo "Created copy of ResetPassword.tsx in src directory with absolute imports"
+  echo "Created copy of ResetPassword.tsx in src directory with relative imports"
 fi
 
 # Update App.tsx to import from the new location

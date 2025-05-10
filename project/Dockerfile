@@ -12,6 +12,7 @@ COPY fix-paths*.js ./
 COPY fix-paths.sh ./
 COPY fix-app.sh ./
 COPY ensure-files.sh ./
+COPY fix-reset-password.sh ./
 
 # Install dependencies with more verbose output and without audit
 RUN npm ci --verbose --no-audit || (echo "npm ci failed, trying npm install" && npm install --verbose --no-audit)
@@ -35,10 +36,10 @@ RUN echo "VITE_API_BASE_URL=/api" > .env.production
 RUN ls -la && ls -la node_modules || echo "node_modules not found or empty"
 
 # Make the fix scripts executable and run them
-RUN chmod +x fix-paths.sh fix-app.sh && ./fix-paths.sh && ./fix-app.sh
+RUN chmod +x fix-paths.sh fix-app.sh fix-reset-password.sh && ./fix-paths.sh && ./fix-app.sh && ./fix-reset-password.sh
 
 # Try the Node.js script as a fallback
-RUN node fix-paths-cjs.js || echo "Fix paths script failed, but continuing with build"
+RUN node fix-paths-cjs.cjs || echo "Fix paths script failed, but continuing with build"
 
 # List files to verify changes
 RUN find src -name "*.tsx" | xargs grep -l "assets/images/logo.png" || echo "No files found with logo.png references"
