@@ -12,7 +12,7 @@ import PendingApproval from './pages/auth/PendingApproval';
 import Login from './pages/auth/Login';
 import ApplicationSuccess from './pages/ApplicationSuccess';
 import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
+import ResetPassword from './ResetPassword';
 import NotFound from './pages/NotFound';
 import { useEffect } from 'react';
 
