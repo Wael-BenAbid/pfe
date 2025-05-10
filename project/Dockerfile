@@ -23,6 +23,23 @@ COPY . .
 # Ensure all required files exist
 RUN chmod +x ensure-files.sh && ./ensure-files.sh
 
+# Ensure image directories exist
+RUN mkdir -p src/assets/images
+
+# Create placeholder image files if they don't exist
+RUN if [ ! -f "src/assets/images/logo.png" ]; then \
+    echo "Creating placeholder logo.png file"; \
+    touch src/assets/images/logo.png; \
+fi
+
+RUN if [ ! -f "src/assets/images/logo2.png" ]; then \
+    echo "Creating placeholder logo2.png file"; \
+    touch src/assets/images/logo2.png; \
+fi
+
+# List image files for verification
+RUN ls -la src/assets/images/
+
 # Use backup App.tsx if needed
 RUN if [ -f "src/App.tsx.backup" ]; then \
     cp src/App.tsx.backup src/App.tsx || true; \
