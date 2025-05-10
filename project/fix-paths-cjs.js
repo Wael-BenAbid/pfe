@@ -9,9 +9,13 @@ try {
   const resetPasswordPath = path.resolve('src/pages/ResetPassword.tsx');
   if (fs.existsSync(resetPasswordPath)) {
     let content = fs.readFileSync(resetPasswordPath, 'utf8');
-    content = content.replace(/"..\/assets\/images\/logo.png"/g, '"../../assets/images/logo.png"');
+    content = content.replace(/"..\/assets\/images\/logo.png"/g, '"@/assets/images/logo.png"');
+    content = content.replace(/"..\/..\/assets\/images\/logo.png"/g, '"@/assets/images/logo.png"');
+    content = content.replace(/"..\/components\/ui\/Button"/g, '"@/components/ui/Button"');
+    content = content.replace(/"..\/components\/ui\/FormElements"/g, '"@/components/ui/FormElements"');
+    content = content.replace(/"..\/config\/constants"/g, '"@/config/constants"');
     fs.writeFileSync(resetPasswordPath, content);
-    console.log('Fixed image path in ResetPassword.tsx');
+    console.log('Fixed imports in ResetPassword.tsx to use absolute paths');
   } else {
     console.log('ResetPassword.tsx not found in src/pages');
   }
@@ -20,9 +24,13 @@ try {
   const forgotPasswordPath = path.resolve('src/pages/ForgotPassword.tsx');
   if (fs.existsSync(forgotPasswordPath)) {
     let content = fs.readFileSync(forgotPasswordPath, 'utf8');
-    content = content.replace(/"..\/assets\/images\/logo.png"/g, '"../../assets/images/logo.png"');
+    content = content.replace(/"..\/assets\/images\/logo.png"/g, '"@/assets/images/logo.png"');
+    content = content.replace(/"..\/..\/assets\/images\/logo.png"/g, '"@/assets/images/logo.png"');
+    content = content.replace(/"..\/components\/ui\/Button"/g, '"@/components/ui/Button"');
+    content = content.replace(/"..\/components\/ui\/FormElements"/g, '"@/components/ui/FormElements"');
+    content = content.replace(/"..\/config\/constants"/g, '"@/config/constants"');
     fs.writeFileSync(forgotPasswordPath, content);
-    console.log('Fixed image path in ForgotPassword.tsx');
+    console.log('Fixed imports in ForgotPassword.tsx to use absolute paths');
   } else {
     console.log('ForgotPassword.tsx not found in src/pages');
   }
@@ -30,15 +38,19 @@ try {
   // Create a copy of ResetPassword.tsx in the src directory
   if (fs.existsSync(resetPasswordPath)) {
     let content = fs.readFileSync(resetPasswordPath, 'utf8');
-    
-    // Update imports in the copied file
-    content = content.replace(/"..\/components\/ui\/Button"/g, '"./components/ui/Button"');
-    content = content.replace(/"..\/components\/ui\/FormElements"/g, '"./components/ui/FormElements"');
-    content = content.replace(/"..\/config\/constants"/g, '"./config/constants"');
-    content = content.replace(/"..\/..\/assets\/images\/logo.png"/g, '"./assets/images/logo.png"');
-    
+
+    // Update imports in the copied file to use absolute paths
+    content = content.replace(/"..\/components\/ui\/Button"/g, '"@/components/ui/Button"');
+    content = content.replace(/"..\/components\/ui\/FormElements"/g, '"@/components/ui/FormElements"');
+    content = content.replace(/"..\/config\/constants"/g, '"@/config/constants"');
+    content = content.replace(/"..\/..\/assets\/images\/logo.png"/g, '"@/assets/images/logo.png"');
+    content = content.replace(/"\.\/components\/ui\/Button"/g, '"@/components/ui/Button"');
+    content = content.replace(/"\.\/components\/ui\/FormElements"/g, '"@/components/ui/FormElements"');
+    content = content.replace(/"\.\/config\/constants"/g, '"@/config/constants"');
+    content = content.replace(/"\.\/assets\/images\/logo.png"/g, '"@/assets/images/logo.png"');
+
     fs.writeFileSync(path.resolve('src/ResetPassword.tsx'), content);
-    console.log('Created copy of ResetPassword.tsx in src directory with updated imports');
+    console.log('Created copy of ResetPassword.tsx in src directory with absolute imports');
   }
 
   // Update App.tsx to import from the new location
