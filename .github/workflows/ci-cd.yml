@@ -237,8 +237,11 @@ jobs:
           echo "Listing files in src directory:"
           find src -type f -name "*.tsx" | sort
 
-          # Make the fix-paths.sh script executable and run it
-          chmod +x fix-paths.sh && ./fix-paths.sh
+          # Ensure all required files exist
+          chmod +x ensure-files.sh && ./ensure-files.sh
+
+          # Make the fix scripts executable and run them
+          chmod +x fix-paths.sh fix-app.sh && ./fix-paths.sh && ./fix-app.sh
 
           # Try to build the application
           npm run build || npm run build:debug
