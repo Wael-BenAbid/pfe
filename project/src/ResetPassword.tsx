@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import Button from "@/components/ui/Button";
-import { TextInput } from "@/components/ui/FormElements";
-import { API_BASE_URL } from "@/config/constants";
+import Button from "./components/ui/Button";
+import { TextInput } from "./components/ui/FormElements";
+import { API_BASE_URL } from "./config/constants";
 import { LockIcon } from "lucide-react";
-import logoImage from "@/assets/images/logo.png";
+// Import using a relative path that works in the src directory
+import logoImage from "./assets/images/logo.png";
 
 const ResetPassword: React.FC = () => {
   const [password, setPassword] = useState("");

@@ -39,18 +39,18 @@ try {
   if (fs.existsSync(resetPasswordPath)) {
     let content = fs.readFileSync(resetPasswordPath, 'utf8');
 
-    // Update imports in the copied file to use absolute paths
-    content = content.replace(/"..\/components\/ui\/Button"/g, '"@/components/ui/Button"');
-    content = content.replace(/"..\/components\/ui\/FormElements"/g, '"@/components/ui/FormElements"');
-    content = content.replace(/"..\/config\/constants"/g, '"@/config/constants"');
-    content = content.replace(/"..\/..\/assets\/images\/logo.png"/g, '"@/assets/images/logo.png"');
-    content = content.replace(/"\.\/components\/ui\/Button"/g, '"@/components/ui/Button"');
-    content = content.replace(/"\.\/components\/ui\/FormElements"/g, '"@/components/ui/FormElements"');
-    content = content.replace(/"\.\/config\/constants"/g, '"@/config/constants"');
-    content = content.replace(/"\.\/assets\/images\/logo.png"/g, '"@/assets/images/logo.png"');
+    // Update imports in the copied file to use relative paths
+    content = content.replace(/"..\/components\/ui\/Button"/g, '"./components/ui/Button"');
+    content = content.replace(/"..\/components\/ui\/FormElements"/g, '"./components/ui/FormElements"');
+    content = content.replace(/"..\/config\/constants"/g, '"./config/constants"');
+    content = content.replace(/"..\/..\/assets\/images\/logo.png"/g, '"./assets/images/logo.png"');
+    content = content.replace(/"@\/components\/ui\/Button"/g, '"./components/ui/Button"');
+    content = content.replace(/"@\/components\/ui\/FormElements"/g, '"./components/ui/FormElements"');
+    content = content.replace(/"@\/config\/constants"/g, '"./config/constants"');
+    content = content.replace(/"@\/assets\/images\/logo.png"/g, '"./assets/images/logo.png"');
 
     fs.writeFileSync(path.resolve('src/ResetPassword.tsx'), content);
-    console.log('Created copy of ResetPassword.tsx in src directory with absolute imports');
+    console.log('Created copy of ResetPassword.tsx in src directory with relative imports');
   }
 
   // Update App.tsx to import from the new location
