@@ -30,15 +30,13 @@ jobs:
           # Vérifier si les fichiers d'images existent
           mkdir -p project/src/assets/images
 
-          # Créer des fichiers d'images vides si nécessaire pour le build
-          if [ ! -f "project/src/assets/images/logo.png" ]; then
-            echo "Creating placeholder logo.png file"
-            touch project/src/assets/images/logo.png
-          fi
-
-          if [ ! -f "project/src/assets/images/logo2.png" ]; then
-            echo "Creating placeholder logo2.png file"
-            touch project/src/assets/images/logo2.png
+          # Vérifier que les images existent dans le dépôt
+          if [ -f "project/src/assets/images/logo.png" ] && [ -f "project/src/assets/images/logo2.png" ]; then
+            echo "Using existing logo images from repository"
+          else
+            echo "ERROR: Required logo images not found in repository!"
+            echo "Please ensure project/src/assets/images/logo.png and project/src/assets/images/logo2.png exist"
+            exit 1
           fi
 
           # Lister les fichiers pour vérification
@@ -144,13 +142,14 @@ jobs:
           # Vérification des fichiers d'images
           echo "Checking image files..."
           mkdir -p src/assets/images
-          if [ ! -f "src/assets/images/logo.png" ]; then
-            echo "Creating placeholder logo.png file"
-            touch src/assets/images/logo.png
-          fi
-          if [ ! -f "src/assets/images/logo2.png" ]; then
-            echo "Creating placeholder logo2.png file"
-            touch src/assets/images/logo2.png
+
+          # Vérifier que les images existent dans le dépôt
+          if [ -f "src/assets/images/logo.png" ] && [ -f "src/assets/images/logo2.png" ]; then
+            echo "Using existing logo images from repository"
+          else
+            echo "ERROR: Required logo images not found in repository!"
+            echo "Please ensure src/assets/images/logo.png and src/assets/images/logo2.png exist"
+            exit 1
           fi
 
           # Vérifier si le script de build existe
@@ -216,13 +215,14 @@ jobs:
           # Vérification des fichiers d'images
           echo "Checking image files..."
           mkdir -p src/assets/images
-          if [ ! -f "src/assets/images/logo.png" ]; then
-            echo "Creating placeholder logo.png file"
-            touch src/assets/images/logo.png
-          fi
-          if [ ! -f "src/assets/images/logo2.png" ]; then
-            echo "Creating placeholder logo2.png file"
-            touch src/assets/images/logo2.png
+
+          # Vérifier que les images existent dans le dépôt
+          if [ -f "src/assets/images/logo.png" ] && [ -f "src/assets/images/logo2.png" ]; then
+            echo "Using existing logo images from repository"
+          else
+            echo "ERROR: Required logo images not found in repository!"
+            echo "Please ensure src/assets/images/logo.png and src/assets/images/logo2.png exist"
+            exit 1
           fi
 
           # Vérifier si le script de build existe
