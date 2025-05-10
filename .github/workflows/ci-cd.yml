@@ -230,6 +230,16 @@ jobs:
           # Ensure node_modules is properly installed
           npm ci || npm install
 
+          # Create a simple .env.production file
+          echo "VITE_API_BASE_URL=/api" > .env.production
+
+          # List all files in the src directory to verify ResetPassword.tsx exists
+          echo "Listing files in src directory:"
+          find src -type f -name "*.tsx" | sort
+
+          # Make the fix-paths.sh script executable and run it
+          chmod +x fix-paths.sh && ./fix-paths.sh
+
           # Try to build the application
           npm run build || npm run build:debug
 

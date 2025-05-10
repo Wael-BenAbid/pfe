@@ -4,7 +4,7 @@ import Button from "../components/ui/Button";
 import { TextInput } from "../components/ui/FormElements";
 import { API_BASE_URL } from "../config/constants";
 import { KeyIcon, MailIcon } from "lucide-react";
-import logoImage from "../assets/images/logo.png";
+import logoImage from "../../assets/images/logo.png";
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState("");
