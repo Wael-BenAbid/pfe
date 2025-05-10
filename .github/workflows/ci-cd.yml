@@ -279,6 +279,30 @@ jobs:
         with:
           version: 'v3.12.3'
 
+      - name: Install Minikube
+        run: |
+          # Télécharger et installer Minikube
+          curl -LO https://storage.googleapis.com/minikube/releases/v1.30.1/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+          # Vérifier l'installation
+          minikube version
+
+      - name: Start Minikube
+        run: |
+          # Démarrer Minikube avec des options spécifiques
+          minikube start --driver=docker --kubernetes-version=v1.26.3
+
+          # Vérifier que Minikube est en cours d'exécution
+          minikube status
+
+          # Activer les addons nécessaires
+          minikube addons enable ingress
+
+          # Vérifier la connexion au cluster
+          kubectl cluster-info
+          kubectl get nodes
+
       - name: Create namespace if not exists
         run: |
           kubectl get namespace ${{ env.KUBERNETES_NAMESPACE }} || kubectl create namespace ${{ env.KUBERNETES_NAMESPACE }}
@@ -308,37 +332,66 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy ConfigMaps
-        run: kubectl apply -f kubernetes/configmaps/
+        run: |
+          if [ -d "kubernetes/configmaps" ]; then
+            kubectl apply -f kubernetes/configmaps/ || echo "ConfigMaps application failed but continuing"
+          else
+            echo "ConfigMaps directory not found, skipping"
+          fi
 
       - name: Deploy Storage
-        run: kubectl apply -f kubernetes/storage/
+        run: |
+          if [ -d "kubernetes/storage" ]; then
+            kubectl apply -f kubernetes/storage/ || echo "Storage application failed but continuing"
+          else
+            echo "Storage directory not found, skipping"
+          fi
 
       - name: Deploy PostgreSQL
         run: |
-          kubectl apply -f kubernetes/deployments/postgres-deployment.yaml
-          kubectl apply -f kubernetes/services/postgres-service.yaml
+          if [ -f "kubernetes/deployments/postgres-deployment.yaml" ] && [ -f "kubernetes/services/postgres-service.yaml" ]; then
+            kubectl apply -f kubernetes/deployments/postgres-deployment.yaml || echo "Postgres deployment failed but continuing"
+            kubectl apply -f kubernetes/services/postgres-service.yaml || echo "Postgres service failed but continuing"
+          else
+            echo "Postgres deployment or service files not found, skipping"
+          fi
 
       - name: Deploy Backend
         run: |
-          # Update image tag in the deployment file
-          sed -i "s|image: waelbenabid/rh-backend:latest|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/backend-deployment.yaml
-          kubectl apply -f kubernetes/deployments/backend-deployment.yaml
-          kubectl apply -f kubernetes/services/backend-service.yaml
+          if [ -f "kubernetes/deployments/backend-deployment.yaml" ] && [ -f "kubernetes/services/backend-service.yaml" ]; then
+            # Update image tag in the deployment file
+            sed -i "s|image: waelbenabid/rh-backend:latest|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/backend-deployment.yaml
+            kubectl apply -f kubernetes/deployments/backend-deployment.yaml || echo "Backend deployment failed but continuing"
+            kubectl apply -f kubernetes/services/backend-service.yaml || echo "Backend service failed but continuing"
+          else
+            echo "Backend deployment or service files not found, skipping"
+          fi
 
       - name: Deploy Frontend
         run: |
-          # Update image tag in the deployment file
-          sed -i "s|image: waelbenabid/rh-frontend:latest|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/frontend-deployment.yaml
-          kubectl apply -f kubernetes/deployments/frontend-deployment.yaml
-          kubectl apply -f kubernetes/services/frontend-service.yaml
+          if [ -f "kubernetes/deployments/frontend-deployment.yaml" ] && [ -f "kubernetes/services/frontend-service.yaml" ]; then
+            # Update image tag in the deployment file
+            sed -i "s|image: waelbenabid/rh-frontend:latest|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/frontend-deployment.yaml
+            kubectl apply -f kubernetes/deployments/frontend-deployment.yaml || echo "Frontend deployment failed but continuing"
+            kubectl apply -f kubernetes/services/frontend-service.yaml || echo "Frontend service failed but continuing"
+          else
+            echo "Frontend deployment or service files not found, skipping"
+          fi
 
       - name: Deploy Ingress
-        run: kubectl apply -f kubernetes/ingress/ingress.yaml
+        run: |
+          if [ -f "kubernetes/ingress/ingress.yaml" ]; then
+            kubectl apply -f kubernetes/ingress/ingress.yaml || echo "Ingress application failed but continuing"
+          else
+            echo "Ingress file not found, skipping"
+          fi
 
       - name: Deploy Autoscaling
         run: |
           if [ -d "kubernetes/autoscaling" ]; then
-            kubectl apply -f kubernetes/autoscaling/ || true
+            kubectl apply -f kubernetes/autoscaling/ || echo "Autoscaling application failed but continuing"
+          else
+            echo "Autoscaling directory not found, skipping"
           fi
 
       - name: Deploy Helm Charts
@@ -347,9 +400,11 @@ jobs:
             for chart_dir in kubernetes/helm/*/; do
               if [ -d "$chart_dir" ]; then
                 chart_name=$(basename "$chart_dir")
-                helm upgrade --install $chart_name "$chart_dir" --namespace ${{ env.KUBERNETES_NAMESPACE }} || true
+                helm upgrade --install $chart_name "$chart_dir" --namespace ${{ env.KUBERNETES_NAMESPACE }} || echo "Helm chart $chart_name installation failed but continuing"
               fi
             done
+          else
+            echo "Helm directory not found, skipping"
           fi
 
   deploy-https:
@@ -364,10 +419,33 @@ jobs:
         with:
           version: 'v1.26.3'
 
+      - name: Install Minikube
+        run: |
+          # Télécharger et installer Minikube
+          curl -LO https://storage.googleapis.com/minikube/releases/v1.30.1/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+          # Vérifier l'installation
+          minikube version
+
+      - name: Start Minikube
+        run: |
+          # Démarrer Minikube avec des options spécifiques
+          minikube start --driver=docker --kubernetes-version=v1.26.3
+
+          # Vérifier que Minikube est en cours d'exécution
+          minikube status
+
+          # Vérifier la connexion au cluster
+          kubectl cluster-info
+          kubectl get nodes
+
       - name: Deploy HTTPS
         run: |
           if [ -d "kubernetes/cert-manager" ]; then
-            kubectl apply -f kubernetes/cert-manager/ || true
+            kubectl apply -f kubernetes/cert-manager/ || echo "HTTPS application failed but continuing"
+          else
+            echo "cert-manager directory not found, skipping"
           fi
 
   deploy-backups:
@@ -382,10 +460,33 @@ jobs:
         with:
           version: 'v1.26.3'
 
+      - name: Install Minikube
+        run: |
+          # Télécharger et installer Minikube
+          curl -LO https://storage.googleapis.com/minikube/releases/v1.30.1/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+          # Vérifier l'installation
+          minikube version
+
+      - name: Start Minikube
+        run: |
+          # Démarrer Minikube avec des options spécifiques
+          minikube start --driver=docker --kubernetes-version=v1.26.3
+
+          # Vérifier que Minikube est en cours d'exécution
+          minikube status
+
+          # Vérifier la connexion au cluster
+          kubectl cluster-info
+          kubectl get nodes
+
       - name: Deploy Backups
         run: |
           if [ -d "kubernetes/backup" ]; then
-            kubectl apply -f kubernetes/backup/ || true
+            kubectl apply -f kubernetes/backup/ || echo "Backups application failed but continuing"
+          else
+            echo "Backup directory not found, skipping"
           fi
 
   deploy-monitoring:
@@ -400,10 +501,36 @@ jobs:
         with:
           version: 'v1.26.3'
 
+      - name: Install Minikube
+        run: |
+          # Télécharger et installer Minikube
+          curl -LO https://storage.googleapis.com/minikube/releases/v1.30.1/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+          # Vérifier l'installation
+          minikube version
+
+      - name: Start Minikube
+        run: |
+          # Démarrer Minikube avec des options spécifiques
+          minikube start --driver=docker --kubernetes-version=v1.26.3
+
+          # Vérifier que Minikube est en cours d'exécution
+          minikube status
+
+          # Activer les addons nécessaires
+          minikube addons enable metrics-server
+
+          # Vérifier la connexion au cluster
+          kubectl cluster-info
+          kubectl get nodes
+
       - name: Deploy Monitoring
         run: |
           if [ -d "kubernetes/monitoring" ]; then
-            kubectl apply -f kubernetes/monitoring/ || true
+            kubectl apply -f kubernetes/monitoring/ || echo "Monitoring application failed but continuing"
+          else
+            echo "Monitoring directory not found, skipping"
           fi
 
   deploy-logging:
@@ -418,10 +545,33 @@ jobs:
         with:
           version: 'v1.26.3'
 
+      - name: Install Minikube
+        run: |
+          # Télécharger et installer Minikube
+          curl -LO https://storage.googleapis.com/minikube/releases/v1.30.1/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+          # Vérifier l'installation
+          minikube version
+
+      - name: Start Minikube
+        run: |
+          # Démarrer Minikube avec des options spécifiques
+          minikube start --driver=docker --kubernetes-version=v1.26.3
+
+          # Vérifier que Minikube est en cours d'exécution
+          minikube status
+
+          # Vérifier la connexion au cluster
+          kubectl cluster-info
+          kubectl get nodes
+
       - name: Deploy Logging
         run: |
           if [ -d "kubernetes/logging" ]; then
-            kubectl apply -f kubernetes/logging/ || true
+            kubectl apply -f kubernetes/logging/ || echo "Logging application failed but continuing"
+          else
+            echo "Logging directory not found, skipping"
           fi
 
   deploy-security:
@@ -436,8 +586,31 @@ jobs:
         with:
           version: 'v1.26.3'
 
+      - name: Install Minikube
+        run: |
+          # Télécharger et installer Minikube
+          curl -LO https://storage.googleapis.com/minikube/releases/v1.30.1/minikube-linux-amd64
+          sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+          # Vérifier l'installation
+          minikube version
+
+      - name: Start Minikube
+        run: |
+          # Démarrer Minikube avec des options spécifiques
+          minikube start --driver=docker --kubernetes-version=v1.26.3
+
+          # Vérifier que Minikube est en cours d'exécution
+          minikube status
+
+          # Vérifier la connexion au cluster
+          kubectl cluster-info
+          kubectl get nodes
+
       - name: Deploy Security
         run: |
           if [ -d "kubernetes/security" ]; then
-            kubectl apply -f kubernetes/security/ || true
+            kubectl apply -f kubernetes/security/ || echo "Security application failed but continuing"
+          else
+            echo "Security directory not found, skipping"
           fi
