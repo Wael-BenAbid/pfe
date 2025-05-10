@@ -3,9 +3,13 @@ kind: Service
 metadata:
   name: postgres-db
   namespace: rh-system
+  labels:
+    app: postgres
 spec:
-  type: ExternalName
-  externalName: host.docker.internal
+  selector:
+    app: postgres
   ports:
-  - port: 5433
-    targetPort: 5433
+  - port: 5432
+    targetPort: 5432
+    protocol: TCP
+  type: ClusterIP

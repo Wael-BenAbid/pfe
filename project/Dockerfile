@@ -42,11 +42,8 @@ fi
 # List image files for verification
 RUN ls -la src/assets/images/
 
-# Use backup App.tsx if needed
-RUN if [ -f "src/App.tsx.backup" ]; then \
-    cp src/App.tsx.backup src/App.tsx || true; \
-    echo "Using backup App.tsx"; \
-fi
+# Skip using backup App.tsx to avoid import errors
+RUN echo "Skipping App.tsx.backup restoration to avoid import errors"
 
 # Configuration pour la production
 RUN echo "VITE_API_BASE_URL=/api" > .env.production
@@ -66,8 +63,11 @@ RUN if ! grep -q '"build"' package.json; then \
     sed -i 's/"scripts": {/"scripts": {\n    "build": "echo No build script defined, creating empty dist directory && mkdir -p dist",/g' package.json; \
 fi
 
-# Build the app with more verbose output and create dist directory if build fails
-RUN npm run build || (mkdir -p dist && echo "Build failed, creating empty dist directory" > dist/index.html)
+# Install terser for minification
+RUN npm install -D terser
+
+# Build the app with more verbose output
+RUN npm run build
 
 # Production stage
 FROM nginx:alpine
