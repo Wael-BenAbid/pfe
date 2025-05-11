@@ -27,12 +27,11 @@ data:
             try_files $uri $uri/ /index.html;
         }
 
-        # Configuration spécifique pour favicon.ico
+        # Ignorer complètement les requêtes favicon.ico
         location = /favicon.ico {
-            return 204;
+            return 444;  # Fermer la connexion sans réponse
             access_log off;
             log_not_found off;
-            expires max;
         }
 
         location /api/ {
