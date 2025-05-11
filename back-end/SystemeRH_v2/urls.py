@@ -49,12 +49,13 @@ def api_root(request):
         'status': 'running'
     })
 
-def django_admin_redirect(request):
-    return HttpResponseRedirect('/admin/')
+# Cette fonction n'est plus nécessaire car nous allons utiliser directement l'interface d'administration Django
+# def django_admin_redirect(request):
+#     return HttpResponseRedirect('/admin/')
 
 urlpatterns = [
     path('', api_root, name='api_root'),  # API root endpoint
-    path('django-admin/', django_admin_redirect, name='django_admin_redirect'),  # Redirection vers l'admin Django
+    path('django-admin/', admin.site.urls, name='django_admin'),  # Interface d'administration Django distincte
     path('admin/', admin.site.urls),  # Chemin standard pour l'admin Django
     path('api/', include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
