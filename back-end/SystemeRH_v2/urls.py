@@ -40,7 +40,7 @@ router.register(r'notifications', NotificationViewSet)
 router.register(r'system-activities', SystemActivityViewSet)
 
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 
 def api_root(request):
     return JsonResponse({
@@ -49,9 +49,13 @@ def api_root(request):
         'status': 'running'
     })
 
+def django_admin_redirect(request):
+    return HttpResponseRedirect('/admin/')
+
 urlpatterns = [
     path('', api_root, name='api_root'),  # API root endpoint
-    path('django-admin/', admin.site.urls),  # Ajout du chemin alternatif pour l'admin Django
+    path('django-admin/', django_admin_redirect, name='django_admin_redirect'),  # Redirection vers l'admin Django
+    path('admin/', admin.site.urls),  # Chemin standard pour l'admin Django
     path('api/', include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
