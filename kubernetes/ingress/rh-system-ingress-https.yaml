@@ -7,6 +7,8 @@ metadata:
     cert-manager.io/cluster-issuer: selfsigned-issuer
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /admin/$2
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
   ingressClassName: nginx
   rules:
@@ -24,11 +26,11 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: rh-backend
+            name: rh-frontend
             port:
-              number: 8000
-      - path: /django-admin
-        pathType: Prefix
+              number: 80
+      - path: /django-admin(/|$)(.*)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: rh-backend
