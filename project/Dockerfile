@@ -12,12 +12,12 @@ COPY package*.json ./
 # Install dependencies with more verbose output and without audit
 RUN npm ci --no-audit || npm install --no-audit
 
-# Copy fix scripts
-COPY fix-paths*.js ./
-COPY fix-paths.sh ./
-COPY fix-app.sh ./
-COPY ensure-files.sh ./
-COPY fix-reset-password.sh ./
+# Copy fix scripts from project/script directory
+COPY project/script/fix-paths*.js ./
+COPY project/script/fix-paths.sh ./
+COPY project/script/fix-app.sh ./
+COPY project/script/ensure-files.sh ./
+COPY project/script/fix-reset-password.sh ./
 
 # Copy project files
 COPY . .
