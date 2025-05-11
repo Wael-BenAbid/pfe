@@ -60,6 +60,14 @@ kubernetes/logging/elasticsearch/*-secret.yaml
 kubernetes/backup/*-secrets.yaml
 !kubernetes/backup/*-secrets-template.yaml
 
+# Certificats SSL
+certs/
+*.key
+*.crt
+*.pem
+*.pfx
+*.p12
+
 # Fichiers de sauvegarde de base de données
 db_backups/
 

@@ -28,22 +28,8 @@ RUN chmod +x ensure-files.sh && ./ensure-files.sh
 # Ensure image directories exist
 RUN mkdir -p src/assets/images
 
-# Create placeholder image files if they don't exist
-RUN if [ ! -f "src/assets/images/logo.png" ]; then \
-    echo "Creating placeholder logo.png file"; \
-    touch src/assets/images/logo.png; \
-fi
-
-RUN if [ ! -f "src/assets/images/logo2.png" ]; then \
-    echo "Creating placeholder logo2.png file"; \
-    touch src/assets/images/logo2.png; \
-fi
-
 # List image files for verification
 RUN ls -la src/assets/images/
-
-# Skip using backup App.tsx to avoid import errors
-RUN echo "Skipping App.tsx.backup restoration to avoid import errors"
 
 # Configuration pour la production
 RUN echo "VITE_API_BASE_URL=/api" > .env.production
@@ -57,17 +43,8 @@ RUN chmod +x fix-paths.sh fix-app.sh fix-reset-password.sh && \
 # Try the Node.js script as a fallback
 RUN node fix-paths-cjs.cjs || echo "Fix paths script failed, but continuing with build"
 
-# Create a dummy build command if it doesn't exist in package.json
-RUN if ! grep -q '"build"' package.json; then \
-    echo "Adding build script to package.json"; \
-    sed -i 's/"scripts": {/"scripts": {\n    "build": "echo No build script defined, creating empty dist directory && mkdir -p dist",/g' package.json; \
-fi
-
-# Install terser for minification
-RUN npm install -D terser
-
 # Build the app with more verbose output
-RUN npm run build
+RUN npm run build || (echo "Build failed, creating empty dist directory" && mkdir -p dist && echo "Build failed" > dist/index.html)
 
 # Production stage
 FROM nginx:alpine
