@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   annotations:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "false"
     cert-manager.io/cluster-issuer: "selfsigned-issuer"
   name: rh-system-ingress
   namespace: rh-system
