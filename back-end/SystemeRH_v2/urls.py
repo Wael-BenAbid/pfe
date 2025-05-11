@@ -56,7 +56,7 @@ def api_root(request):
 urlpatterns = [
     path('', api_root, name='api_root'),  # API root endpoint
     path('django-admin/', admin.site.urls, name='django_admin'),  # Interface d'administration Django distincte
-    path('admin/', admin.site.urls),  # Chemin standard pour l'admin Django
+    # Suppression de la route 'admin/' pour éviter la duplication
     path('api/', include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
