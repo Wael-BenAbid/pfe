@@ -8,9 +8,10 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_API_BASE_URL=http://backend:8000/api
-    volumes:
-      - ./project:/app
-      - /app/node_modules
+    # Nous ne montons pas le répertoire du projet pour éviter d'écraser les fichiers construits
+    # volumes:
+    #   - ./project:/app
+    #   - /app/node_modules
     depends_on:
       - backend
     healthcheck:
