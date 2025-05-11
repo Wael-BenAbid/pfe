@@ -29,8 +29,7 @@ data:
 
         # Configuration spécifique pour favicon.ico
         location = /favicon.ico {
-            root /usr/share/nginx/html;
-            try_files $uri =204;
+            return 204;
             access_log off;
             log_not_found off;
             expires max;
@@ -60,8 +59,12 @@ data:
         }
 
         # Redirection simple pour django-admin (avec ou sans slash)
-        location ~ ^/django-admin(/.*)?$ {
-            return 302 $scheme://$host/admin$1;
+        location = /django-admin {
+            return 302 $scheme://$host/admin/;
+        }
+
+        location ^~ /django-admin/ {
+            return 302 $scheme://$host/admin/;
         }
 
         location /media/ {
