@@ -16,15 +16,21 @@ data:
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
 
-        # Redirection HTTP vers HTTPS - désactivée pour le débogage
-        # if ($scheme = http) {
-        #     return 301 https://$host$request_uri;
-        # }
+        # Redirection HTTP vers HTTPS
+        if ($scheme = http) {
+            return 301 https://$host$request_uri;
+        }
 
         location / {
             root /usr/share/nginx/html;
             index index.html index.htm;
             try_files $uri $uri/ /index.html;
+
+            # Empêcher la redirection vers /admin ou /django-admin lors du rafraîchissement
+            # des pages frontend comme /admin/applications, /admin/employees, etc.
+            location ~ ^/admin/(?!login|logout|api) {
+                try_files $uri $uri/ /index.html;
+            }
         }
 
         # Ignorer complètement les requêtes favicon.ico
@@ -42,8 +48,25 @@ data:
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
-        location /admin/ {
+        # Route spécifique pour l'API d'administration backend
+        location = /admin/ {
             proxy_pass http://rh-backend:8000/admin/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # Ajouter les en-têtes de sécurité pour résoudre le problème COOP
+            add_header Cross-Origin-Opener-Policy same-origin;
+            add_header Cross-Origin-Embedder-Policy require-corp;
+            add_header X-Content-Type-Options nosniff;
+            add_header X-Frame-Options SAMEORIGIN;
+            add_header X-XSS-Protection "1; mode=block";
+        }
+
+        # Route pour les API d'administration backend
+        location ~ ^/admin/(login|logout|api) {
+            proxy_pass http://rh-backend:8000/admin/$1;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

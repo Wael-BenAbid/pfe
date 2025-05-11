@@ -1,8 +1,12 @@
 // API configuration
-export const API_BASE_URL = 'http://localhost:8000';
+export const API_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:8000'
+  : `https://${window.location.hostname}/api`;
 
 // Media URL configuration (for images, files, etc.)
-export const MEDIA_BASE_URL = 'http://localhost:5173';
+export const MEDIA_BASE_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:5173'
+  : `https://${window.location.hostname}`;
 
 // Application types
 export const APPLICATION_TYPES = [
