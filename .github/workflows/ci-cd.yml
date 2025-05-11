@@ -178,27 +178,8 @@ jobs:
             echo "Created placeholder images for build"
           fi
 
-          # Vérifier si les scripts existent dans le dossier script
-          if [ -d "script" ]; then
-            echo "Using scripts from script directory"
-            # Rendre les scripts exécutables
-            chmod +x script/*.sh
-            # Exécuter les scripts
-            if [ -f "script/ensure-files.sh" ]; then
-              ./script/ensure-files.sh
-            fi
-            if [ -f "script/fix-paths.sh" ]; then
-              ./script/fix-paths.sh
-            fi
-            if [ -f "script/fix-app.sh" ]; then
-              ./script/fix-app.sh
-            fi
-            if [ -f "script/fix-reset-password.sh" ]; then
-              ./script/fix-reset-password.sh
-            fi
-          else
-            echo "Script directory not found, skipping script execution"
-          fi
+          # Les scripts ne sont plus nécessaires
+          echo "Skipping script execution as they are not needed"
 
           # Vérifier si le script de build existe
           if ! grep -q '"build"' package.json; then
@@ -275,27 +256,8 @@ jobs:
             echo "Created placeholder images for build"
           fi
 
-          # Vérifier si les scripts existent dans le dossier script
-          if [ -d "script" ]; then
-            echo "Using scripts from script directory"
-            # Rendre les scripts exécutables
-            chmod +x script/*.sh
-            # Exécuter les scripts
-            if [ -f "script/ensure-files.sh" ]; then
-              ./script/ensure-files.sh
-            fi
-            if [ -f "script/fix-paths.sh" ]; then
-              ./script/fix-paths.sh
-            fi
-            if [ -f "script/fix-app.sh" ]; then
-              ./script/fix-app.sh
-            fi
-            if [ -f "script/fix-reset-password.sh" ]; then
-              ./script/fix-reset-password.sh
-            fi
-          else
-            echo "Script directory not found, skipping script execution"
-          fi
+          # Les scripts ne sont plus nécessaires
+          echo "Skipping script execution as they are not needed"
 
           # Vérifier si le script de build existe
           if ! grep -q '"build"' package.json; then
