@@ -16,10 +16,10 @@ data:
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
 
-        # Redirection HTTP vers HTTPS
-        if ($scheme = http) {
-            return 301 https://$host$request_uri;
-        }
+        # Redirection HTTP vers HTTPS - désactivée pour le débogage
+        # if ($scheme = http) {
+        #     return 301 https://$host$request_uri;
+        # }
 
         location / {
             root /usr/share/nginx/html;
