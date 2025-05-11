@@ -27,6 +27,15 @@ data:
             try_files $uri $uri/ /index.html;
         }
 
+        # Configuration spécifique pour favicon.ico
+        location = /favicon.ico {
+            root /usr/share/nginx/html;
+            try_files $uri =204;
+            access_log off;
+            log_not_found off;
+            expires max;
+        }
+
         location /api/ {
             proxy_pass http://rh-backend:8000/api/;
             proxy_set_header Host $host;
@@ -50,25 +59,9 @@ data:
             add_header X-XSS-Protection "1; mode=block";
         }
 
-        location = /django-admin {
-            # Redirection directe vers /admin/
-            return 301 $scheme://$host/admin/;
-        }
-
-        location ^~ /django-admin/ {
-            # Proxy vers l'admin Django
-            proxy_pass http://rh-backend:8000/admin/;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-
-            # Ajouter les en-têtes de sécurité pour résoudre le problème COOP
-            add_header Cross-Origin-Opener-Policy same-origin;
-            add_header Cross-Origin-Embedder-Policy require-corp;
-            add_header X-Content-Type-Options nosniff;
-            add_header X-Frame-Options SAMEORIGIN;
-            add_header X-XSS-Protection "1; mode=block";
+        # Redirection simple pour django-admin (avec ou sans slash)
+        location ~ ^/django-admin(/.*)?$ {
+            return 302 $scheme://$host/admin$1;
         }
 
         location /media/ {
