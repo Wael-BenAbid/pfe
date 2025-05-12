@@ -58,9 +58,6 @@ FROM nginx:alpine
 
 # Copy built files from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
-
-# Nginx configuration is provided by Kubernetes ConfigMap
-
 # Create a simple health check file
 RUN echo "OK" > /usr/share/nginx/html/health.txt
 

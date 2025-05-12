@@ -16,11 +16,6 @@ data:
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
 
-        # Désactivation de la redirection HTTP vers HTTPS pour éviter les boucles
-        # if ($scheme = http) {
-        #     return 301 https://$host$request_uri;
-        # }
-
         # Configuration des types MIME
         include /etc/nginx/mime.types;
         default_type application/octet-stream;
@@ -39,33 +34,6 @@ data:
             image/svg+xml svg;
             application/font-woff woff;
             application/font-woff2 woff2;
-        }
-
-        location / {
-            root /usr/share/nginx/html;
-            index index.html index.htm;
-            try_files $uri $uri/ /index.html;
-
-            # Configuration des types MIME pour les fichiers JavaScript
-            location ~* \.(js|mjs)$ {
-                add_header Content-Type application/javascript;
-                add_header X-Content-Type-Options nosniff;
-                expires 30d;
-                access_log off;
-            }
-
-            # Configuration des types MIME pour les fichiers CSS
-            location ~* \.css$ {
-                add_header Content-Type text/css;
-                expires 30d;
-                access_log off;
-            }
-
-            # Empêcher la redirection vers /admin ou /django-admin lors du rafraîchissement
-            # des pages frontend comme /admin/applications, /admin/employees, etc.
-            location ~ ^/admin/(?!login|logout|api) {
-                try_files $uri $uri/ /index.html;
-            }
         }
 
         # Servir le favicon depuis le fichier logo2.png
@@ -93,46 +61,8 @@ data:
             }
         }
 
-        location /api/ {
-            # Rediriger les requêtes avec doublon api/api vers /api
-            rewrite ^/api/api/(.*)$ /api/$1 break;
-
-            proxy_pass http://rh-backend:8000/;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Port $server_port;
-        }
-
-        # Route spécifique pour l'interface d'administration frontend
-        location = /admin/ {
-            try_files $uri $uri/ /index.html;
-        }
-
-        # Route pour les API d'administration backend
-        location ~ ^/admin/(login|logout|api) {
-            proxy_pass http://rh-backend:8000/admin/$1;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-
-            # Ajouter les en-têtes de sécurité pour résoudre le problème COOP
-            add_header Cross-Origin-Opener-Policy same-origin;
-            add_header Cross-Origin-Embedder-Policy require-corp;
-            add_header X-Content-Type-Options nosniff;
-            add_header X-Frame-Options SAMEORIGIN;
-            add_header X-XSS-Protection "1; mode=block";
-        }
-
-        # Configuration pour l'interface d'administration Django
-        location = /admin {
-            return 301 /admin/;
-        }
-
-        location ^~ /admin/ {
+        # Route pour l'interface d'administration Django
+        location /admin/ {
             proxy_pass http://rh-backend:8000/admin/;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
@@ -140,21 +70,56 @@ data:
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Port $server_port;
-
-            # Ajouter les en-têtes de sécurité pour résoudre le problème COOP
-            add_header Cross-Origin-Opener-Policy same-origin;
-            add_header Cross-Origin-Embedder-Policy require-corp;
-            add_header X-Content-Type-Options nosniff;
-            add_header X-Frame-Options SAMEORIGIN;
-            add_header X-XSS-Protection "1; mode=block";
         }
 
+        # Redirection pour /admin sans slash
+        location = /admin {
+            return 301 /admin/;
+        }
+
+        # Route pour l'API
+        location /api/ {
+            # Rediriger les requêtes avec doublon api/api vers /api
+            rewrite ^/api/api/(.*)$ /api/$1 break;
+
+            proxy_pass http://rh-backend:8000/api/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+        }
+
+        # Route pour les médias
         location /media/ {
             proxy_pass http://rh-backend:8000/media/;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Route par défaut pour le frontend
+        location / {
+            root /usr/share/nginx/html;
+            index index.html index.htm;
+            try_files $uri $uri/ /index.html;
+
+            # Configuration des types MIME pour les fichiers JavaScript
+            location ~* \.(js|mjs)$ {
+                add_header Content-Type application/javascript;
+                add_header X-Content-Type-Options nosniff;
+                expires 30d;
+                access_log off;
+            }
+
+            # Configuration des types MIME pour les fichiers CSS
+            location ~* \.css$ {
+                add_header Content-Type text/css;
+                expires 30d;
+                access_log off;
+            }
         }
 
         error_page 500 502 503 504 /50x.html;

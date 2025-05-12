@@ -20,27 +20,6 @@ spec:
       paths:
       - backend:
           service:
-            name: rh-backend
-            port:
-              number: 8000
-        path: /api
-        pathType: Prefix
-      - backend:
-          service:
-            name: rh-frontend
-            port:
-              number: 80
-        path: /admin
-        pathType: Prefix
-      - backend:
-          service:
-            name: rh-backend
-            port:
-              number: 8000
-        path: /django-admin
-        pathType: Prefix
-      - backend:
-          service:
             name: rh-frontend
             port:
               number: 80
