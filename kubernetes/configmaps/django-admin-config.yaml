@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: django-admin-config
+  namespace: rh-system
+data:
+  admin_settings.py: |
+    # Configuration spécifique pour l'administration Django
+    from django.conf import settings
+    
+    # Désactiver la protection CSRF pour l'administration
+    settings.CSRF_COOKIE_SECURE = False
+    settings.SESSION_COOKIE_SECURE = False
+    settings.CSRF_COOKIE_HTTPONLY = False
+    settings.CSRF_USE_SESSIONS = False
+    
+    # Ajouter des origines de confiance supplémentaires
+    settings.CSRF_TRUSTED_ORIGINS.append('https://rh-system.local')
+    settings.CSRF_TRUSTED_ORIGINS.append('http://rh-system.local')
+    settings.CSRF_TRUSTED_ORIGINS.append('http://localhost:8000')
+    
+    # Désactiver la vérification CSRF pour les vues d'administration
+    from django.views.decorators.csrf import csrf_exempt
+    from django.contrib import admin
+    
+    # Appliquer csrf_exempt à toutes les vues d'administration
+    admin.site.csrf_exempt = True
+    
+    # Patch pour les vues d'administration
+    original_admin_view = admin.site.admin_view
+    
+    def csrf_exempt_admin_view(view_func, cacheable=False):
+        # Appliquer csrf_exempt à la vue
+        return csrf_exempt(original_admin_view(view_func, cacheable))
+    
+    # Remplacer la méthode admin_view
+    admin.site.admin_view = csrf_exempt_admin_view

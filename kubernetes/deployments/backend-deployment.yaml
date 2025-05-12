@@ -24,6 +24,7 @@ spec:
       - name: rh-backend
         image: waelbenabid/rh-backend:latest
         imagePullPolicy: IfNotPresent
+        command: ["/bin/bash", "/scripts/init.sh"]
         ports:
         - containerPort: 8000
           name: http
@@ -34,6 +35,14 @@ spec:
           limits:
             cpu: "500m"
             memory: "512Mi"
+        volumeMounts:
+        - name: init-script
+          mountPath: /scripts
+        - name: admin-config
+          mountPath: /app/SystemeRH_v2/admin_settings.py
+          subPath: admin_settings.py
+        - name: media-storage
+          mountPath: /app/media_v2
         env:
         - name: DEBUG
           valueFrom:
@@ -91,4 +100,15 @@ spec:
               name: rh-backend-secrets
               key: SENDGRID_API_KEY
 
+      volumes:
+      - name: init-script
+        configMap:
+          name: backend-init-script
+          defaultMode: 0755
+      - name: admin-config
+        configMap:
+          name: django-admin-config
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-pvc
       restartPolicy: Always

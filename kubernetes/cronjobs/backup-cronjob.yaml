@@ -1,0 +1,81 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+  namespace: rh-system
+spec:
+  schedule: "0 2 * * *"  # Tous les jours à 2h du matin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: postgres:15-alpine
+            command:
+            - /bin/bash
+            - /scripts/backup-db.sh
+            env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_PASSWORD
+            volumeMounts:
+            - name: backup-scripts
+              mountPath: /scripts
+            - name: backup-volume
+              mountPath: /backups
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-scripts
+            configMap:
+              name: backup-scripts
+              defaultMode: 0755
+          - name: backup-volume
+            persistentVolumeClaim:
+              claimName: backup-pvc
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: media-backup
+  namespace: rh-system
+spec:
+  schedule: "0 3 * * *"  # Tous les jours à 3h du matin
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: backup
+            image: alpine:latest
+            command:
+            - /bin/sh
+            - /scripts/backup-media.sh
+            volumeMounts:
+            - name: backup-scripts
+              mountPath: /scripts
+            - name: backup-volume
+              mountPath: /backups
+            - name: media-volume
+              mountPath: /media_v2
+              readOnly: true
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-scripts
+            configMap:
+              name: backup-scripts
+              defaultMode: 0755
+          - name: backup-volume
+            persistentVolumeClaim:
+              claimName: backup-pvc
+          - name: media-volume
+            persistentVolumeClaim:
+              claimName: media-pvc

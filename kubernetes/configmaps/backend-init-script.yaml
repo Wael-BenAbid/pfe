@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-init-script
+  namespace: rh-system
+data:
+  init.sh: |
+    #!/bin/bash
+
+    # Attendre que la base de données soit prête
+    echo 'Waiting for PostgreSQL to start...'
+    until pg_isready -h postgres-db -p 5432; do
+      echo 'PostgreSQL is unavailable - sleeping'
+      sleep 1
+    done
+    echo 'PostgreSQL started!'
+
+    # Appliquer les migrations
+    echo 'Applying migrations...'
+    python manage.py migrate --noinput
+
+    # Créer un superutilisateur si nécessaire
+    echo 'Creating superuser if needed...'
+    python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='wael').exists() or User.objects.create_superuser('wael', 'waelbenabid1@gmail.com', 'Abidos\$123'); print('Superuser created or already exists.')"
+
+    # Créer un fichier pour importer la configuration d'administration
+    echo 'Creating admin configuration...'
+    cat > SystemeRH_v2/admin_init.py << 'EOF'
+    from django.conf import settings
+    try:
+        # Importer la configuration d'administration
+        from SystemeRH_v2 import admin_settings
+        print("Admin settings loaded successfully")
+    except Exception as e:
+        print(f"Error loading admin settings: {e}")
+    EOF
+
+    # Modifier le fichier urls.py pour importer la configuration d'administration
+    echo 'Modifying urls.py...'
+    sed -i '1s/^/from SystemeRH_v2 import admin_init\n/' SystemeRH_v2/urls.py
+
+    # Démarrer le serveur
+    echo 'Starting server...'
+    python manage.py runserver 0.0.0.0:8000
