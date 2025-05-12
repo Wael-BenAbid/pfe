@@ -16,7 +16,7 @@ data:
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers HIGH:!aNULL:!MD5;
 
-        # Désactivation de la redirection HTTP vers HTTPS
+        # Désactivation de la redirection HTTP vers HTTPS pour éviter les boucles
         # if ($scheme = http) {
         #     return 301 https://$host$request_uri;
         # }
@@ -31,7 +31,8 @@ data:
 
         # Types MIME personnalisés
         types {
-            application/javascript js mjs;
+            application/javascript js;
+            application/javascript mjs;
             text/css css;
             image/png png;
             image/jpeg jpg jpeg;
@@ -46,27 +47,11 @@ data:
             try_files $uri $uri/ /index.html;
 
             # Configuration des types MIME pour les fichiers JavaScript
-            location ~* \.js$ {
+            location ~* \.(js|mjs)$ {
                 add_header Content-Type application/javascript;
                 add_header X-Content-Type-Options nosniff;
                 expires 30d;
                 access_log off;
-            }
-
-            # Configuration spécifique pour les modules JavaScript
-            location ~* \.mjs$ {
-                add_header Content-Type application/javascript;
-                add_header X-Content-Type-Options nosniff;
-                expires 30d;
-                access_log off;
-            }
-
-            # Configuration pour les modules ES6
-            location ~* \.js$ {
-                if ($http_accept ~* "application/javascript") {
-                    add_header Content-Type application/javascript;
-                    add_header X-Content-Type-Options nosniff;
-                }
             }
 
             # Configuration des types MIME pour les fichiers CSS
@@ -83,9 +68,11 @@ data:
             }
         }
 
-        # Ignorer complètement les requêtes favicon.ico
+        # Servir le favicon depuis le fichier logo2.png
         location = /favicon.ico {
-            return 444;  # Fermer la connexion sans réponse
+            alias /usr/share/nginx/html/assets/logo2.png;
+            add_header Content-Type image/png;
+            expires 30d;
             access_log off;
             log_not_found off;
         }
@@ -97,32 +84,8 @@ data:
             add_header Cache-Control "public, max-age=2592000";
             try_files $uri $uri/ =404;
 
-            # Configuration pour les fichiers JavaScript dans assets
-            location ~* /assets/.*\.js$ {
-                add_header Content-Type application/javascript;
-                add_header X-Content-Type-Options nosniff;
-                expires 30d;
-                access_log off;
-            }
-
-            # Configuration spécifique pour vendor-DcllX_RJ.js
-            location = /assets/vendor-DcllX_RJ.js {
-                add_header Content-Type application/javascript;
-                add_header X-Content-Type-Options nosniff;
-                expires 30d;
-                access_log off;
-            }
-
-            # Configuration spécifique pour index-1Xl-8N17.js
-            location = /assets/index-1Xl-8N17.js {
-                add_header Content-Type application/javascript;
-                add_header X-Content-Type-Options nosniff;
-                expires 30d;
-                access_log off;
-            }
-
-            # Configuration pour les modules JavaScript dans assets
-            location ~* /assets/.*\.mjs$ {
+            # Configuration pour tous les fichiers JavaScript dans assets
+            location ~* /assets/.*\.(js|mjs)$ {
                 add_header Content-Type application/javascript;
                 add_header X-Content-Type-Options nosniff;
                 expires 30d;
@@ -131,11 +94,16 @@ data:
         }
 
         location /api/ {
-            proxy_pass http://rh-backend:8000/api/;
+            # Rediriger les requêtes avec doublon api/api vers /api
+            rewrite ^/api/api/(.*)$ /api/$1 break;
+
+            proxy_pass http://rh-backend:8000/;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
         }
 
         # Route spécifique pour l'interface d'administration frontend
@@ -159,13 +127,19 @@ data:
             add_header X-XSS-Protection "1; mode=block";
         }
 
-        # Configuration pour django-admin (interface d'administration Django distincte)
-        location ^~ /django-admin/ {
+        # Configuration pour l'interface d'administration Django
+        location = /admin {
+            return 301 /admin/;
+        }
+
+        location ^~ /admin/ {
             proxy_pass http://rh-backend:8000/admin/;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
 
             # Ajouter les en-têtes de sécurité pour résoudre le problème COOP
             add_header Cross-Origin-Opener-Policy same-origin;
