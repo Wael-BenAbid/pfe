@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const refreshToken = localStorage.getItem('refresh_token');
             if (refreshToken) {
               try {
-                const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh-token/`, {
+                const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh-token/`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = async (username: string, password: string) => {
     try {
       // Try the login endpoint
-      const response = await fetch(`${API_BASE_URL}/api/auth/login/`, {
+      const response = await fetch(`${API_BASE_URL}/auth/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -197,7 +197,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       if (token) {
         // Send the session ID when logging out
-        await fetch(`${API_BASE_URL}/api/auth/logout/`, {
+        await fetch(`${API_BASE_URL}/auth/logout/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
