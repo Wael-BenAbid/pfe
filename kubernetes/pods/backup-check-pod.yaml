@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backup-check
+  namespace: rh-system
+spec:
+  containers:
+  - name: backup-check
+    image: alpine:latest
+    command:
+    - /bin/sh
+    - -c
+    - "sleep 3600"
+    volumeMounts:
+    - name: backup-volume
+      mountPath: /backups
+  volumes:
+  - name: backup-volume
+    persistentVolumeClaim:
+      claimName: backup-pvc

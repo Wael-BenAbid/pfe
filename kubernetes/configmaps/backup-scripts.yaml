@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-scripts
+  namespace: rh-system
+data:
+  backup-db.sh: |
+    #!/bin/bash
+    
+    # Configuration
+    BACKUP_DIR="/backups/db"
+    POSTGRES_DB="rh_v2"
+    POSTGRES_USER="postgres"
+    POSTGRES_HOST="postgres-db"
+    POSTGRES_PORT="5432"
+    RETENTION_DAYS=7
+    
+    # Créer le répertoire de sauvegarde s'il n'existe pas
+    mkdir -p $BACKUP_DIR
+    
+    # Nom du fichier de sauvegarde avec date et heure
+    BACKUP_FILENAME="$BACKUP_DIR/db_backup_$(date +%Y%m%d_%H%M%S).sql"
+    
+    echo "Démarrage de la sauvegarde de la base de données à $(date)"
+    
+    # Exécuter la sauvegarde
+    PGPASSWORD=$POSTGRES_PASSWORD pg_dump -h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DB -f $BACKUP_FILENAME
+    
+    # Vérifier si la sauvegarde a réussi
+    if [ $? -eq 0 ]; then
+      echo "Sauvegarde réussie: $BACKUP_FILENAME"
+      
+      # Compresser le fichier de sauvegarde
+      gzip $BACKUP_FILENAME
+      echo "Fichier compressé: $BACKUP_FILENAME.gz"
+      
+      # Supprimer les anciennes sauvegardes (plus de RETENTION_DAYS jours)
+      find $BACKUP_DIR -name "db_backup_*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete
+      echo "Anciennes sauvegardes supprimées (plus de $RETENTION_DAYS jours)"
+    else
+      echo "Erreur lors de la sauvegarde de la base de données"
+      exit 1
+    fi
+    
+    echo "Sauvegarde terminée à $(date)"
+    
+  backup-media.sh: |
+    #!/bin/bash
+    
+    # Configuration
+    BACKUP_DIR="/backups/media"
+    MEDIA_DIR="/media_v2"
+    RETENTION_DAYS=7
+    
+    # Créer le répertoire de sauvegarde s'il n'existe pas
+    mkdir -p $BACKUP_DIR
+    
+    # Nom du fichier de sauvegarde avec date et heure
+    BACKUP_FILENAME="$BACKUP_DIR/media_backup_$(date +%Y%m%d_%H%M%S).tar.gz"
+    
+    echo "Démarrage de la sauvegarde des fichiers médias à $(date)"
+    
+    # Exécuter la sauvegarde
+    tar -czf $BACKUP_FILENAME -C $MEDIA_DIR .
+    
+    # Vérifier si la sauvegarde a réussi
+    if [ $? -eq 0 ]; then
+      echo "Sauvegarde réussie: $BACKUP_FILENAME"
+      
+      # Supprimer les anciennes sauvegardes (plus de RETENTION_DAYS jours)
+      find $BACKUP_DIR -name "media_backup_*.tar.gz" -type f -mtime +$RETENTION_DAYS -delete
+      echo "Anciennes sauvegardes supprimées (plus de $RETENTION_DAYS jours)"
+    else
+      echo "Erreur lors de la sauvegarde des fichiers médias"
+      exit 1
+    fi
+    
+    echo "Sauvegarde terminée à $(date)"
