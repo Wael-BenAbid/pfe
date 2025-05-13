@@ -32,7 +32,7 @@ frontend:
     targetCPUUtilizationPercentage: 70
     targetMemoryUtilizationPercentage: 80
   config:
-    apiBaseUrl: http://rh-backend:8000/api
+    apiBaseUrl: http://rh-backend:8000
     nodeEnv: production
 
 # Backend configuration

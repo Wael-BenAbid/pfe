@@ -1,7 +1,13 @@
 // API configuration
+// Pour éviter les doublons de préfixe 'api/', nous définissons deux constantes:
+// - API_BASE_URL: URL de base sans le préfixe '/api' (pour les appels directs au backend)
+// - API_URL: URL complète avec le préfixe '/api' (pour les appels aux endpoints API)
 export const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8000'
   : `https://${window.location.hostname}`;
+
+// URL pour les appels d'API (avec le préfixe '/api')
+export const API_URL = `${API_BASE_URL}/api`;
 
 // Media URL configuration (for images, files, etc.)
 export const MEDIA_BASE_URL = window.location.hostname === 'localhost'

@@ -4,5 +4,5 @@ metadata:
   name: rh-frontend-config
   namespace: rh-system
 data:
-  API_BASE_URL: "/api"
+  API_BASE_URL: ""
   NODE_ENV: "production"

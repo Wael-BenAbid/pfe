@@ -55,18 +55,24 @@ data:
         }
 
         # Route directe pour l'interface d'administration Django
+        # Toutes les requêtes vers /admin/ sont envoyées au backend Django
         location /admin/ {
             proxy_pass http://rh-backend:8000/admin/;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
-        }
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
 
-        # Redirection pour les requêtes du backend Django qui essaient d'accéder à /admin/
-        location = /admin/login/ {
-            # Continuer normalement (frontend)
-            try_files $uri $uri/ /index.html;
+            # Ajouter des en-têtes pour éviter les problèmes de CSRF
+            proxy_set_header X-CSRFToken $http_x_csrf_token;
+            proxy_set_header Referer $http_referer;
+
+            # Augmenter les timeouts pour les opérations longues
+            proxy_connect_timeout 300s;
+            proxy_send_timeout 300s;
+            proxy_read_timeout 300s;
         }
 
 
@@ -90,10 +96,15 @@ data:
         }
 
         # Route pour l'interface d'administration frontend
+        # Toutes les requêtes vers /admine/ sont gérées par le frontend React
         location /admine/ {
             root /usr/share/nginx/html;
             index index.html index.htm;
             try_files $uri $uri/ /index.html;
+
+            # Ajouter des en-têtes pour éviter les problèmes de cache
+            add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
+            expires off;
         }
 
         # Redirection pour /admine sans slash
@@ -103,12 +114,7 @@ data:
 
         # Route pour l'API
         location /api/ {
-            # Rediriger les requêtes avec doublon api/api vers /api
-            rewrite ^/api/api/(.*)$ /api/$1 break;
-
-            # Rediriger les requêtes avec doublon api/auth vers /auth
-            rewrite ^/api/api/auth/(.*)$ /api/auth/$1 break;
-
+            # Proxy direct vers le backend sans préfixe supplémentaire
             proxy_pass http://rh-backend:8000/api/;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;

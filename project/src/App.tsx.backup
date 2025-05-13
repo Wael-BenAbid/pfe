@@ -32,11 +32,11 @@ function AppWithAlerts() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/application-success" element={<ApplicationSuccess />} />
           <Route path="/pending-approval" element={<PendingApproval />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/employee-management" element={<EmployeeManagement />} />
-          <Route path="/admin/intern-management" element={<InternManagementAdmin />} />
-          <Route path="/admin/applications-review" element={<ApplicationsReview />} />
-          <Route path="/admin/mission-management" element={<MissionManagement />} />
+          <Route path="/admine" element={<AdminDashboard />} />
+          <Route path="/admine/employee-management" element={<EmployeeManagement />} />
+          <Route path="/admine/intern-management" element={<InternManagementAdmin />} />
+          <Route path="/admine/applications-review" element={<ApplicationsReview />} />
+          <Route path="/admine/mission-management" element={<MissionManagement />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>

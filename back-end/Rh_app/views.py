@@ -228,22 +228,37 @@ def api_logout(request):
     try:
         # Get the session ID from the request
         session_id = request.data.get('session_id')
+        logger.info(f"Logout request received for user {request.user.username}, session_id: {session_id}")
 
         # Close the user session and record work hours
         from .models import UserSession, WorkHours
-        from datetime import datetime, date
+        from datetime import datetime, date, timedelta
         from django.utils import timezone
 
         # Initialiser hours_worked à 0
         hours_worked = 0
 
         # Get the user's active session
+        user_session = None
         if session_id:
             # If session_id is provided, get that specific session
-            user_session = UserSession.objects.filter(id=session_id, is_active=True).first()
-        else:
-            # Otherwise, get the most recent active session for the user
+            try:
+                session_id = int(session_id)  # Ensure session_id is an integer
+                user_session = UserSession.objects.filter(id=session_id, is_active=True).first()
+                if user_session:
+                    logger.info(f"Found active session with ID {session_id} for user {request.user.username}")
+                else:
+                    logger.warning(f"No active session found with ID {session_id} for user {request.user.username}")
+            except (ValueError, TypeError):
+                logger.error(f"Invalid session_id format: {session_id}")
+
+        if not user_session:
+            # If no valid session found with the provided ID, get the most recent active session
             user_session = UserSession.objects.filter(user=request.user, is_active=True).order_by('-login_time').first()
+            if user_session:
+                logger.info(f"Using most recent active session (ID: {user_session.id}) for user {request.user.username}")
+            else:
+                logger.warning(f"No active sessions found for user {request.user.username}")
 
         if user_session:
             # Set the logout time and mark session as inactive
@@ -253,6 +268,13 @@ def api_logout(request):
 
             # Calculate hours worked
             hours_worked = user_session.calculate_duration()
+
+            # Vérifier si la durée est raisonnable (moins de 24 heures)
+            if hours_worked > 24:
+                logger.warning(f"Unreasonable session duration detected: {hours_worked} hours for session {user_session.id}")
+                # Limiter à une durée raisonnable (8 heures)
+                hours_worked = 8
+                logger.info(f"Session duration capped at 8 hours for session {user_session.id}")
 
             # Ne pas enregistrer d'heures de travail pour les stagiaires
             if request.user.user_type != 'intern':
@@ -266,14 +288,18 @@ def api_logout(request):
                     # Update existing record
                     existing_record.hours_worked += hours_worked
                     existing_record.save()
+                    logger.info(f"Updated work hours record for {request.user.username} on {today}: added {hours_worked} hours, new total: {existing_record.hours_worked}")
                 else:
                     # Create new record
-                    WorkHours.objects.create(
+                    new_record = WorkHours.objects.create(
                         user=request.user,
                         date=today,
                         hours_worked=hours_worked,
                         description=f"Automatic time tracking: {hours_worked} hours"
                     )
+                    logger.info(f"Created new work hours record for {request.user.username} on {today}: {hours_worked} hours")
+            else:
+                logger.info(f"No work hours recorded for intern user {request.user.username}")
 
         # Blacklist the refresh token
         refresh_token = request.data.get('refresh')
@@ -281,19 +307,23 @@ def api_logout(request):
             try:
                 token = RefreshToken(refresh_token)
                 token.blacklist()
+                logger.info(f"Refresh token blacklisted for user {request.user.username}")
             except Exception as token_error:
-                logger.warning(f"Error blacklisting token: {str(token_error)}")
+                logger.warning(f"Error blacklisting token for user {request.user.username}: {str(token_error)}")
                 # Continue with logout even if token blacklisting fails
 
         # Enregistrer l'activité de déconnexion
         log_logout(request.user, request)
+        logger.info(f"Logout activity recorded for user {request.user.username}")
 
         return Response({
             'message': 'Successfully logged out',
             'hours_worked': hours_worked
         }, status=status.HTTP_200_OK)
     except Exception as e:
-        logger.error(f"Error during logout: {str(e)}")
+        logger.error(f"Error during logout for user {request.user.username if hasattr(request, 'user') else 'unknown'}: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         # Retourner une réponse plus générique pour éviter de divulguer des informations sensibles
         return Response({'error': 'An error occurred during logout'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

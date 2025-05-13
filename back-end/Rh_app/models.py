@@ -125,6 +125,9 @@ class UserSession(models.Model):
     logout_time = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
 
+    # Champ pour stocker les heures travaillées calculées
+    hours_worked = models.DecimalField(max_digits=5, decimal_places=2, default=0)
+
     def __str__(self):
         return f"{self.user.username} - {self.login_time.strftime('%Y-%m-%d %H:%M')}"
 
@@ -134,8 +137,20 @@ class UserSession(models.Model):
             return 0
 
         duration = self.logout_time - self.login_time
+
+        # Vérifier si la durée est négative (cas où le logout_time est avant login_time)
+        if duration.total_seconds() < 0:
+            return 0
+
+        # Vérifier si la durée est trop longue (plus de 24 heures)
+        if duration.total_seconds() > 24 * 3600:
+            # Limiter à 8 heures de travail maximum
+            return 8.0
+
         # Convert to hours
         hours = duration.total_seconds() / 3600
+
+        # Arrondir à 2 décimales
         return round(hours, 2)
 
 

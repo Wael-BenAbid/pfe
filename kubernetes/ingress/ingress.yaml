@@ -18,38 +18,56 @@ spec:
   - host: rh-system.local
     http:
       paths:
-      - backend:
+      # Frontend Admin Interface
+      - path: /admine(/|$)(.*)
+        pathType: Prefix
+        backend:
           service:
             name: rh-frontend
             port:
               number: 80
-        path: /admine
+
+      # Backend Admin Interface
+      - path: /admin(/|$)(.*)
         pathType: Prefix
-      - backend:
+        backend:
           service:
             name: rh-backend
             port:
               number: 8000
-        path: /admin
+
+      # Backend API
+      - path: /api(/|$)(.*)
         pathType: Prefix
-      - backend:
+        backend:
           service:
             name: rh-backend
             port:
               number: 8000
-        path: /api
+
+      # Media files
+      - path: /media(/|$)(.*)
         pathType: Prefix
-      - backend:
+        backend:
           service:
             name: rh-backend
             port:
               number: 8000
-        path: /media
+
+      # Static files
+      - path: /static(/|$)(.*)
         pathType: Prefix
-      - backend:
+        backend:
+          service:
+            name: rh-backend
+            port:
+              number: 8000
+
+      # Frontend default route
+      - path: /(.*)
+        pathType: Prefix
+        backend:
           service:
             name: rh-frontend
             port:
               number: 80
-        path: /
-        pathType: Prefix
