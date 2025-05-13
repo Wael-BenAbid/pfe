@@ -336,7 +336,7 @@ const UserManagement: React.FC = () => {
                           size="sm"
                           icon={<UserIcon className="h-4 w-4" />}
                           onClick={() =>
-                            window.open(`/admin/user/${user.id}`, "_blank")
+                            window.open(`/admine/user/${user.id}`, "_blank")
                           }
                         >
                           View
@@ -348,7 +348,7 @@ const UserManagement: React.FC = () => {
                             icon={<ClockIcon className="h-4 w-4" />}
                             onClick={() =>
                               window.open(
-                                `/admin/user/${user.id}/work-hours`,
+                                `/admine/user/${user.id}/work-hours`,
                                 "_blank"
                               )
                             }

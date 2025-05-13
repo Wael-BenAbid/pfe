@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.routers import DefaultRouter
 from django.conf import settings
@@ -49,14 +49,15 @@ def api_root(request):
         'status': 'running'
     })
 
-# Cette fonction n'est plus nécessaire car nous allons utiliser directement l'interface d'administration Django
-# def django_admin_redirect(request):
-#     return HttpResponseRedirect('/admin/')
+# Fonction pour servir l'admin Django directement
+def django_admin_view(request, path=''):
+    # Cette fonction n'est plus utilisée, mais conservée pour référence
+    pass
 
 urlpatterns = [
     path('', api_root, name='api_root'),  # API root endpoint
-    path('admin/', admin.site.urls, name='django_admin'),  # Interface d'administration Django distincte
-    # Suppression de la route 'admin/' pour éviter la duplication
+    path('admin/', admin.site.urls, name='django_admin'),  # Interface d'administration Django
+    # Suppression de la route 'django-admin/' pour éviter la confusion
     path('api/', include(router.urls)),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
@@ -67,6 +68,10 @@ urlpatterns = [
     path('', include('Rh_app.urls')),
 ]
 
-# Ajouter les URLs pour servir les fichiers média en mode développement
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Ajouter les URLs pour servir les fichiers média et statiques
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Servir les fichiers statiques de l'admin Django
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+urlpatterns += staticfiles_urlpatterns()

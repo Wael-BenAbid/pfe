@@ -29,7 +29,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY') or 'django-insecure-' + ''.join(['x' for _ in range(50)])
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DEBUG', 'False') == 'True'
+DEBUG = True  # Activé pour servir les fichiers statiques
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
 
@@ -53,7 +53,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',  # Temporairement désactivé pour le débogage
+    'django.middleware.csrf.CsrfViewMiddleware',  # Réactivé pour la sécurité
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -138,8 +138,20 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+# Assurez-vous que Django peut trouver les fichiers statiques de l'admin
+STATICFILES_DIRS = []
+
+# Configuration pour servir les fichiers statiques en production
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
+# Servir les fichiers statiques même en mode production
+SERVE_STATIC_FILES = True
 
 
 # Default primary key field type
@@ -158,8 +170,11 @@ CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,
 
 # Paramètres de sécurité pour HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SESSION_COOKIE_SECURE = False  # Temporairement désactivé pour le débogage
-CSRF_COOKIE_SECURE = False  # Temporairement désactivé pour le débogage
+SESSION_COOKIE_SECURE = True  # Activé pour la sécurité
+CSRF_COOKIE_SECURE = True  # Activé pour la sécurité
+CSRF_COOKIE_HTTPONLY = False  # Permettre l'accès via JavaScript
+SESSION_COOKIE_HTTPONLY = True  # Empêcher l'accès via JavaScript
+CSRF_TRUSTED_ORIGINS = ['https://rh-system.local', 'http://rh-system.local']
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

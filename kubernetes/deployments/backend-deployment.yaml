@@ -41,8 +41,13 @@ spec:
         - name: admin-config
           mountPath: /app/SystemeRH_v2/admin_settings.py
           subPath: admin_settings.py
+        - name: urls-config
+          mountPath: /app/SystemeRH_v2/urls.py
+          subPath: urls.py
         - name: media-storage
           mountPath: /app/media_v2
+        - name: static-storage
+          mountPath: /app/static
         env:
         - name: DEBUG
           valueFrom:
@@ -108,7 +113,12 @@ spec:
       - name: admin-config
         configMap:
           name: django-admin-config
+      - name: urls-config
+        configMap:
+          name: django-urls-config
       - name: media-storage
         persistentVolumeClaim:
           claimName: media-pvc
+      - name: static-storage
+        emptyDir: {}
       restartPolicy: Always

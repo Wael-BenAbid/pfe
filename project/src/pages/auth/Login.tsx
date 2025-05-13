@@ -29,7 +29,7 @@ const Login: React.FC = () => {
       // Assume the response contains the user type, or you can fetch it after login
       const userType = localStorage.getItem("user_type");
       if (userType === "admin") {
-        navigate("/admin");
+        navigate("/admine");
       } else if (userType === "employee") {
         navigate("/employee");
       } else if (userType === "intern") {

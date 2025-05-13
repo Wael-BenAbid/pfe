@@ -64,7 +64,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Pending Applications */}
-        <Link to="/admin/applications" className="group">
+        <Link to="/admine/applications" className="group">
           <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02]">
             <div className="p-5">
               <div className="flex items-center">
@@ -97,7 +97,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </Link>
 
         {/* Active Employees */}
-        <Link to="/admin/employees?filter=employee" className="group">
+        <Link to="/admine/employees?filter=employee" className="group">
           <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02]">
             <div className="p-5">
               <div className="flex items-center">
@@ -130,7 +130,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
         </Link>
 
         {/* Active Interns */}
-        <Link to="/admin/interns" className="group">
+        <Link to="/admine/interns" className="group">
           <div className="bg-white overflow-hidden shadow rounded-lg transition-all duration-200 group-hover:shadow-md group-hover:scale-[1.02]">
             <div className="p-5">
               <div className="flex items-center">
@@ -168,7 +168,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       <div className="bg-white shadow overflow-hidden sm:rounded-md mb-8">
         <ul className="divide-y divide-gray-200">
           <li>
-            <Link to="/admin/applications" className="block hover:bg-gray-50">
+            <Link to="/admine/applications" className="block hover:bg-gray-50">
               <div className="px-4 py-4 sm:px-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -187,7 +187,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
             </Link>
           </li>
           <li>
-            <Link to="/admin/users" className="block hover:bg-gray-50">
+            <Link to="/admine/users" className="block hover:bg-gray-50">
               <div className="px-4 py-4 sm:px-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">

@@ -23,6 +23,24 @@ data:
     echo 'Creating superuser if needed...'
     python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='wael').exists() or User.objects.create_superuser('wael', 'waelbenabid1@gmail.com', 'Abidos\$123'); print('Superuser created or already exists.')"
 
+    # Collecter les fichiers statiques
+    echo 'Collecting static files...'
+    python manage.py collectstatic --noinput
+
+    # Vérifier que les fichiers statiques ont été collectés
+    echo 'Verifying static files...'
+    if [ -d "static/admin" ]; then
+        echo 'Static files for admin collected successfully'
+        ls -la static/admin
+    else
+        echo 'Static files for admin not found, creating directory'
+        mkdir -p static/admin
+
+        # Copier les fichiers statiques de l'admin depuis Django
+        echo 'Copying admin static files from Django...'
+        python -c "import os, django, shutil; from django.contrib import admin; os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SystemeRH_v2.settings'); django.setup(); admin_static_dir = os.path.join(os.path.dirname(admin.__file__), 'static', 'admin'); print(f'Copying admin static files from {admin_static_dir}'); os.makedirs('static/admin', exist_ok=True); [shutil.copy2(os.path.join(root, file), os.path.join('static/admin', os.path.relpath(os.path.join(root, file), admin_static_dir))) for root, dirs, files in os.walk(admin_static_dir) for file in files]"
+    fi
+
     # Créer un fichier pour importer la configuration d'administration
     echo 'Creating admin configuration...'
     cat > SystemeRH_v2/admin_init.py << 'EOF'
@@ -35,9 +53,17 @@ data:
         print(f"Error loading admin settings: {e}")
     EOF
 
-    # Modifier le fichier urls.py pour importer la configuration d'administration
-    echo 'Modifying urls.py...'
-    sed -i '1s/^/from SystemeRH_v2 import admin_init\n/' SystemeRH_v2/urls.py
+    # Créer le fichier admin_init.py
+    echo 'Creating admin_init.py...'
+    cat > SystemeRH_v2/admin_init.py << 'EOF'
+    from django.conf import settings
+    try:
+        # Importer la configuration d'administration
+        from SystemeRH_v2 import admin_settings
+        print("Admin settings loaded successfully")
+    except Exception as e:
+        print(f"Error loading admin settings: {e}")
+    EOF
 
     # Démarrer le serveur
     echo 'Starting server...'

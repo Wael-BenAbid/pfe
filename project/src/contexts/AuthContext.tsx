@@ -45,6 +45,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
+            // Ajouter cache: 'no-store' pour éviter les problèmes de cache lors du rafraîchissement
+            cache: 'no-store',
           });
 
           if (userInfoResponse.ok) {
@@ -52,17 +54,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const userData = await userInfoResponse.json();
             console.log('User data:', userData);
             setUser(userData);
+
+            // Stocker les données utilisateur dans le localStorage pour la persistance
+            localStorage.setItem('user_data', JSON.stringify(userData));
           } else if (userInfoResponse.status === 401) {
             // Le token a expiré, essayer de le rafraîchir
             const refreshToken = localStorage.getItem('refresh_token');
             if (refreshToken) {
               try {
+                console.log('Refreshing token...');
                 const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh-token/`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({ refresh: refreshToken }),
+                  // Ajouter cache: 'no-store' pour éviter les problèmes de cache
+                  cache: 'no-store',
                 });
 
                 if (refreshResponse.ok) {
@@ -70,6 +78,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                   const refreshData = await refreshResponse.json();
                   localStorage.setItem('access_token', refreshData.access);
                   setToken(refreshData.access);
+                  console.log('Token refreshed successfully');
 
                   // Récupérer les informations utilisateur avec le nouveau token
                   const newUserInfoResponse = await fetch(`${API_BASE_URL}/users/me/`, {
@@ -77,43 +86,104 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
                     headers: {
                       Authorization: `Bearer ${refreshData.access}`,
                     },
+                    cache: 'no-store',
                   });
 
                   if (newUserInfoResponse.ok) {
                     const userData = await newUserInfoResponse.json();
                     setUser(userData);
+                    localStorage.setItem('user_data', JSON.stringify(userData));
                   }
                 } else {
-                  // Échec du rafraîchissement, déconnecter l'utilisateur
-                  console.error('Failed to refresh token');
-                  localStorage.removeItem('access_token');
-                  localStorage.removeItem('refresh_token');
-                  localStorage.removeItem('session_id');
-                  setToken(null);
-                  setUser(null);
-                  setSessionId(null);
+                  console.error('Failed to refresh token, status:', refreshResponse.status);
+                  // Essayer de récupérer les données utilisateur du localStorage
+                  const storedUserData = localStorage.getItem('user_data');
+                  if (storedUserData) {
+                    try {
+                      const parsedUserData = JSON.parse(storedUserData);
+                      setUser(parsedUserData);
+                      console.log('Using stored user data');
+                    } catch (parseError) {
+                      console.error('Error parsing stored user data:', parseError);
+                      handleLogout();
+                    }
+                  } else {
+                    handleLogout();
+                  }
                 }
               } catch (refreshError) {
                 console.error('Error refreshing token:', refreshError);
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('refresh_token');
-                localStorage.removeItem('session_id');
-                setToken(null);
-                setUser(null);
-                setSessionId(null);
+                // Essayer de récupérer les données utilisateur du localStorage
+                const storedUserData = localStorage.getItem('user_data');
+                if (storedUserData) {
+                  try {
+                    const parsedUserData = JSON.parse(storedUserData);
+                    setUser(parsedUserData);
+                    console.log('Using stored user data after refresh error');
+                  } catch (parseError) {
+                    console.error('Error parsing stored user data:', parseError);
+                    handleLogout();
+                  }
+                } else {
+                  handleLogout();
+                }
               }
             } else {
-              // Pas de token de rafraîchissement, déconnecter l'utilisateur
-              localStorage.removeItem('access_token');
-              setToken(null);
-              setUser(null);
+              // Pas de token de rafraîchissement, essayer d'utiliser les données stockées
+              const storedUserData = localStorage.getItem('user_data');
+              if (storedUserData) {
+                try {
+                  const parsedUserData = JSON.parse(storedUserData);
+                  setUser(parsedUserData);
+                  console.log('Using stored user data, no refresh token');
+                } catch (parseError) {
+                  console.error('Error parsing stored user data:', parseError);
+                  handleLogout();
+                }
+              } else {
+                handleLogout();
+              }
             }
           }
         } catch (error) {
           console.error('Error validating token:', error);
+          // En cas d'erreur réseau, essayer d'utiliser les données stockées
+          const storedUserData = localStorage.getItem('user_data');
+          if (storedUserData) {
+            try {
+              const parsedUserData = JSON.parse(storedUserData);
+              setUser(parsedUserData);
+              console.log('Using stored user data after network error');
+            } catch (parseError) {
+              console.error('Error parsing stored user data:', parseError);
+            }
+          }
+        }
+      } else {
+        // Pas de token, essayer de récupérer les données utilisateur du localStorage
+        const storedUserData = localStorage.getItem('user_data');
+        if (storedUserData) {
+          try {
+            const parsedUserData = JSON.parse(storedUserData);
+            setUser(parsedUserData);
+            console.log('Using stored user data, no token');
+          } catch (parseError) {
+            console.error('Error parsing stored user data:', parseError);
+          }
         }
       }
       setLoading(false);
+    };
+
+    // Fonction utilitaire pour la déconnexion
+    const handleLogout = () => {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('session_id');
+      localStorage.removeItem('user_data');
+      setToken(null);
+      setUser(null);
+      setSessionId(null);
     };
 
     validateToken();
@@ -153,6 +223,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUser(userData);
+          // Stocker les données utilisateur dans le localStorage pour la persistance
+          localStorage.setItem('user_data', JSON.stringify(userData));
         }
       } else {
         // Gérer les différents cas d'erreur
@@ -215,6 +287,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('session_id');
+      localStorage.removeItem('user_data');
       setToken(null);
       setUser(null);
       setSessionId(null);

@@ -56,10 +56,17 @@ RUN npm run build || (echo "Build failed, creating empty dist directory" && mkdi
 # Production stage
 FROM nginx:alpine
 
+# Create directory for static files
+RUN mkdir -p /usr/share/nginx/html/static/admin
+
 # Copy built files from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
+
 # Create a simple health check file
 RUN echo "OK" > /usr/share/nginx/html/health.txt
+
+# Create a favicon.ico file
+RUN touch /usr/share/nginx/html/favicon.ico
 
 # Expose port
 EXPOSE 80

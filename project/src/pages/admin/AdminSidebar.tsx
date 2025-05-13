@@ -24,24 +24,24 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   pendingApplicationsCount,
 }) => {
   const navigation = [
-    { name: "Dashboard", href: "/admin", icon: HomeIcon },
+    { name: "Dashboard", href: "/admine", icon: HomeIcon },
     {
       name: "Applications",
-      href: "/admin/applications",
+      href: "/admine/applications",
       icon: FileTextIcon,
       badge:
         pendingApplicationsCount > 0 ? pendingApplicationsCount : undefined,
     },
-    { name: "Employees", href: "/admin/employees", icon: UsersIcon },
-    { name: "Interns", href: "/admin/interns", icon: UsersIcon },
-    { name: "Missions", href: "/admin/missions", icon: BriefcaseIcon },
+    { name: "Employees", href: "/admine/employees", icon: UsersIcon },
+    { name: "Interns", href: "/admine/interns", icon: UsersIcon },
+    { name: "Missions", href: "/admine/missions", icon: BriefcaseIcon },
     {
       name: "Internships",
-      href: "/admin/internships",
+      href: "/admine/internships",
       icon: GraduationCapIcon,
     },
-    { name: "Leave Requests", href: "/admin/leaves", icon: CalendarIcon },
-    { name: "My Profile", href: "/admin/profile", icon: UserIcon },
+    { name: "Leave Requests", href: "/admine/leaves", icon: CalendarIcon },
+    { name: "My Profile", href: "/admine/profile", icon: UserIcon },
   ];
 
   const renderNavLinks = () => {
