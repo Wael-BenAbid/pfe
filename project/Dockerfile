@@ -35,7 +35,7 @@ RUN mkdir -p src/assets/images
 RUN ls -la src/assets/images/
 
 # Configuration pour la production
-RUN echo "VITE_API_BASE_URL=/api" > .env.production
+RUN echo "VITE_API_BASE_URL=" > .env.production
 
 # Make the fix scripts executable and run them
 # Commented out because the scripts are not available
@@ -67,6 +67,9 @@ RUN echo "OK" > /usr/share/nginx/html/health.txt
 
 # Create a favicon.ico file
 RUN touch /usr/share/nginx/html/favicon.ico
+
+# Copy custom nginx configuration
+COPY default.conf /etc/nginx/conf.d/default.conf
 
 # Expose port
 EXPOSE 80

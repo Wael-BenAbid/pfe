@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { API_BASE_URL } from '../config/constants';
+import { API_BASE_URL, API_URL } from '../config/constants';
 
 interface User {
   id: number;
@@ -35,155 +35,142 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   );
   const [loading, setLoading] = useState(true);
 
+  // Fonction utilitaire pour la déconnexion
+  const handleLogout = () => {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('session_id');
+    localStorage.removeItem('user_data');
+    setToken(null);
+    setUser(null);
+    setSessionId(null);
+  };
+
+  // Fonction pour rafraîchir le token
+  const refreshAccessToken = async (refreshToken: string): Promise<string | null> => {
+    try {
+      console.log('Refreshing token...');
+      const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh-token/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+        cache: 'no-store',
+      });
+
+      if (refreshResponse.ok) {
+        const refreshData = await refreshResponse.json();
+        localStorage.setItem('access_token', refreshData.access);
+        console.log('Token refreshed successfully');
+        return refreshData.access;
+      } else {
+        console.error('Failed to refresh token, status:', refreshResponse.status);
+
+        // Essayer d'obtenir des détails sur l'erreur
+        try {
+          const errorData = await refreshResponse.json();
+          console.error('Refresh token error details:', errorData);
+        } catch (e) {
+          console.error('Could not parse refresh token error response');
+        }
+
+        return null;
+      }
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return null;
+    }
+  };
+
+  // Fonction pour récupérer les informations de l'utilisateur
+  const fetchUserInfo = async (accessToken: string): Promise<User | null> => {
+    try {
+      const userInfoResponse = await fetch(`${API_BASE_URL}/users/me/`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        cache: 'no-store',
+      });
+
+      if (userInfoResponse.ok) {
+        const userData = await userInfoResponse.json();
+        console.log('User data fetched successfully');
+        return userData;
+      } else {
+        console.error('Failed to fetch user info, status:', userInfoResponse.status);
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const validateToken = async () => {
       if (token) {
         try {
           // Essayer d'obtenir les informations de l'utilisateur avec le token actuel
-          const userInfoResponse = await fetch(`${API_BASE_URL}/users/me/`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            // Ajouter cache: 'no-store' pour éviter les problèmes de cache lors du rafraîchissement
-            cache: 'no-store',
-          });
+          const userData = await fetchUserInfo(token);
 
-          if (userInfoResponse.ok) {
-            // Le token est valide, récupérer les données utilisateur
-            const userData = await userInfoResponse.json();
-            console.log('User data:', userData);
+          if (userData) {
+            // Le token est valide, mettre à jour l'état utilisateur
             setUser(userData);
-
-            // Stocker les données utilisateur dans le localStorage pour la persistance
             localStorage.setItem('user_data', JSON.stringify(userData));
-          } else if (userInfoResponse.status === 401) {
+          } else if (userData === null) {
             // Le token a expiré, essayer de le rafraîchir
             const refreshToken = localStorage.getItem('refresh_token');
             if (refreshToken) {
-              try {
-                console.log('Refreshing token...');
-                const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh-token/`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ refresh: refreshToken }),
-                  // Ajouter cache: 'no-store' pour éviter les problèmes de cache
-                  cache: 'no-store',
-                });
+              const newToken = await refreshAccessToken(refreshToken);
 
-                if (refreshResponse.ok) {
-                  // Token rafraîchi avec succès
-                  const refreshData = await refreshResponse.json();
-                  localStorage.setItem('access_token', refreshData.access);
-                  setToken(refreshData.access);
-                  console.log('Token refreshed successfully');
+              if (newToken) {
+                // Token rafraîchi avec succès, mettre à jour l'état
+                setToken(newToken);
 
-                  // Récupérer les informations utilisateur avec le nouveau token
-                  const newUserInfoResponse = await fetch(`${API_BASE_URL}/users/me/`, {
-                    method: 'GET',
-                    headers: {
-                      Authorization: `Bearer ${refreshData.access}`,
-                    },
-                    cache: 'no-store',
-                  });
+                // Récupérer les informations utilisateur avec le nouveau token
+                const newUserData = await fetchUserInfo(newToken);
 
-                  if (newUserInfoResponse.ok) {
-                    const userData = await newUserInfoResponse.json();
-                    setUser(userData);
-                    localStorage.setItem('user_data', JSON.stringify(userData));
-                  }
+                if (newUserData) {
+                  setUser(newUserData);
+                  localStorage.setItem('user_data', JSON.stringify(newUserData));
                 } else {
-                  console.error('Failed to refresh token, status:', refreshResponse.status);
-                  // Essayer de récupérer les données utilisateur du localStorage
-                  const storedUserData = localStorage.getItem('user_data');
-                  if (storedUserData) {
-                    try {
-                      const parsedUserData = JSON.parse(storedUserData);
-                      setUser(parsedUserData);
-                      console.log('Using stored user data');
-                    } catch (parseError) {
-                      console.error('Error parsing stored user data:', parseError);
-                      handleLogout();
-                    }
-                  } else {
-                    handleLogout();
-                  }
-                }
-              } catch (refreshError) {
-                console.error('Error refreshing token:', refreshError);
-                // Essayer de récupérer les données utilisateur du localStorage
-                const storedUserData = localStorage.getItem('user_data');
-                if (storedUserData) {
-                  try {
-                    const parsedUserData = JSON.parse(storedUserData);
-                    setUser(parsedUserData);
-                    console.log('Using stored user data after refresh error');
-                  } catch (parseError) {
-                    console.error('Error parsing stored user data:', parseError);
-                    handleLogout();
-                  }
-                } else {
-                  handleLogout();
-                }
-              }
-            } else {
-              // Pas de token de rafraîchissement, essayer d'utiliser les données stockées
-              const storedUserData = localStorage.getItem('user_data');
-              if (storedUserData) {
-                try {
-                  const parsedUserData = JSON.parse(storedUserData);
-                  setUser(parsedUserData);
-                  console.log('Using stored user data, no refresh token');
-                } catch (parseError) {
-                  console.error('Error parsing stored user data:', parseError);
+                  // Impossible de récupérer les informations utilisateur même avec le nouveau token
+                  console.error('Failed to fetch user data with new token');
                   handleLogout();
                 }
               } else {
+                // Échec du rafraîchissement du token
+                console.error('Token refresh failed');
                 handleLogout();
               }
+            } else {
+              // Pas de token de rafraîchissement disponible
+              console.error('No refresh token available');
+              handleLogout();
             }
           }
         } catch (error) {
-          console.error('Error validating token:', error);
-          // En cas d'erreur réseau, essayer d'utiliser les données stockées
-          const storedUserData = localStorage.getItem('user_data');
-          if (storedUserData) {
-            try {
-              const parsedUserData = JSON.parse(storedUserData);
-              setUser(parsedUserData);
-              console.log('Using stored user data after network error');
-            } catch (parseError) {
-              console.error('Error parsing stored user data:', parseError);
-            }
-          }
+          console.error('Error in token validation process:', error);
+          handleLogout();
         }
       } else {
-        // Pas de token, essayer de récupérer les données utilisateur du localStorage
-        const storedUserData = localStorage.getItem('user_data');
-        if (storedUserData) {
-          try {
-            const parsedUserData = JSON.parse(storedUserData);
-            setUser(parsedUserData);
-            console.log('Using stored user data, no token');
-          } catch (parseError) {
-            console.error('Error parsing stored user data:', parseError);
+        // Pas de token d'accès, vérifier si l'utilisateur a un token de rafraîchissement
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          // Essayer de rafraîchir le token
+          const newToken = await refreshAccessToken(refreshToken);
+          if (newToken) {
+            setToken(newToken);
+            // Les informations utilisateur seront récupérées lors du prochain cycle useEffect
+          } else {
+            handleLogout();
           }
         }
       }
-      setLoading(false);
-    };
 
-    // Fonction utilitaire pour la déconnexion
-    const handleLogout = () => {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      localStorage.removeItem('session_id');
-      localStorage.removeItem('user_data');
-      setToken(null);
-      setUser(null);
-      setSessionId(null);
+      setLoading(false);
     };
 
     validateToken();
@@ -269,7 +256,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       if (token) {
         // Send the session ID when logging out
-        await fetch(`${API_BASE_URL}/auth/logout/`, {
+        const response = await fetch(`${API_BASE_URL}/auth/logout/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -280,10 +267,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             session_id: sessionId
           })
         });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Logout successful:', data);
+
+          // Afficher les heures travaillées si disponibles
+          if (data.hours_worked) {
+            console.log(`Hours worked this session: ${data.hours_worked}`);
+          }
+        } else {
+          console.error('Logout failed with status:', response.status);
+          try {
+            const errorData = await response.json();
+            console.error('Logout error details:', errorData);
+          } catch (e) {
+            console.error('Could not parse logout error response');
+          }
+        }
       }
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Toujours nettoyer le stockage local et l'état, même en cas d'erreur
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('session_id');
