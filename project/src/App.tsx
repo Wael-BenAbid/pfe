@@ -39,7 +39,7 @@ function AppWithAlerts() {
           <Route path="/not-found" element={<NotFound />} />
 
           {/* Routes protégées */}
-          <Route path="/admin/*" element={<ProtectedRoute userType="admin"><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admine/*" element={<ProtectedRoute userType="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/employee/*" element={<ProtectedRoute userType="employee"><EmployeeDashboard /></ProtectedRoute>} />
           <Route path="/intern/*" element={<ProtectedRoute userType="intern"><InternDashboard /></ProtectedRoute>} />
 

@@ -191,7 +191,7 @@ const UserProfile: React.FC = () => {
 
       // Navigate after a short delay to allow the user to see the success message
       setTimeout(() => {
-        navigate("/admin/employees");
+        navigate("/admine/employees");
       }, 1500);
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -218,7 +218,7 @@ const UserProfile: React.FC = () => {
             variant="primary"
             size="md"
             className="mt-4"
-            onClick={() => navigate("/admin/employees")}
+            onClick={() => navigate("/admine/employees")}
           >
             Back to Employee Management
           </Button>
@@ -272,7 +272,7 @@ const UserProfile: React.FC = () => {
           variant="outline"
           size="sm"
           icon={<ArrowLeftIcon className="h-4 w-4" />}
-          onClick={() => navigate("/admin/employees")}
+          onClick={() => navigate("/admine/employees")}
         >
           Back
         </Button>

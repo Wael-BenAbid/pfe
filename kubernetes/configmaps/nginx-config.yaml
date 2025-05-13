@@ -54,11 +54,34 @@ data:
             }
         }
 
-        # Route pour l'interface d'administration Django
+        # Route directe pour l'interface d'administration Django
         location /admin/ {
-            # Rediriger vers le port-forward local pour l'administration
-            # Cette approche contourne complètement les problèmes CSRF
-            return 302 http://localhost:8000/admin/;
+            proxy_pass http://rh-backend:8000/admin/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Redirection pour les requêtes du backend Django qui essaient d'accéder à /admin/
+        location = /admin/login/ {
+            # Continuer normalement (frontend)
+            try_files $uri $uri/ /index.html;
+        }
+
+
+
+        # Route pour tous les fichiers statiques
+        location /static/ {
+            proxy_pass http://rh-backend:8000/static/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # Désactiver la mise en cache pour le débogage
+            expires off;
+            add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0";
         }
 
         # Redirection pour /admin sans slash
@@ -66,10 +89,25 @@ data:
             return 301 /admin/;
         }
 
+        # Route pour l'interface d'administration frontend
+        location /admine/ {
+            root /usr/share/nginx/html;
+            index index.html index.htm;
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Redirection pour /admine sans slash
+        location = /admine {
+            return 301 /admine/;
+        }
+
         # Route pour l'API
         location /api/ {
             # Rediriger les requêtes avec doublon api/api vers /api
             rewrite ^/api/api/(.*)$ /api/$1 break;
+
+            # Rediriger les requêtes avec doublon api/auth vers /auth
+            rewrite ^/api/api/auth/(.*)$ /api/auth/$1 break;
 
             proxy_pass http://rh-backend:8000/api/;
             proxy_set_header Host $host;

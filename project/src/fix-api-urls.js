@@ -1,11 +1,15 @@
 /**
  * Script pour corriger les URLs d'API dans le code frontend
- * 
+ *
  * Ce script recherche et remplace les occurrences de doublon "api/api" dans les fichiers JavaScript/TypeScript
  */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Fonction pour parcourir récursivement un répertoire
 function walkDir(dir, callback) {
@@ -32,12 +36,12 @@ const patterns = [
 ];
 
 // Parcourir le répertoire src
-walkDir(path.resolve('src'), function(filePath) {
+walkDir(path.resolve(path.join(__dirname, '..')), function(filePath) {
   // Vérifier si le fichier a une extension à traiter
   if (fileExtensions.includes(path.extname(filePath))) {
     let content = fs.readFileSync(filePath, 'utf8');
     let modified = false;
-    
+
     // Appliquer les remplacements
     patterns.forEach(pattern => {
       if (pattern.search.test(content)) {
@@ -45,7 +49,7 @@ walkDir(path.resolve('src'), function(filePath) {
         modified = true;
       }
     });
-    
+
     // Enregistrer le fichier si modifié
     if (modified) {
       fs.writeFileSync(filePath, content);
