@@ -62,6 +62,8 @@ spec:
           mountPath: /etc/grafana/provisioning/dashboards
         - name: grafana-dashboards
           mountPath: /var/lib/grafana/dashboards
+        - name: grafana-alerts
+          mountPath: /etc/grafana/provisioning/alerting
       volumes:
       - name: grafana-storage
         persistentVolumeClaim:
@@ -75,3 +77,6 @@ spec:
       - name: grafana-dashboards
         configMap:
           name: grafana-dashboards
+      - name: grafana-alerts
+        configMap:
+          name: grafana-alerts

@@ -7,5 +7,6 @@ data:
   kibana.yml: |
     server.name: kibana
     server.host: "0.0.0.0"
-    elasticsearch.hosts: ["http://elasticsearch:9200"]
+    elasticsearch.hosts: ["http://elasticsearch.logging.svc.cluster.local:9200"]
+    elasticsearch.requestTimeout: 90000
     monitoring.ui.container.elasticsearch.enabled: true

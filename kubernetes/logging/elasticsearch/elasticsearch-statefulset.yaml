@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: elasticsearch
-        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+        image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
         resources:
           limits:
             cpu: 1000m
@@ -44,7 +44,7 @@ spec:
           mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
           subPath: elasticsearch.yml
         - name: elasticsearch-data
-          mountPath: /usr/share/elasticsearch/data
+          mountPath: /usr/share/elasticsearch/data_new
       volumes:
       - name: elasticsearch-config
         configMap:
