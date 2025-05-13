@@ -29,9 +29,9 @@ data:
             application/font-woff2 woff2;
         }
 
-        # Servir le favicon depuis le fichier logo2.png
+        # Servir le favicon depuis n'importe quel fichier logo2*.png
         location = /favicon.ico {
-            alias /usr/share/nginx/html/assets/logo2.png;
+            try_files /assets/logo2*.png /assets/logo2-*.png =404;
             add_header Content-Type image/png;
             expires 30d;
             access_log off;
@@ -101,6 +101,9 @@ data:
             root /usr/share/nginx/html;
             index index.html index.htm;
             try_files $uri $uri/ /index.html;
+
+            # Ajouter l'en-tête Content-Security-Policy pour autoriser les scripts inline
+            add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self';";
 
             # Configuration des types MIME pour les fichiers JavaScript
             location ~* \.(js|mjs)$ {
