@@ -23,9 +23,8 @@ def patch_mission_viewset():
         """
         Vérifier les missions en retard et mettre à jour leur statut
         """
-        # Vérifier que l'utilisateur est un administrateur ou un employé
-        if request.user.user_type not in ['admin', 'employee'] and not request.user.is_superuser:
-            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        # Permettre à tous les utilisateurs authentifiés d'appeler cette méthode
+        # Les stagiaires doivent pouvoir vérifier les missions en retard
 
         # Récupérer toutes les missions en attente dont la date d'échéance est passée
         today = timezone.now().date()
@@ -88,9 +87,8 @@ def patch_mission_viewset():
         """
         Vérifier les missions dont la date limite approche et envoyer des notifications
         """
-        # Vérifier que l'utilisateur est un administrateur ou un employé
-        if request.user.user_type not in ['admin', 'employee'] and not request.user.is_superuser:
-            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        # Permettre à tous les utilisateurs authentifiés d'appeler cette méthode
+        # Les stagiaires doivent pouvoir vérifier les missions dont la date limite approche
 
         # Date actuelle
         today = timezone.now().date()

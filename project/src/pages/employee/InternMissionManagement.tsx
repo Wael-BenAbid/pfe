@@ -82,15 +82,9 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
       const data = await response.json();
       console.log("Missions supervisées récupérées:", data);
 
-      // Filter missions for this intern
-      // Filtrer les missions pour cet intern
-      console.log(`Filtrage des missions pour l'intern ${internId}`);
-      const internMissions = data.filter(
-        (mission: Mission) => mission.assigned_to == internId
-      );
-
-      console.log(`Missions filtrées pour l'intern ${internId}:`, internMissions);
-      setMissions(internMissions);
+      // Afficher toutes les missions supervisées sans filtrage
+      console.log(`Affichage de toutes les missions supervisées`);
+      setMissions(data);
     } catch (error) {
       console.error("Error fetching missions:", error);
     } finally {
@@ -307,7 +301,7 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
     <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
       <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
         <h2 className="text-lg font-medium text-gray-900">
-          Missions for {internName}
+          Toutes les missions supervisées
         </h2>
         <Button
           variant="primary"
