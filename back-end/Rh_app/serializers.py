@@ -94,10 +94,38 @@ class WorkHoursSerializer(serializers.ModelSerializer):
 class InternshipSerializer(serializers.ModelSerializer):
     intern_name = serializers.ReadOnlyField(source='intern.username')
     supervisor_name = serializers.ReadOnlyField(source='supervisor.username')
+    intern_details = serializers.SerializerMethodField()
+    supervisor_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Internship
         fields = '__all__'
+
+    def get_intern_details(self, obj):
+        if obj.intern:
+            return {
+                'id': obj.intern.id,
+                'first_name': obj.intern.first_name,
+                'last_name': obj.intern.last_name,
+                'email': obj.intern.email,
+                'profile_image': obj.intern.profile_image.url if obj.intern.profile_image else None,
+                'github_profile': obj.intern.github_profile,
+                'user_type': obj.intern.user_type
+            }
+        return None
+
+    def get_supervisor_details(self, obj):
+        if obj.supervisor:
+            return {
+                'id': obj.supervisor.id,
+                'first_name': obj.supervisor.first_name,
+                'last_name': obj.supervisor.last_name,
+                'email': obj.supervisor.email,
+                'profile_image': obj.supervisor.profile_image.url if obj.supervisor.profile_image else None,
+                'github_profile': obj.supervisor.github_profile,
+                'user_type': obj.supervisor.user_type
+            }
+        return None
 
 class JobApplicationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)

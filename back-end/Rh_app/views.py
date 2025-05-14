@@ -670,6 +670,23 @@ class MissionViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
+
+
+    def get_queryset(self):
+        """
+        Limiter les résultats en fonction du type d'utilisateur
+        """
+        user = self.request.user
+        if user.is_superuser or user.user_type == 'admin':
+            return Mission.objects.all()
+
+        # Les employés peuvent voir les missions qu'ils supervisent et celles qui leur sont assignées
+        if user.user_type == 'employee':
+            return Mission.objects.filter(assigned_to=user) | Mission.objects.filter(supervisor=user)
+
+        # Les stagiaires peuvent voir uniquement les missions qui leur sont assignées
+        return Mission.objects.filter(assigned_to=user)
+
     def perform_create(self, serializer):
         if self.request.user.user_type == 'intern':
             raise PermissionDenied('Intern cannot create missions')
@@ -678,9 +695,10 @@ class MissionViewSet(viewsets.ModelViewSet):
         attachment_link = self.request.data.get('attachment_link', None)
         attachment_file = self.request.FILES.get('attachment_file', None)
 
-        # L'utilisateur qui crée la mission est automatiquement désigné comme superviseur
+        # Si le superviseur n'est pas spécifié, l'utilisateur qui crée la mission est automatiquement désigné comme superviseur
+        supervisor = serializer.validated_data.get('supervisor', self.request.user)
         mission = serializer.save(
-            supervisor=self.request.user,
+            supervisor=supervisor,
             attachment_link=attachment_link,
             attachment_file=attachment_file
         )
@@ -705,57 +723,15 @@ class MissionViewSet(viewsets.ModelViewSet):
                 f"Superviseur : {mission.supervisor.first_name} {mission.supervisor.last_name}\n\n"
             )
 
-            if mission.attachment_link:
-                message += f"Lien de document : {mission.attachment_link}\n\n"
+            if attachment_link:
+                message += f"Lien de document : {attachment_link}\n\n"
 
-            if mission.attachment_file:
+            if attachment_file:
                 message += f"Un fichier a été joint à cette mission. Connectez-vous au système pour le télécharger.\n\n"
 
             message += "Connectez-vous au système pour plus de détails.\n\n"
             message += "Cordialement,\n"
             message += "L'équipe RH"
-
-            send_email_notification(subject, message, [mission.assigned_to.email])
-
-    def get_queryset(self):
-        """
-        Limiter les résultats en fonction du type d'utilisateur
-        """
-        user = self.request.user
-        if user.is_superuser or user.user_type == 'admin':
-            return Mission.objects.all()
-
-        # Les employés peuvent voir les missions qu'ils supervisent et celles qui leur sont assignées
-        if user.user_type == 'employee':
-            return Mission.objects.filter(assigned_to=user) | Mission.objects.filter(supervisor=user)
-
-        # Les stagiaires peuvent voir uniquement les missions qui leur sont assignées
-        return Mission.objects.filter(assigned_to=user)
-
-    def perform_create(self, serializer):
-        if self.request.user.user_type == 'intern':
-            raise PermissionDenied('Intern cannot create missions')
-
-        # Si le superviseur n'est pas spécifié, l'utilisateur qui crée la mission est automatiquement désigné comme superviseur
-        supervisor = serializer.validated_data.get('supervisor', self.request.user)
-        mission = serializer.save(supervisor=supervisor)
-
-        # Envoyer un email à l'assigné si la mission est assignée à quelqu'un
-        if hasattr(mission, 'assigned_to') and mission.assigned_to:
-            from .utils import send_email_notification
-
-            subject = f"Nouvelle mission : {mission.title}"
-            message = (
-                f"Bonjour {mission.assigned_to.first_name} {mission.assigned_to.last_name},\n\n"
-                f"Une nouvelle mission vous a été assignée :\n\n"
-                f"Titre : {mission.title}\n"
-                f"Description : {mission.description}\n"
-                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
-                f"Superviseur : {mission.supervisor.first_name} {mission.supervisor.last_name}\n\n"
-                f"Connectez-vous au système pour plus de détails.\n\n"
-                f"Cordialement,\n"
-                f"L'équipe RH"
-            )
 
             send_email_notification(subject, message, [mission.assigned_to.email])
 
@@ -835,6 +811,24 @@ class MissionViewSet(viewsets.ModelViewSet):
             not request.user.is_superuser):
             return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
 
+        # Envoyer un email à l'assigné pour l'informer de la suppression
+        if hasattr(mission, 'assigned_to') and mission.assigned_to and mission.assigned_to.email:
+            from .utils import send_email_notification
+
+            subject = f"Mission supprimée : {mission.title}"
+            message = (
+                f"Bonjour {mission.assigned_to.first_name} {mission.assigned_to.last_name},\n\n"
+                f"La mission suivante a été supprimée par {request.user.first_name} {request.user.last_name} :\n\n"
+                f"Titre : {mission.title}\n"
+                f"Description : {mission.description}\n"
+                f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
+                f"Si vous avez des questions, veuillez contacter votre superviseur.\n\n"
+                f"Cordialement,\n"
+                f"L'équipe RH"
+            )
+
+            send_email_notification(subject, message, [mission.assigned_to.email])
+
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['post'])
@@ -913,9 +907,8 @@ class MissionViewSet(viewsets.ModelViewSet):
         """
         Vérifier les missions en retard et mettre à jour leur statut
         """
-        # Vérifier que l'utilisateur est un administrateur
-        if request.user.user_type != 'admin' and not request.user.is_superuser:
-            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+        # Permettre à tous les utilisateurs authentifiés d'appeler cette méthode
+        # Les stagiaires doivent pouvoir vérifier les missions en retard
 
         # Récupérer toutes les missions en attente dont la date d'échéance est passée
         from django.utils import timezone
@@ -963,6 +956,73 @@ class MissionViewSet(viewsets.ModelViewSet):
         return Response({
             'status': 'late missions checked',
             'updated_count': updated_count
+        })
+
+    @action(detail=False, methods=['post'])
+    def check_upcoming_deadlines(self, request):
+        """
+        Vérifier les missions dont la date limite approche et envoyer des notifications
+        """
+        # Permettre à tous les utilisateurs authentifiés d'appeler cette méthode
+        # Les stagiaires doivent pouvoir vérifier les missions dont la date limite approche
+
+        # Date actuelle
+        from django.utils import timezone
+        from datetime import timedelta
+        today = timezone.now().date()
+        tomorrow = today + timedelta(days=1)
+
+        # Récupérer toutes les missions en attente dont la date d'échéance est demain
+        upcoming_missions = Mission.objects.filter(
+            status='pending',
+            completed=False,
+            deadline=tomorrow
+        )
+
+        # Envoyer des notifications pour les missions dont la date limite approche
+        notified_count = 0
+        for mission in upcoming_missions:
+            # Créer une notification pour l'utilisateur assigné
+            from .models import Notification
+            Notification.objects.create(
+                user=mission.assigned_to,
+                title="Date limite de mission approche",
+                message=f"La mission '{mission.title}' doit être terminée demain ({mission.deadline.strftime('%d/%m/%Y')}).",
+                type="warning"
+            )
+
+            # Créer une notification pour le superviseur si c'est un employé
+            if mission.supervisor and mission.supervisor.user_type in ['employee', 'admin']:
+                Notification.objects.create(
+                    user=mission.supervisor,
+                    title="Date limite de mission supervisée approche",
+                    message=f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} doit être terminée demain ({mission.deadline.strftime('%d/%m/%Y')}).",
+                    type="warning"
+                )
+
+            # Envoyer un email à l'utilisateur assigné
+            try:
+                from .utils import send_email_notification
+                subject = f"Rappel : Date limite de mission demain - {mission.title}"
+                message = (
+                    f"Bonjour {mission.assigned_to.first_name} {mission.assigned_to.last_name},\n\n"
+                    f"La mission suivante doit être terminée demain :\n\n"
+                    f"Titre : {mission.title}\n"
+                    f"Description : {mission.description}\n"
+                    f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
+                    f"Veuillez compléter cette mission avant la date limite pour éviter qu'elle ne soit marquée en retard.\n\n"
+                    f"Cordialement,\n"
+                    f"L'équipe RH"
+                )
+
+                send_email_notification(subject, message, [mission.assigned_to.email])
+                notified_count += 1
+            except Exception as e:
+                print(f"Erreur lors de l'envoi de l'email à {mission.assigned_to.email}: {str(e)}")
+
+        return Response({
+            'status': 'upcoming deadlines checked',
+            'notified_count': notified_count
         })
 
     @action(detail=True, methods=['post'])

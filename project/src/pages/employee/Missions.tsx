@@ -27,7 +27,7 @@ const Missions: React.FC = () => {
     try {
       // Vérifier d'abord les missions en retard
       try {
-        await fetch(`${API_BASE_URL}/api/missions/check_late_missions/`, {
+        await fetch(`${API_BASE_URL}/missions/check_late_missions/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -42,7 +42,7 @@ const Missions: React.FC = () => {
 
       // Vérifier les missions dont la date limite approche
       try {
-        await fetch(`${API_BASE_URL}/api/missions/check_upcoming_deadlines/`, {
+        await fetch(`${API_BASE_URL}/missions/check_upcoming_deadlines/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -55,7 +55,7 @@ const Missions: React.FC = () => {
         // Continuer même si cette requête échoue
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/missions/`, {
+      const response = await fetch(`${API_BASE_URL}/missions/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -75,7 +75,7 @@ const Missions: React.FC = () => {
   const handleCompleteMission = async (id: number) => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/missions/${id}/complete_mission/`,
+        `${API_BASE_URL}/missions/${id}/complete_mission/`,
         {
           method: "POST",
           headers: {
