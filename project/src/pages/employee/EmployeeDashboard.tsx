@@ -16,6 +16,7 @@ import {
   CheckCircle as CheckCircleIcon,
   AlertCircle as AlertCircleIcon,
   Clock as PendingIcon,
+  MessageSquare as MessageSquareIcon,
 } from "lucide-react";
 import Logo from "../../components/ui/Logo";
 import LeaveRequests from "./LeaveRequests";
@@ -24,6 +25,7 @@ import SupervisedInterns from "./SupervisedInterns";
 import WorkHours from "./WorkHours";
 import NotificationsPage from "./NotificationsPage";
 import EmployeeProfile from "./EmployeeProfile";
+import EmployeeChat from "./EmployeeChat";
 import CalendarView from "../common/CalendarView";
 
 const EmployeeDashboard: React.FC = () => {
@@ -45,6 +47,7 @@ const EmployeeDashboard: React.FC = () => {
     <Routes>
       <Route path="profile" element={<EmployeeProfile />} />
       <Route path="calendar" element={<CalendarView />} />
+      <Route path="chat" element={<EmployeeChat />} />
       <Route path="*" element={
         <div className="min-h-screen bg-gray-50">
           <header className="bg-white shadow">
@@ -91,6 +94,7 @@ const EmployeeDashboard: React.FC = () => {
                   },
                   { id: "hours", label: "Work Hours", icon: ClockIcon },
                   { id: "notifications", label: "Notifications", icon: BellIcon },
+                  { id: "messages", label: "Messages", icon: MessageSquareIcon, onClick: () => navigate("/employee/chat") },
                   { id: "calendar", label: "Calendar", icon: CalendarIcon, onClick: () => navigate("/employee/calendar") },
                 ].map((tab) => (
                   <button

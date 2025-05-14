@@ -9,6 +9,7 @@ import {
   GraduationCap as GraduationCapIcon,
   Calendar as CalendarIcon,
   User as UserIcon,
+  MessageSquare as MessageSquareIcon,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -42,6 +43,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     },
     { name: "Leave Requests", href: "/admine/leaves", icon: CalendarIcon },
     { name: "Calendar", href: "/admine/calendar", icon: CalendarIcon },
+    { name: "Messages", href: "/admine/chat", icon: MessageSquareIcon },
     { name: "My Profile", href: "/admine/profile", icon: UserIcon },
   ];
 

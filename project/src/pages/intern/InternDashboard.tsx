@@ -10,12 +10,14 @@ import {
   Briefcase as BriefcaseIcon,
   Calendar as CalendarIcon,
   Bell as BellIcon,
+  MessageSquare as MessageSquareIcon,
 } from "lucide-react";
 import Logo from "../../components/ui/Logo";
 import InternMissions from "./InternMissions";
 import InternMeetings from "./InternMeetings";
 import NotificationsPage from "./NotificationsPage";
 import InternProfile from "./InternProfile";
+import InternChat from "./InternChat";
 import CalendarView from "../common/CalendarView";
 
 const InternDashboard: React.FC = () => {
@@ -73,6 +75,7 @@ const InternDashboard: React.FC = () => {
     <Routes>
       <Route path="profile" element={<InternProfile />} />
       <Route path="calendar" element={<CalendarView />} />
+      <Route path="chat" element={<InternChat />} />
       <Route path="*" element={
         <div className="min-h-screen bg-gray-50">
           <header className="bg-white shadow">
@@ -146,6 +149,14 @@ const InternDashboard: React.FC = () => {
                       {unreadNotifications}
                     </span>
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/intern/chat")}
+                  className="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center"
+                >
+                  <MessageSquareIcon className="h-4 w-4 mr-2" />
+                  Messages
                 </button>
                 <button
                   type="button"
