@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../../config/constants';
+import { API_BASE_URL, API_URL } from '../../config/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
@@ -72,7 +72,7 @@ const DeadlineCalendar: React.FC = () => {
       const isAdmin = userInfo.user_type === 'admin';
 
       // Récupérer les missions (toutes pour admin, seulement assignées pour les autres)
-      const missionsEndpoint = isAdmin ? `${API_BASE_URL}/missions/` : `${API_BASE_URL}/missions/assigned/`;
+      const missionsEndpoint = isAdmin ? `${API_URL}/missions/` : `${API_URL}/missions/assigned/`;
       const missionsResponse = await fetch(missionsEndpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -80,7 +80,7 @@ const DeadlineCalendar: React.FC = () => {
       });
 
       // Récupérer les réunions
-      const meetingsResponse = await fetch(`${API_BASE_URL}/meetings/`, {
+      const meetingsResponse = await fetch(`${API_URL}/meetings/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

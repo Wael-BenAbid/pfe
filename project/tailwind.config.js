@@ -45,6 +45,10 @@ export default {
       borderWidth: {
         '3': '3px',
       },
+      // Animation personnalisée pour les notifications importantes
+      animation: {
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      },
     },
   },
   plugins: [
@@ -59,5 +63,7 @@ export default {
     'bg-blue-100', 'bg-green-100', 'bg-yellow-100', 'bg-red-100', 'bg-purple-100',
     'text-blue-800', 'text-green-800', 'text-yellow-800', 'text-red-800', 'text-purple-800',
     'md:grid-cols-2', 'lg:grid-cols-3', 'xl:grid-cols-4',
+    'animate-pulse-slow', 'bg-yellow-50', 'bg-red-50', 'text-yellow-700', 'text-red-700',
+    'border-yellow-400', 'border-red-400',
   ],
 };

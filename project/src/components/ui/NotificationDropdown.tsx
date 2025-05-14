@@ -47,13 +47,28 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
       case 'info':
         return 'bg-blue-100 text-blue-800';
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800 border border-yellow-400';
       case 'success':
         return 'bg-green-100 text-green-800';
       case 'error':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-100 text-red-800 border border-red-400';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getNotificationTypeIcon = (type: string) => {
+    switch (type) {
+      case 'info':
+        return '📌';
+      case 'warning':
+        return '⚠️';
+      case 'success':
+        return '✅';
+      case 'error':
+        return '❌';
+      default:
+        return '📢';
     }
   };
 
@@ -107,17 +122,30 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`py-3 px-3 border-b border-gray-200 hover:bg-gray-50 ${
+                    className={`py-3 px-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer ${
+                      !notification.read && notification.type === 'warning' ? 'bg-yellow-50' :
+                      !notification.read && notification.type === 'error' ? 'bg-red-50' :
                       !notification.read ? 'bg-blue-50' : ''
+                    } ${
+                      notification.type === 'warning' ? 'animate-pulse-slow' : ''
                     }`}
                     onClick={() => onMarkAsRead(notification.id)}
                   >
                     <div className="flex items-start">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {notification.title}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <div className="flex items-center">
+                          <span className="mr-1">{getNotificationTypeIcon(notification.type)}</span>
+                          <p className={`text-sm font-medium truncate ${
+                            notification.type === 'warning' ? 'text-yellow-800' :
+                            notification.type === 'error' ? 'text-red-800' : 'text-gray-900'
+                          }`}>
+                            {notification.title}
+                          </p>
+                        </div>
+                        <p className={`text-sm mt-1 ${
+                          notification.type === 'warning' ? 'text-yellow-700' :
+                          notification.type === 'error' ? 'text-red-700' : 'text-gray-500'
+                        }`}>
                           {notification.message}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">

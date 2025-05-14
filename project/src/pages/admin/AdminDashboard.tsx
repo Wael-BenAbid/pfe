@@ -15,6 +15,7 @@ import LeaveManagement from "./LeaveManagement";
 import NotificationsPage from "./NotificationsPage";
 import UserManagement from "./UserManagement";
 import AdminProfile from "./AdminProfile";
+import AdminChat from "./AdminChat";
 import NotFound from "../NotFound";
 import CalendarView from "../common/CalendarView";
 import EmbeddedCalendar from "../../components/calendar/EmbeddedCalendar";
@@ -124,6 +125,7 @@ const AdminDashboard: React.FC = () => {
               <Route path="profile" element={<AdminProfile />} />
               <Route path="calendar" element={<CalendarView />} />
               <Route path="embedded-calendar" element={<EmbeddedCalendar />} />
+              <Route path="chat" element={<AdminChat />} />
               <Route path="user/:userId" element={<UserProfile />} />
               <Route
                 path="user/:userId/work-hours"
