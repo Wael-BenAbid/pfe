@@ -53,7 +53,7 @@ export const useMissionStats = (): MissionStats => {
 
       try {
         // Essayer d'utiliser l'endpoint de statistiques des missions
-        const response = await fetch(`${API_BASE_URL}/missions/stats/`, {
+        const response = await fetch(`${API_BASE_URL}/api/missions/stats/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -67,7 +67,7 @@ export const useMissionStats = (): MissionStats => {
           console.warn("Mission stats endpoint not available, fetching missions manually");
 
           // Récupérer les missions assignées à l'utilisateur
-          const missionsResponse = await fetch(`${API_BASE_URL}/missions/`, {
+          const missionsResponse = await fetch(`${API_BASE_URL}/api/missions/assigned/`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -91,7 +91,7 @@ export const useMissionStats = (): MissionStats => {
 
             // Récupérer les missions supervisées (si possible)
             try {
-              const supervisedResponse = await fetch(`${API_BASE_URL}/missions/supervised/`, {
+              const supervisedResponse = await fetch(`${API_BASE_URL}/api/missions/supervised/`, {
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
@@ -155,11 +155,13 @@ export const useMissionStats = (): MissionStats => {
   }, [token]);
 
   return {
+    // Les missions assignées à l'utilisateur (celles qu'il doit accomplir)
     total: stats.assigned.total,
     completed: stats.assigned.completed,
     pending: stats.assigned.pending,
     late: stats.assigned.late,
     completionRate: stats.assigned.completion_rate,
+    // Les missions que l'utilisateur a assignées à d'autres (qu'il supervise)
     assignedMissions: {
       total: stats.supervised.total,
       completed: stats.supervised.completed,

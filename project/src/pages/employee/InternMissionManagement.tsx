@@ -67,7 +67,9 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/missions/`, {
+
+      // Utiliser l'endpoint spécifique pour récupérer les missions supervisées
+      const response = await fetch(`${API_BASE_URL}/api/missions/supervised/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -78,12 +80,14 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
       }
 
       const data = await response.json();
+      console.log("Missions supervisées récupérées:", data);
 
       // Filter missions for this intern
       const internMissions = data.filter(
         (mission: Mission) => mission.assigned_to === internId
       );
 
+      console.log(`Missions filtrées pour l'intern ${internId}:`, internMissions);
       setMissions(internMissions);
     } catch (error) {
       console.error("Error fetching missions:", error);

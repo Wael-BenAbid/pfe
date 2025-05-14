@@ -49,6 +49,15 @@ def patch_mission_viewset():
                 type="error"
             )
 
+            # Créer une notification pour le superviseur si c'est un employé
+            if mission.supervisor and mission.supervisor.user_type in ['employee', 'admin']:
+                Notification.objects.create(
+                    user=mission.supervisor,
+                    title="Mission supervisée en retard",
+                    message=f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} est maintenant en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}.",
+                    type="error"
+                )
+
         return Response({
             'status': 'late missions checked',
             'updated_count': updated_count

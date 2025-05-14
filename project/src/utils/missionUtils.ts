@@ -27,11 +27,11 @@ export const isMissionLate = (mission: Mission): boolean => {
   if (mission.completed || mission.status === 'completed') {
     return false;
   }
-  
+
   const deadlineDate = new Date(mission.deadline);
   const today = new Date();
   today.setHours(0, 0, 0, 0); // Réinitialiser l'heure pour comparer uniquement les dates
-  
+
   return deadlineDate < today;
 };
 
@@ -45,11 +45,11 @@ export const updateMissionStatuses = (missions: Mission[]): Mission[] => {
     if (mission.completed || mission.status === 'completed') {
       return { ...mission, status: 'completed' };
     }
-    
+
     if (isMissionLate(mission)) {
       return { ...mission, status: 'late' };
     }
-    
+
     return { ...mission, status: 'pending' };
   });
 };
@@ -61,7 +61,23 @@ export const updateMissionStatuses = (missions: Mission[]): Mission[] => {
  */
 export const fetchAndUpdateMissions = async (token: string): Promise<Mission[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/missions/`, {
+    // Appeler d'abord l'endpoint pour vérifier les missions en retard
+    try {
+      await fetch(`${API_BASE_URL}/api/missions/check_late_missions/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      console.log("Late missions check completed");
+    } catch (error) {
+      console.warn("Failed to check late missions:", error);
+      // Continuer même si cette requête échoue
+    }
+
+    // Récupérer les missions
+    const response = await fetch(`${API_BASE_URL}/api/missions/`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
