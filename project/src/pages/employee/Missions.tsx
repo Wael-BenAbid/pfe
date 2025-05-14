@@ -40,6 +40,21 @@ const Missions: React.FC = () => {
         // Continuer même si cette requête échoue
       }
 
+      // Vérifier les missions dont la date limite approche
+      try {
+        await fetch(`${API_BASE_URL}/api/missions/check_upcoming_deadlines/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('Vérification des missions dont la date limite approche effectuée');
+      } catch (checkError) {
+        console.warn('Erreur lors de la vérification des missions dont la date limite approche:', checkError);
+        // Continuer même si cette requête échoue
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/missions/`, {
         headers: {
           Authorization: `Bearer ${token}`,
