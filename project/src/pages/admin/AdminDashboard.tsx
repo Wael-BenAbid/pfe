@@ -16,6 +16,8 @@ import NotificationsPage from "./NotificationsPage";
 import UserManagement from "./UserManagement";
 import AdminProfile from "./AdminProfile";
 import NotFound from "../NotFound";
+import CalendarView from "../common/CalendarView";
+import EmbeddedCalendar from "../../components/calendar/EmbeddedCalendar";
 import { API_BASE_URL } from "../../config/constants";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 
@@ -120,6 +122,8 @@ const AdminDashboard: React.FC = () => {
               <Route path="leaves" element={<LeaveManagement />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route path="profile" element={<AdminProfile />} />
+              <Route path="calendar" element={<CalendarView />} />
+              <Route path="embedded-calendar" element={<EmbeddedCalendar />} />
               <Route path="user/:userId" element={<UserProfile />} />
               <Route
                 path="user/:userId/work-hours"

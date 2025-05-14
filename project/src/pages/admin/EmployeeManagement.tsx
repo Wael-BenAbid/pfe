@@ -37,7 +37,7 @@ const EmployeeManagement: React.FC = () => {
     // Check if there's a filter parameter in the URL
     const urlParams = new URLSearchParams(window.location.search);
     const filterParam = urlParams.get('filter');
-    if (filterParam && ['employee', 'intern', 'admin'].includes(filterParam)) {
+    if (filterParam && ['employee', 'intern', 'admin', 'all'].includes(filterParam)) {
       setFilterType(filterParam);
     } else {
       // Par défaut, afficher uniquement les employés
@@ -51,7 +51,7 @@ const EmployeeManagement: React.FC = () => {
     if (!token) return;
 
     try {
-      let url = `${API_BASE_URL}/users/`;
+      let url = `${API_BASE_URL}/api/users/`;
       if (filterType !== "all") {
         url += `?user_type=${filterType}`;
       }
@@ -68,12 +68,20 @@ const EmployeeManagement: React.FC = () => {
 
       const data = await response.json();
 
-      // Récupérer les heures de travail pour chaque utilisateur
+      // Récupérer les heures de travail pour chaque utilisateur (sauf les stagiaires)
       const usersWithWorkHours = await Promise.all(
         data.map(async (user: User) => {
+          // Les stagiaires n'ont pas d'heures de travail
+          if (user.user_type === 'intern') {
+            return {
+              ...user,
+              total_hours_worked: 0
+            };
+          }
+
           try {
             const workHoursResponse = await fetch(
-              `${API_BASE_URL}/work-hours/?user=${user.id}`,
+              `${API_BASE_URL}/api/work-hours/?user=${user.id}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -165,7 +173,27 @@ const EmployeeManagement: React.FC = () => {
                     ? "Interns"
                     : "Admins"}
             </h2>
-            {/* Pas de boutons de filtrage ici */}
+            <div className="mt-2 sm:mt-0">
+              <label htmlFor="user-type-filter" className="sr-only">Filter by user type</label>
+              <select
+                id="user-type-filter"
+                aria-label="Filter by user type"
+                className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                value={filterType}
+                onChange={(e) => {
+                  setFilterType(e.target.value);
+                  // Mettre à jour l'URL avec le nouveau filtre
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('filter', e.target.value);
+                  window.history.pushState({}, '', url.toString());
+                }}
+              >
+                <option value="employee">Employees</option>
+                <option value="intern">Interns</option>
+                <option value="admin">Admins</option>
+                <option value="all">All Users</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -265,10 +293,16 @@ const EmployeeManagement: React.FC = () => {
                       {getUserTypeBadge(user.user_type)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.leave_balance} days
+                      {user.user_type === 'intern' ? (
+                        <span className="text-gray-400">N/A</span>
+                      ) : (
+                        `${user.leave_balance} days`
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.total_hours_worked !== undefined ? (
+                      {user.user_type === 'intern' ? (
+                        <span className="text-gray-400">N/A</span>
+                      ) : user.total_hours_worked !== undefined ? (
                         <div className="flex items-center">
                           <span className="font-medium">{user.total_hours_worked}</span>
                           <span className="ml-1">hours</span>
@@ -284,23 +318,25 @@ const EmployeeManagement: React.FC = () => {
                           size="sm"
                           icon={<UserIcon className="h-4 w-4" />}
                           onClick={() =>
-                            window.open(`/admin/user/${user.id}`, "_blank")
+                            window.open(`/admine/user/${user.id}`, "_blank")
                           }
                         >
                           View Profile
                         </Button>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() =>
-                            window.open(
-                              `/admin/user/${user.id}/work-hours`,
-                              "_blank"
-                            )
-                          }
-                        >
-                          Work Hours
-                        </Button>
+                        {user.user_type !== 'intern' && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() =>
+                              window.open(
+                                `/admine/user/${user.id}/work-hours`,
+                                "_blank"
+                              )
+                            }
+                          >
+                            Work Hours
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

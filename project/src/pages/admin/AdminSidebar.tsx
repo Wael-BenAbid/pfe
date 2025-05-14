@@ -41,6 +41,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       icon: GraduationCapIcon,
     },
     { name: "Leave Requests", href: "/admine/leaves", icon: CalendarIcon },
+    { name: "Calendar", href: "/admine/calendar", icon: CalendarIcon },
     { name: "My Profile", href: "/admine/profile", icon: UserIcon },
   ];
 

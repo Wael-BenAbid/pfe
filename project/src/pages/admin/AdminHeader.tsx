@@ -151,7 +151,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
             <div className="ml-3">
               <Link
-                to="/admin/profile"
+                to="/admine/profile"
                 className="flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-2"
               >
                 <UserIcon className="h-4 w-4 mr-1" />

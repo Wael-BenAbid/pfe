@@ -6,7 +6,8 @@ import Button from "../../components/ui/Button";
 import TextInput from "../../components/ui/TextInput";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import Modal from "../../components/ui/Modal";
-import { PlusIcon, CheckIcon, XIcon, ClipboardListIcon } from "lucide-react";
+import { PlusIcon, CheckIcon, XIcon, ClipboardListIcon, AlertTriangleIcon } from "lucide-react";
+import { updateMissionStatuses, isMissionLate, Mission as MissionType } from "../../utils/missionUtils";
 
 interface User {
   id: number;
@@ -17,23 +18,8 @@ interface User {
   user_type: string;
 }
 
-interface Mission {
-  id: number;
-  title: string;
-  description: string;
-  status?: string;
-  deadline: string;
-  assigned_to: number;
-  user?: number; // Pour la compatibilité avec l'ancien code
-  user_details?: {
-    first_name: string;
-    last_name: string;
-    user_type?: string; // Ajout du type d'utilisateur
-  };
-  created_at: string;
-  completed: boolean;
-  assignee_type?: 'employees' | 'interns'; // Pour filtrer les missions par type d'assigné
-}
+// Utiliser le type Mission importé de missionUtils
+interface Mission extends MissionType {}
 
 const MissionManagement: React.FC = () => {
   const { token } = useAuth();
@@ -67,7 +53,19 @@ const MissionManagement: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/missions/`, {
+      // Appeler l'endpoint pour vérifier et mettre à jour les missions en retard dans le backend
+      await fetch(`${API_BASE_URL}/api/missions/check_late_missions/`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }).catch(error => {
+        console.warn("Failed to check late missions:", error);
+        // Continuer même si cette requête échoue
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/missions/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -79,15 +77,18 @@ const MissionManagement: React.FC = () => {
 
       const data = await response.json();
 
+      // Mettre à jour le statut des missions en fonction de leur date limite
+      const updatedMissions = updateMissionStatuses(data);
+
       // Fetch user details for each mission
       const missionsWithUserDetails = await Promise.all(
-        data.map(async (mission: Mission) => {
+        updatedMissions.map(async (mission: Mission) => {
           try {
             // Vérifier si mission.assigned_to existe avant de faire la requête
             const userId = mission.assigned_to || mission.user; // Utiliser assigned_to ou user (pour la compatibilité)
             if (userId) {
               const userResponse = await fetch(
-                `${API_BASE_URL}/users/${userId}/`,
+                `${API_BASE_URL}/api/users/${userId}/`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -136,7 +137,7 @@ const MissionManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/users/?user_type=employee`,
+        `${API_BASE_URL}/api/users/?user_type=employee`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -160,7 +161,7 @@ const MissionManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/users/?user_type=intern`,
+        `${API_BASE_URL}/api/users/?user_type=intern`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -209,7 +210,7 @@ const MissionManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/missions/`, {
+      const response = await fetch(`${API_BASE_URL}/api/missions/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -280,7 +281,7 @@ const MissionManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/missions/${editingMission.id}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/missions/${editingMission.id}/`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -324,7 +325,7 @@ const MissionManagement: React.FC = () => {
     if (!token || !deletingMissionId) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/missions/${deletingMissionId}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/missions/${deletingMissionId}/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -364,7 +365,7 @@ const MissionManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/missions/${completingMission.id}/complete_mission/`,
+        `${API_BASE_URL}/api/missions/${completingMission.id}/complete_mission/`,
         {
           method: "POST",
           headers: {
@@ -405,17 +406,43 @@ const MissionManagement: React.FC = () => {
     }
   };
 
-  const handleApplyPenalty = (id: number) => {
+  const handleApplyPenalty = async (id: number) => {
     if (!token) return;
 
     // Trouver la mission dans la liste
     const mission = missions.find((m) => m.id === id);
     if (!mission) return;
 
-    // Ouvrir le formulaire de pénalité
-    setPenaltyMission(mission);
-    setPenaltyDays(1);
-    setShowPenaltyForm(true);
+    // S'assurer que la mission est marquée comme "late" dans le backend
+    try {
+      // Mettre à jour le statut de la mission dans le backend
+      const updateResponse = await fetch(`${API_BASE_URL}/api/missions/${id}/`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "late"
+        }),
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error("Failed to update mission status");
+      }
+
+      // Ouvrir le formulaire de pénalité
+      setPenaltyMission(mission);
+      setPenaltyDays(1);
+      setShowPenaltyForm(true);
+    } catch (error) {
+      console.error("Error updating mission status:", error);
+      showAlert(
+        "Échec de la mise à jour du statut de la mission. Veuillez réessayer.",
+        "Erreur",
+        "error"
+      );
+    }
   };
 
   const submitApplyPenalty = async () => {
@@ -423,7 +450,7 @@ const MissionManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/missions/${penaltyMission.id}/apply_penalty/`,
+        `${API_BASE_URL}/api/missions/${penaltyMission.id}/apply_penalty/`,
         {
           method: "POST",
           headers: {
@@ -649,10 +676,11 @@ const MissionManagement: React.FC = () => {
                           </Button>
                         )}
 
-                        {mission.status === "late" && mission.user_details?.user_type === "employee" && (
+                        {mission.status === "late" && !mission.completed && mission.user_details?.user_type === "employee" && (
                           <Button
                             variant="danger"
                             size="sm"
+                            icon={<AlertTriangleIcon className="h-4 w-4" />}
                             onClick={() => handleApplyPenalty(mission.id)}
                           >
                             Penalty

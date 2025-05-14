@@ -50,7 +50,7 @@ const InternManagementAdmin: React.FC = () => {
     if (!token) return;
 
     try {
-      let url = `${API_BASE_URL}/users/`;
+      let url = `${API_BASE_URL}/api/users/`;
       if (filterType !== "all") {
         url += `?user_type=${filterType}`;
       }
@@ -67,41 +67,13 @@ const InternManagementAdmin: React.FC = () => {
 
       const data = await response.json();
 
-      // Récupérer les heures de travail pour chaque utilisateur
-      const usersWithWorkHours = await Promise.all(
-        data.map(async (user: User) => {
-          try {
-            const workHoursResponse = await fetch(
-              `${API_BASE_URL}/work-hours/?user=${user.id}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              }
-            );
-
-            if (workHoursResponse.ok) {
-              const workHoursData = await workHoursResponse.json();
-
-              // Calculer le total des heures travaillées
-              const totalHours = workHoursData.reduce(
-                (sum: number, entry: WorkHour) =>
-                  sum + parseFloat(entry.hours_worked.toString()),
-                0
-              );
-
-              return {
-                ...user,
-                total_hours_worked: parseFloat(totalHours.toFixed(2))
-              };
-            }
-            return user;
-          } catch (error) {
-            console.error(`Error fetching work hours for user ${user.id}:`, error);
-            return user;
-          }
-        })
-      );
+      // Les stagiaires n'ont pas d'heures de travail, donc on ajoute simplement 0 comme total
+      const usersWithWorkHours = data.map((user: User) => {
+        return {
+          ...user,
+          total_hours_worked: 0
+        };
+      });
 
       setUsers(usersWithWorkHours);
     } catch (error) {
@@ -264,7 +236,7 @@ const InternManagementAdmin: React.FC = () => {
                           size="sm"
                           icon={<UserIcon className="h-4 w-4" />}
                           onClick={() =>
-                            window.open(`/admin/user/${user.id}`, "_blank")
+                            window.open(`/admine/user/${user.id}`, "_blank")
                           }
                         >
                           View Profile

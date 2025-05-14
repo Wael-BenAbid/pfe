@@ -19,6 +19,7 @@ interface NewLeaveRequest {
   start_date: string;
   end_date: string;
   reason: string;
+  leave_type?: string;
 }
 
 const LeaveRequests: React.FC = () => {
@@ -30,6 +31,7 @@ const LeaveRequests: React.FC = () => {
     start_date: "",
     end_date: "",
     reason: "",
+    leave_type: "annual",
   });
   const [leaveBalance, setLeaveBalance] = useState<number>(0);
 
@@ -191,7 +193,7 @@ const LeaveRequests: React.FC = () => {
       if (response.ok) {
         await fetchLeaveRequests();
         setShowNewRequestForm(false);
-        setNewRequest({ start_date: "", end_date: "", reason: "" });
+        setNewRequest({ start_date: "", end_date: "", reason: "", leave_type: "annual" });
         alert("Demande de congé soumise avec succès!");
       } else {
         console.warn("Failed to submit request:", responseData);
@@ -312,6 +314,30 @@ const LeaveRequests: React.FC = () => {
                 }
                 required
               />
+            </div>
+            <div>
+              <label
+                htmlFor="leave-type"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Type de congé
+              </label>
+              <select
+                id="leave-type"
+                name="leave_type"
+                aria-label="Type de congé"
+                value={newRequest.leave_type}
+                onChange={(e) =>
+                  setNewRequest({ ...newRequest, leave_type: e.target.value })
+                }
+                className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                required
+              >
+                <option value="annual">Congé annuel</option>
+                <option value="sick">Congé maladie</option>
+                <option value="personal">Congé personnel</option>
+                <option value="other">Autre</option>
+              </select>
             </div>
             <div>
               <label

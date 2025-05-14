@@ -118,23 +118,35 @@ const UserProfile: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to update user");
+          try {
+            const errorData = await response.json();
+            console.error("Error details:", errorData);
+            throw new Error(`Failed to update user: ${JSON.stringify(errorData)}`);
+          } catch (jsonError) {
+            throw new Error(`Failed to update user: ${response.statusText}`);
+          }
         }
 
         updatedUser = await response.json();
       } else {
         // Pas de nouvelle image, on peut utiliser JSON
+        // Créer une copie des données du formulaire sans le champ profile_image
+        const formDataWithoutImage = { ...formData };
+        delete formDataWithoutImage.profile_image;
+
         const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(formDataWithoutImage),
         });
 
         if (!response.ok) {
-          throw new Error("Failed to update user");
+          const errorData = await response.json();
+          console.error("Error details:", errorData);
+          throw new Error(`Failed to update user: ${JSON.stringify(errorData)}`);
         }
 
         updatedUser = await response.json();
@@ -561,7 +573,7 @@ const UserProfile: React.FC = () => {
                       size="sm"
                       onClick={() =>
                         window.open(
-                          `/admin/user/${user.id}/work-hours`,
+                          `/admine/user/${user.id}/work-hours`,
                           "_blank"
                         )
                       }

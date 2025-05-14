@@ -34,13 +34,16 @@ const LeaveManagement: React.FC = () => {
   const [processingId, setProcessingId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (token) fetchLeaveRequests();
+    if (token) {
+      console.log("Fetching leave requests with filter:", filter);
+      fetchLeaveRequests();
+    }
   }, [token, filter]);
 
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
-      let url = `${API_BASE_URL}/leaves/`;
+      let url = `${API_BASE_URL}/api/leaves/`;
       if (filter !== "all") {
         url += `?status=${filter}`;
       }
@@ -59,7 +62,7 @@ const LeaveManagement: React.FC = () => {
           data.map(async (request: LeaveRequest) => {
             try {
               const userResponse = await fetch(
-                `${API_BASE_URL}/users/${request.user}/`,
+                `${API_BASE_URL}/api/users/${request.user}/`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -86,7 +89,14 @@ const LeaveManagement: React.FC = () => {
           })
         );
 
-        setLeaveRequests(requestsWithUserDetails);
+        // Filtrer pour exclure les stagiaires
+        const filteredRequests = requestsWithUserDetails.filter(
+          (request) => !request.user_details || request.user_details.user_type !== 'intern'
+        );
+
+        console.log("Received leave requests:", filteredRequests);
+        console.log("Current filter:", filter);
+        setLeaveRequests(filteredRequests);
       } else {
         console.warn("Failed to fetch leave requests:", response.status);
       }
@@ -101,7 +111,7 @@ const LeaveManagement: React.FC = () => {
     setProcessingId(id);
     try {
       const response = await fetch(
-        `${API_BASE_URL}/leaves/${id}/approve_leave/`,
+        `${API_BASE_URL}/api/leaves/${id}/approve_leave/`,
         {
           method: "POST",
           headers: {
@@ -127,7 +137,7 @@ const LeaveManagement: React.FC = () => {
     setProcessingId(id);
     try {
       const response = await fetch(
-        `${API_BASE_URL}/leaves/${id}/reject_leave/`,
+        `${API_BASE_URL}/api/leaves/${id}/reject_leave/`,
         {
           method: "POST",
           headers: {
@@ -283,7 +293,10 @@ const LeaveManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {leaveRequests.map((request) => (
+                {(() => {
+                  const filteredRequests = leaveRequests.filter(request => filter === "all" || request.status === filter);
+                  console.log("Filtered requests for display:", filteredRequests);
+                  return filteredRequests.map((request) => (
                   <tr key={request.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -349,7 +362,7 @@ const LeaveManagement: React.FC = () => {
                       )}
                     </td>
                   </tr>
-                ))}
+                ))})()}
               </tbody>
             </table>
           </div>
