@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../hooks/useNotifications";
 import Button from "../../components/ui/Button";
-import { API_BASE_URL } from "../../config/constants";
+import { API_URL } from "../../config/constants";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -22,6 +22,8 @@ interface Mission {
   assigned_to_name: string;
   supervisor_id: number;
   supervisor_name: string;
+  supervisor_full_name: string;
+  status: string;
   created_at: Date;
 }
 
@@ -46,7 +48,7 @@ const InternMissions: React.FC = () => {
 
       // Vérifier d'abord les missions en retard
       try {
-        await fetch(`${API_BASE_URL}/api/missions/check_late_missions/`, {
+        await fetch(`${API_URL}/missions/check_late_missions/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -61,7 +63,7 @@ const InternMissions: React.FC = () => {
 
       // Vérifier les missions dont la date limite approche
       try {
-        await fetch(`${API_BASE_URL}/api/missions/check_upcoming_deadlines/`, {
+        await fetch(`${API_URL}/missions/check_upcoming_deadlines/`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -75,7 +77,7 @@ const InternMissions: React.FC = () => {
       }
 
       // Appeler directement l'API pour récupérer les missions
-      const response = await fetch(`${API_BASE_URL}/api/missions/`, {
+      const response = await fetch(`${API_URL}/missions/`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -152,7 +154,7 @@ const InternMissions: React.FC = () => {
       // Call the API to update the mission
       console.log(`Marking mission ${missionId} as complete`);
 
-      const response = await fetch(`${API_BASE_URL}/missions/${missionId}/complete_mission/`, {
+      const response = await fetch(`${API_URL}/missions/${missionId}/complete_mission/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
