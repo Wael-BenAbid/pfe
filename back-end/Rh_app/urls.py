@@ -86,15 +86,15 @@ urlpatterns = [
     path('api/auth/reset-password/', reset_password, name='reset_password_v2'),
 
     # Endpoint pour appliquer une pénalité
-    path('api/missions/<int:mission_id>/apply_penalty/', apply_penalty, name='apply_penalty'),
+    path('missions/<int:mission_id>/apply_penalty/', apply_penalty, name='apply_penalty'),
 
     # Endpoints pour les missions
-    path('api/missions/supervised/', mission_supervised, name='missions-supervised'),
-    path('api/missions/assigned/', mission_assigned, name='missions-assigned'),
-    path('api/missions/stats/', mission_stats, name='missions-stats'),
-    path('api/missions/check_late_missions/', mission_check_late, name='missions-check-late'),
-    path('api/missions/check_upcoming_deadlines/', mission_check_upcoming, name='missions-check-upcoming'),
-    path('api/missions/<int:pk>/complete_mission/', mission_complete, name='mission-complete'),
+    path('missions/supervised/', mission_supervised, name='missions-supervised'),
+    path('missions/assigned/', mission_assigned, name='missions-assigned'),
+    path('missions/stats/', mission_stats, name='missions-stats'),
+    path('missions/check_late_missions/', mission_check_late, name='missions-check-late'),
+    path('missions/check_upcoming_deadlines/', mission_check_upcoming, name='missions-check-upcoming'),
+    path('missions/<int:pk>/complete_mission/', mission_complete, name='mission-complete'),
 ]
 
 # Appliquer le patch pour MissionViewSet
