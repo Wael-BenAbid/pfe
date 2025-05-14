@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../config/constants';
+import { API_URL } from '../config/constants';
 import { useAuth } from '../contexts/AuthContext';
 
 interface MissionStats {
@@ -53,7 +53,7 @@ export const useMissionStats = (): MissionStats => {
 
       try {
         // Essayer d'utiliser l'endpoint de statistiques des missions
-        const response = await fetch(`${API_BASE_URL}/api/missions/stats/`, {
+        const response = await fetch(`${API_URL}/missions/stats/`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -67,7 +67,7 @@ export const useMissionStats = (): MissionStats => {
           console.warn("Mission stats endpoint not available, fetching missions manually");
 
           // Récupérer les missions assignées à l'utilisateur
-          const missionsResponse = await fetch(`${API_BASE_URL}/api/missions/assigned/`, {
+          const missionsResponse = await fetch(`${API_URL}/missions/assigned/`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -91,7 +91,7 @@ export const useMissionStats = (): MissionStats => {
 
             // Récupérer les missions supervisées (si possible)
             try {
-              const supervisedResponse = await fetch(`${API_BASE_URL}/api/missions/supervised/`, {
+              const supervisedResponse = await fetch(`${API_URL}/missions/supervised/`, {
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
