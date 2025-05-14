@@ -69,6 +69,13 @@ urlpatterns = [
 
     # Endpoint pour appliquer une pénalité
     path('api/missions/<int:mission_id>/apply_penalty/', apply_penalty, name='apply_penalty'),
+
+    # Endpoints pour les missions
+    path('api/missions/supervised/', MissionViewSet.as_view({'get': 'supervised'}), name='missions-supervised'),
+    path('api/missions/assigned/', MissionViewSet.as_view({'get': 'assigned'}), name='missions-assigned'),
+    path('api/missions/stats/', MissionViewSet.as_view({'get': 'stats'}), name='missions-stats'),
+    path('api/missions/check_late_missions/', MissionViewSet.as_view({'post': 'check_late_missions'}), name='missions-check-late'),
+    path('api/missions/check_upcoming_deadlines/', MissionViewSet.as_view({'post': 'check_upcoming_deadlines'}), name='missions-check-upcoming'),
 ]
 
 # Appliquer le patch pour MissionViewSet
