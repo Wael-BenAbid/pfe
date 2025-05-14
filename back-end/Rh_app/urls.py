@@ -38,6 +38,24 @@ router.register(r'meetings', MeetingViewSet)
 router.register(r'notifications', NotificationViewSet)
 router.register(r'system-activities', SystemActivityViewSet)
 
+# Endpoints pour les missions
+mission_list = MissionViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+mission_detail = MissionViewSet.as_view({
+    'get': 'retrieve',
+    'put': 'update',
+    'patch': 'partial_update',
+    'delete': 'destroy'
+})
+mission_supervised = MissionViewSet.as_view({'get': 'supervised'})
+mission_assigned = MissionViewSet.as_view({'get': 'assigned'})
+mission_stats = MissionViewSet.as_view({'get': 'stats'})
+mission_check_late = MissionViewSet.as_view({'post': 'check_late_missions'})
+mission_check_upcoming = MissionViewSet.as_view({'post': 'check_upcoming_deadlines'})
+mission_complete = MissionViewSet.as_view({'post': 'complete_mission'})
+
 urlpatterns = [
     path('', include(router.urls)),
     # Custom user management endpoints
@@ -71,11 +89,12 @@ urlpatterns = [
     path('api/missions/<int:mission_id>/apply_penalty/', apply_penalty, name='apply_penalty'),
 
     # Endpoints pour les missions
-    path('api/missions/supervised/', MissionViewSet.as_view({'get': 'supervised'}), name='missions-supervised'),
-    path('api/missions/assigned/', MissionViewSet.as_view({'get': 'assigned'}), name='missions-assigned'),
-    path('api/missions/stats/', MissionViewSet.as_view({'get': 'stats'}), name='missions-stats'),
-    path('api/missions/check_late_missions/', MissionViewSet.as_view({'post': 'check_late_missions'}), name='missions-check-late'),
-    path('api/missions/check_upcoming_deadlines/', MissionViewSet.as_view({'post': 'check_upcoming_deadlines'}), name='missions-check-upcoming'),
+    path('api/missions/supervised/', mission_supervised, name='missions-supervised'),
+    path('api/missions/assigned/', mission_assigned, name='missions-assigned'),
+    path('api/missions/stats/', mission_stats, name='missions-stats'),
+    path('api/missions/check_late_missions/', mission_check_late, name='missions-check-late'),
+    path('api/missions/check_upcoming_deadlines/', mission_check_upcoming, name='missions-check-upcoming'),
+    path('api/missions/<int:pk>/complete_mission/', mission_complete, name='mission-complete'),
 ]
 
 # Appliquer le patch pour MissionViewSet
