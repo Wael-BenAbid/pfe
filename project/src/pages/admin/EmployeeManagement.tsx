@@ -81,7 +81,7 @@ const EmployeeManagement: React.FC = () => {
 
           try {
             const workHoursResponse = await fetch(
-              `${API_BASE_URL}/api/work-hours/?user=${user.id}`,
+              `${API_BASE_URL}/work-hours/?user=${user.id}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,

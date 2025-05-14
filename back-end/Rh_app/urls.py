@@ -22,9 +22,7 @@ from .views import (
     reset_password,
 )
 from .views_mission import MissionViewSet
-from .views_penalty import apply_penalty
-# Importer le patch pour MissionViewSet
-from .views_mission_patch import patch_mission_viewset
+# Les méthodes sont directement définies dans views_mission.py
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -55,6 +53,7 @@ mission_stats = MissionViewSet.as_view({'get': 'stats'})
 mission_check_late = MissionViewSet.as_view({'post': 'check_late_missions'})
 mission_check_upcoming = MissionViewSet.as_view({'post': 'check_upcoming_deadlines'})
 mission_complete = MissionViewSet.as_view({'post': 'complete_mission'})
+mission_apply_penalty = MissionViewSet.as_view({'post': 'apply_penalty'})
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -86,7 +85,7 @@ urlpatterns = [
     path('api/auth/reset-password/', reset_password, name='reset_password_v2'),
 
     # Endpoint pour appliquer une pénalité
-    path('missions/<int:mission_id>/apply_penalty/', apply_penalty, name='apply_penalty'),
+    path('missions/<int:pk>/apply_penalty/', mission_apply_penalty, name='apply_penalty'),
 
     # Endpoints pour les missions
     path('missions/supervised/', mission_supervised, name='missions-supervised'),
@@ -95,10 +94,15 @@ urlpatterns = [
     path('missions/check_late_missions/', mission_check_late, name='missions-check-late'),
     path('missions/check_upcoming_deadlines/', mission_check_upcoming, name='missions-check-upcoming'),
     path('missions/<int:pk>/complete_mission/', mission_complete, name='mission-complete'),
+
+    # Endpoints API pour les missions
+    path('api/missions/supervised/', mission_supervised, name='api-missions-supervised'),
+    path('api/missions/assigned/', mission_assigned, name='api-missions-assigned'),
+    path('api/missions/stats/', mission_stats, name='api-missions-stats'),
+    path('api/missions/check_late_missions/', mission_check_late, name='api-missions-check-late'),
+    path('api/missions/check_upcoming_deadlines/', mission_check_upcoming, name='api-missions-check-upcoming'),
+    path('api/missions/<int:pk>/complete_mission/', mission_complete, name='api-mission-complete'),
+    path('api/missions/<int:pk>/apply_penalty/', mission_apply_penalty, name='api-mission-apply-penalty'),
 ]
 
-# Appliquer le patch pour MissionViewSet
-try:
-    patch_mission_viewset()
-except NameError:
-    print("Fonction patch_mission_viewset non disponible")
+# Le patch n'est plus nécessaire car les méthodes sont directement définies dans views_mission.py

@@ -7,16 +7,23 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import InternMissionManagement from './InternMissionManagement';
 import { Calendar as CalendarIcon, Briefcase as BriefcaseIcon, GraduationCap as GraduationCapIcon, X as XIcon } from 'lucide-react';
 
+interface InternDetails {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  profile_image?: string;
+  github_profile?: string;
+  user_type: string;
+}
+
 interface Internship {
   id: number;
   title: string;
   description: string;
   intern: number;
   supervisor: number;
-  intern_details?: {
-    first_name: string;
-    last_name: string;
-  };
+  intern_details?: InternDetails;
   start_date: string;
   end_date: string;
   status: string;
@@ -64,7 +71,33 @@ const InternManagement: React.FC = () => {
         const supervisedInterns = data.filter((internship: Internship) =>
           internship.supervisor === user?.id && internship.status === 'ongoing'
         );
-        setInterns(supervisedInterns);
+
+        // Récupérer les détails complets de chaque stagiaire
+        const internsWithDetails = await Promise.all(
+          supervisedInterns.map(async (internship) => {
+            try {
+              const userResponse = await fetch(`${API_BASE_URL}/users/${internship.intern}/`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                return {
+                  ...internship,
+                  intern_details: userData
+                };
+              }
+              return internship;
+            } catch (error) {
+              console.error(`Error fetching details for intern ${internship.intern}:`, error);
+              return internship;
+            }
+          })
+        );
+
+        setInterns(internsWithDetails);
       } else {
         console.error('Failed to fetch internships:', response.status);
       }
@@ -233,11 +266,33 @@ const InternManagement: React.FC = () => {
                 <li key={intern.id} className="p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="text-blue-800 font-semibold">
-                          {intern.intern_details ? intern.intern_details.first_name.charAt(0) : ''}
-                          {intern.intern_details ? intern.intern_details.last_name.charAt(0) : ''}
-                        </span>
+                      <div className="flex-shrink-0 h-12 w-12 rounded-full overflow-hidden">
+                        {intern.intern_details?.profile_image ? (
+                          <img
+                            src={intern.intern_details.profile_image.startsWith('http')
+                              ? intern.intern_details.profile_image
+                              : `${API_BASE_URL}/media/${intern.intern_details.profile_image}`}
+                            alt={`${intern.intern_details.first_name} ${intern.intern_details.last_name}`}
+                            className="h-full w-full object-cover"
+                            onError={(e) => {
+                              // Fallback en cas d'erreur de chargement de l'image
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.parentElement!.classList.add('bg-blue-100', 'flex', 'items-center', 'justify-center');
+                              const span = document.createElement('span');
+                              span.className = 'text-blue-800 font-semibold';
+                              span.textContent = `${intern.intern_details.first_name.charAt(0)}${intern.intern_details.last_name.charAt(0)}`;
+                              e.currentTarget.parentElement!.appendChild(span);
+                            }}
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-blue-100 flex items-center justify-center">
+                            <span className="text-blue-800 font-semibold">
+                              {intern.intern_details ? intern.intern_details.first_name.charAt(0) : ''}
+                              {intern.intern_details ? intern.intern_details.last_name.charAt(0) : ''}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
@@ -246,11 +301,18 @@ const InternManagement: React.FC = () => {
                             : `Stagiaire #${intern.intern}`}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {intern.title}
+                          {intern.intern_details?.email || intern.title}
                         </div>
                         <div className="text-xs text-gray-500">
                           {new Date(intern.start_date).toLocaleDateString()} - {new Date(intern.end_date).toLocaleDateString()}
                         </div>
+                        {intern.intern_details?.github_profile && (
+                          <div className="text-xs text-blue-600 mt-1">
+                            <a href={intern.intern_details.github_profile} target="_blank" rel="noopener noreferrer">
+                              GitHub Profile
+                            </a>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex space-x-2">

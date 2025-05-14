@@ -57,8 +57,23 @@ const DeadlineCalendar: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Récupérer les missions
-      const missionsResponse = await fetch(`${API_BASE_URL}/missions/assigned/`, {
+      // Récupérer les informations de l'utilisateur pour déterminer son type
+      const userInfoResponse = await fetch(`${API_BASE_URL}/api/get-user-info/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!userInfoResponse.ok) {
+        throw new Error('Failed to fetch user info');
+      }
+
+      const userInfo = await userInfoResponse.json();
+      const isAdmin = userInfo.user_type === 'admin';
+
+      // Récupérer les missions (toutes pour admin, seulement assignées pour les autres)
+      const missionsEndpoint = isAdmin ? `${API_BASE_URL}/missions/` : `${API_BASE_URL}/missions/assigned/`;
+      const missionsResponse = await fetch(missionsEndpoint, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -82,7 +97,7 @@ const DeadlineCalendar: React.FC = () => {
       const missionEvents = missions.map((mission: Mission) => {
         const deadlineDate = new Date(mission.deadline);
         const status = mission.completed ? 'completed' : isMissionLate(mission) ? 'late' : 'pending';
-        
+
         return {
           id: mission.id,
           title: `Mission: ${mission.title}`,
@@ -233,6 +248,7 @@ const DeadlineCalendar: React.FC = () => {
             </div>
             <div className="flex justify-end">
               <button
+                type="button"
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
                 onClick={() => setShowEventDetails(false)}
               >

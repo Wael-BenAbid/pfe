@@ -13,7 +13,12 @@ import {
   PencilIcon,
   TrashIcon,
   AlertCircleIcon,
+  CalendarIcon,
+  MapPinIcon,
+  UserIcon,
+  LinkIcon,
 } from "lucide-react";
+import { format } from "date-fns";
 
 interface User {
   id: number;
@@ -37,6 +42,20 @@ interface Mission {
   supervisor_name?: string;
 }
 
+interface Meeting {
+  id: number;
+  title: string;
+  description: string;
+  date_time: string;
+  duration_minutes: number;
+  location_type: string;
+  location_details: string;
+  meeting_link: string;
+  organizer: number;
+  organizer_name: string;
+  status: string;
+}
+
 interface InternMissionManagementProps {
   internId: number;
   internName: string;
@@ -49,7 +68,9 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
   const { token, user } = useAuth();
   const { addNotification } = useNotifications();
   const [missions, setMissions] = useState<Mission[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMeetings, setLoadingMeetings] = useState(true);
   const [showNewMissionForm, setShowNewMissionForm] = useState(false);
   const [editingMission, setEditingMission] = useState<Mission | null>(null);
   const [newMission, setNewMission] = useState({
@@ -60,6 +81,7 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
 
   useEffect(() => {
     fetchMissions();
+    fetchMeetings();
   }, [token, internId]);
 
   const fetchMissions = async () => {
@@ -82,13 +104,49 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
       const data = await response.json();
       console.log("Missions supervisées récupérées:", data);
 
-      // Afficher toutes les missions supervisées sans filtrage
-      console.log(`Affichage de toutes les missions supervisées`);
-      setMissions(data);
+      // Filtrer pour ne montrer que les missions assignées à ce stagiaire
+      const internMissions = data.filter((mission: Mission) => mission.assigned_to === internId);
+      console.log(`Affichage des missions supervisées pour le stagiaire ${internId}:`, internMissions);
+      setMissions(internMissions);
     } catch (error) {
       console.error("Error fetching missions:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMeetings = async () => {
+    if (!token) return;
+
+    try {
+      setLoadingMeetings(true);
+
+      // Récupérer toutes les réunions organisées par l'utilisateur
+      const response = await fetch(`${API_URL}/meetings/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch meetings");
+      }
+
+      const data = await response.json();
+
+      // Filtrer pour ne montrer que les réunions avec ce stagiaire comme participant
+      const internMeetings = data.filter((meeting: Meeting) => {
+        // Vérifier si le stagiaire est un participant (nécessite une API qui retourne les détails des participants)
+        // Pour l'instant, nous devons faire une supposition basée sur les données disponibles
+        return meeting.participants && meeting.participants.includes(internId);
+      });
+
+      console.log(`Réunions avec le stagiaire ${internId}:`, internMeetings);
+      setMeetings(internMeetings);
+    } catch (error) {
+      console.error("Error fetching meetings:", error);
+    } finally {
+      setLoadingMeetings(false);
     }
   };
 
@@ -164,9 +222,10 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
         type: "info",
       });
 
+      // Afficher un message de confirmation avec mention de l'email
       resetForm();
       fetchMissions();
-      alert("Mission created successfully!");
+      alert("Mission created successfully! An email notification has been sent to the intern.");
     } catch (error) {
       console.error("Error creating mission:", error);
       alert("Failed to create mission. Please try again.");
@@ -248,9 +307,9 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
 
       // Afficher un message différent selon que la mission était complétée ou non
       if (wasCompleted) {
-        alert("Mission updated successfully! The mission has been set back to 'in progress' status.");
+        alert("Mission updated successfully! The mission has been set back to 'in progress' status. An email notification has been sent to the intern.");
       } else {
-        alert("Mission updated successfully!");
+        alert("Mission updated successfully! An email notification has been sent to the intern.");
       }
     } catch (error) {
       console.error("Error updating mission:", error);
@@ -285,7 +344,7 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
       });
 
       fetchMissions();
-      alert("Mission deleted successfully!");
+      alert("Mission deleted successfully! An email notification has been sent to the intern.");
     } catch (error) {
       console.error("Error deleting mission:", error);
       alert("Failed to delete mission. Please try again.");
@@ -297,148 +356,269 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
     setShowNewMissionForm(true);
   };
 
+  // Fonction pour afficher le lieu de la réunion en fonction du type
+  const getLocationDisplay = (meeting: Meeting) => {
+    switch (meeting.location_type) {
+      case "online":
+        return (
+          <div className="flex items-center text-sm text-gray-500">
+            <LinkIcon className="h-4 w-4 mr-2" />
+            <a
+              href={meeting.meeting_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              Lien de réunion
+            </a>
+          </div>
+        );
+      case "office":
+        return (
+          <div className="flex items-center text-sm text-gray-500">
+            <MapPinIcon className="h-4 w-4 mr-2" />
+            Bureau: {meeting.location_details || "Non spécifié"}
+          </div>
+        );
+      case "external":
+        return (
+          <div className="flex items-center text-sm text-gray-500">
+            <MapPinIcon className="h-4 w-4 mr-2" />
+            Lieu externe: {meeting.location_details || "Non spécifié"}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  // Fonction pour afficher le badge de statut de la réunion
+  const getStatusBadge = (meeting: Meeting) => {
+    switch (meeting.status) {
+      case "scheduled":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            Planifié
+          </span>
+        );
+      case "completed":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            Terminé
+          </span>
+        );
+      case "cancelled":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            Annulé
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
-      <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-        <h2 className="text-lg font-medium text-gray-900">
-          Toutes les missions supervisées
-        </h2>
-        <Button
-          variant="primary"
-          size="sm"
-          icon={<PlusIcon className="h-4 w-4" />}
-          onClick={() => {
-            resetForm();
-            setShowNewMissionForm(true);
-          }}
-        >
-          New Mission
-        </Button>
+    <div className="space-y-6">
+      {/* Section des missions */}
+      <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+          <h2 className="text-lg font-medium text-gray-900">
+            Missions assignées à {internName}
+          </h2>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={<PlusIcon className="h-4 w-4" />}
+            onClick={() => {
+              resetForm();
+              setShowNewMissionForm(true);
+            }}
+          >
+            New Mission
+          </Button>
+        </div>
+
+        {showNewMissionForm && (
+          <div className="p-4 border-b border-gray-200">
+            <form onSubmit={editingMission ? handleUpdate : handleSubmit}>
+              <div className="grid grid-cols-1 gap-4">
+                <TextInput
+                  label="Title"
+                  name="title"
+                  value={editingMission ? editingMission.title : newMission.title}
+                  onChange={handleInputChange}
+                  required
+                />
+                <TextArea
+                  label="Description"
+                  name="description"
+                  value={
+                    editingMission
+                      ? editingMission.description
+                      : newMission.description
+                  }
+                  onChange={handleInputChange}
+                  required
+                />
+                <DateInput
+                  label="Deadline"
+                  name="deadline"
+                  value={
+                    editingMission ? editingMission.deadline : newMission.deadline
+                  }
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+              <div className="mt-4 flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    resetForm();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  type="submit"
+                >
+                  {editingMission ? "Update Mission" : "Create Mission"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="p-6 text-center text-gray-600">Loading missions...</div>
+        ) : missions.length === 0 ? (
+          <div className="p-6 text-center">
+            <AlertCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No missions found
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Get started by creating a new mission for this intern.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-gray-200">
+            {missions.map((mission) => (
+              <li key={mission.id} className="px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-gray-900">
+                        {mission.title}
+                      </div>
+                      <div>
+                        {mission.completed ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Completed
+                          </span>
+                        ) : new Date(mission.deadline) < new Date() ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Overdue
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            In Progress
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500">{mission.description}</p>
+                    </div>
+                    <div className="mt-2 flex items-center text-sm text-gray-500">
+                      <ClockIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                      Deadline: {new Date(mission.deadline).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="ml-4 flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      icon={<PencilIcon className="h-4 w-4" />}
+                      onClick={() => handleEdit(mission)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      icon={<TrashIcon className="h-4 w-4" />}
+                      onClick={() => handleDelete(mission.id, mission.title)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {showNewMissionForm && (
-        <div className="p-4 border-b border-gray-200">
-          <form onSubmit={editingMission ? handleUpdate : handleSubmit}>
-            <div className="grid grid-cols-1 gap-4">
-              <TextInput
-                label="Title"
-                name="title"
-                value={editingMission ? editingMission.title : newMission.title}
-                onChange={handleInputChange}
-                required
-              />
-              <TextArea
-                label="Description"
-                name="description"
-                value={
-                  editingMission
-                    ? editingMission.description
-                    : newMission.description
-                }
-                onChange={handleInputChange}
-                required
-              />
-              <DateInput
-                label="Deadline"
-                name="deadline"
-                value={
-                  editingMission ? editingMission.deadline : newMission.deadline
-                }
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="mt-4 flex justify-end space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  resetForm();
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                type="submit"
-              >
-                {editingMission ? "Update Mission" : "Create Mission"}
-              </Button>
-            </div>
-          </form>
+      {/* Section des rendez-vous */}
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <div className="p-4 border-b border-gray-200 bg-gray-50">
+          <h2 className="text-lg font-medium text-gray-900">
+            Rendez-vous avec {internName}
+          </h2>
         </div>
-      )}
 
-      {loading ? (
-        <div className="p-6 text-center text-gray-600">Loading missions...</div>
-      ) : missions.length === 0 ? (
-        <div className="p-6 text-center">
-          <AlertCircleIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
-            No missions found
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Get started by creating a new mission for this intern.
-          </p>
-        </div>
-      ) : (
-        <ul className="divide-y divide-gray-200">
-          {missions.map((mission) => (
-            <li key={mission.id} className="px-4 py-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium text-gray-900">
-                      {mission.title}
+        {loadingMeetings ? (
+          <div className="p-6 text-center text-gray-600">Loading meetings...</div>
+        ) : meetings.length === 0 ? (
+          <div className="p-6 text-center">
+            <CalendarIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No meetings found
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              No meetings scheduled with this intern yet.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4 p-4">
+            {meetings.map((meeting) => (
+              <div
+                key={meeting.id}
+                className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">
+                      {meeting.title}
+                    </h3>
+                    {meeting.description && (
+                      <p className="mt-1 text-sm text-gray-500">
+                        {meeting.description}
+                      </p>
+                    )}
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <CalendarIcon className="h-4 w-4 mr-2" />
+                        {format(new Date(meeting.date_time), "PPP")} at {format(new Date(meeting.date_time), "p")}
+                        <span className="ml-2 text-gray-400">({meeting.duration_minutes} min)</span>
+                      </div>
+                      {getLocationDisplay(meeting)}
                     </div>
-                    <div>
-                      {mission.completed ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Completed
-                        </span>
-                      ) : new Date(mission.deadline) < new Date() ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Overdue
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          In Progress
-                        </span>
-                      )}
-                    </div>
                   </div>
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500">{mission.description}</p>
+                  <div>
+                    {getStatusBadge(meeting)}
                   </div>
-                  <div className="mt-2 flex items-center text-sm text-gray-500">
-                    <ClockIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                    Deadline: {new Date(mission.deadline).toLocaleDateString()}
-                  </div>
-                </div>
-                <div className="ml-4 flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    icon={<PencilIcon className="h-4 w-4" />}
-                    onClick={() => handleEdit(mission)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    icon={<TrashIcon className="h-4 w-4" />}
-                    onClick={() => handleDelete(mission.id, mission.title)}
-                  >
-                    Delete
-                  </Button>
                 </div>
               </div>
-            </li>
-          ))}
-        </ul>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
