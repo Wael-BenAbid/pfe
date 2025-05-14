@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'Rh_app.middleware.CheckLateMissionsMiddleware',  # Middleware pour vérifier les missions en retard
 ]
 
 IGNORABLE_404_URLS = [

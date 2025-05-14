@@ -25,7 +25,22 @@ const Missions: React.FC = () => {
 
   const fetchMissions = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/missions/`, {
+      // Vérifier d'abord les missions en retard
+      try {
+        await fetch(`${API_BASE_URL}/api/missions/check_late_missions/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('Vérification des missions en retard effectuée');
+      } catch (checkError) {
+        console.warn('Erreur lors de la vérification des missions en retard:', checkError);
+        // Continuer même si cette requête échoue
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/missions/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -45,20 +60,27 @@ const Missions: React.FC = () => {
   const handleCompleteMission = async (id: number) => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/missions/${id}/complete_mission/`,
+        `${API_BASE_URL}/api/missions/${id}/complete_mission/`,
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
           },
         }
       );
 
       if (response.ok) {
         fetchMissions();
+        alert("Mission marquée comme complétée avec succès!");
+      } else {
+        const errorData = await response.json();
+        console.error("Failed to complete mission:", errorData);
+        alert("Échec de la complétion de la mission. Veuillez réessayer.");
       }
     } catch (error) {
       console.error("Error completing mission:", error);
+      alert("Une erreur s'est produite lors de la complétion de la mission.");
     }
   };
 
@@ -74,6 +96,12 @@ const Missions: React.FC = () => {
         return (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
             In Progress
+          </span>
+        );
+      case "late":
+        return (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            Late
           </span>
         );
       default:

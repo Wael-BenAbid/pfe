@@ -40,13 +40,17 @@ const LeaveManagement: React.FC = () => {
     }
   }, [token, filter]);
 
+  // Effet pour récupérer les demandes de congés lorsque le filtre change
+  useEffect(() => {
+    console.log("Filter changed to:", filter);
+  }, [filter]);
+
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
-      let url = `${API_BASE_URL}/api/leaves/`;
-      if (filter !== "all") {
-        url += `?status=${filter}`;
-      }
+      // Récupérer toutes les demandes de congés, puis filtrer côté client
+      // pour éviter les problèmes avec les filtres côté serveur
+      const url = `${API_BASE_URL}/api/leaves/`;
 
       const response = await fetch(url, {
         headers: {
