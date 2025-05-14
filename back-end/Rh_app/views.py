@@ -736,8 +736,9 @@ class MissionViewSet(viewsets.ModelViewSet):
         if self.request.user.user_type == 'intern':
             raise PermissionDenied('Intern cannot create missions')
 
-        # L'utilisateur qui crée la mission est automatiquement désigné comme superviseur
-        mission = serializer.save(supervisor=self.request.user)
+        # Si le superviseur n'est pas spécifié, l'utilisateur qui crée la mission est automatiquement désigné comme superviseur
+        supervisor = serializer.validated_data.get('supervisor', self.request.user)
+        mission = serializer.save(supervisor=supervisor)
 
         # Envoyer un email à l'assigné si la mission est assignée à quelqu'un
         if hasattr(mission, 'assigned_to') and mission.assigned_to:

@@ -36,6 +36,7 @@ class MissionSerializer(serializers.ModelSerializer):
     supervisor_name = serializers.SerializerMethodField()
     assigned_to_full_name = serializers.SerializerMethodField()
     work_duration_display = serializers.SerializerMethodField()
+    supervisor_full_name = serializers.SerializerMethodField()
 
     # Rendre le champ supervisor optionnel
     supervisor = serializers.PrimaryKeyRelatedField(
@@ -56,6 +57,11 @@ class MissionSerializer(serializers.ModelSerializer):
     def get_supervisor_name(self, obj):
         if obj.supervisor:
             return obj.supervisor.username
+        return None
+
+    def get_supervisor_full_name(self, obj):
+        if obj.supervisor:
+            return f"{obj.supervisor.first_name} {obj.supervisor.last_name}"
         return None
 
     def get_assigned_to_full_name(self, obj):

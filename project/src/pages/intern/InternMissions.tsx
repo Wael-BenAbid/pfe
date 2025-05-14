@@ -59,6 +59,21 @@ const InternMissions: React.FC = () => {
         // Continuer même si cette requête échoue
       }
 
+      // Vérifier les missions dont la date limite approche
+      try {
+        await fetch(`${API_BASE_URL}/api/missions/check_upcoming_deadlines/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log('Vérification des missions dont la date limite approche effectuée');
+      } catch (checkError) {
+        console.warn('Erreur lors de la vérification des missions dont la date limite approche:', checkError);
+        // Continuer même si cette requête échoue
+      }
+
       // Appeler directement l'API pour récupérer les missions
       const response = await fetch(`${API_BASE_URL}/api/missions/`, {
         method: 'GET',
@@ -255,7 +270,7 @@ const InternMissions: React.FC = () => {
                     {getDeadlineStatus(mission.deadline, mission.status)}
                   </div>
                   <div className="mt-2 text-sm text-gray-500">
-                    Supervisor: {mission.supervisor_name}
+                    Supervisor: {mission.supervisor_full_name || mission.supervisor_name || "Non assigné"}
                   </div>
                 </div>
                 <div className="ml-4">

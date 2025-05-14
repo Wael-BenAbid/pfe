@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'django_crontab',
 ]
 
 MIDDLEWARE = [
@@ -241,3 +242,11 @@ LOGGING = {
         },
     },
 }
+
+# Configuration des tâches cron
+CRONJOBS = [
+    # Vérifier les missions en retard tous les jours à minuit
+    ('0 0 * * *', 'Rh_app.management.commands.check_late_missions.Command.handle'),
+    # Vérifier les missions dont la date limite approche tous les jours à 8h du matin
+    ('0 8 * * *', 'Rh_app.management.commands.check_upcoming_deadlines.Command.handle'),
+]

@@ -46,7 +46,7 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
   internId,
   internName,
 }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const { addNotification } = useNotifications();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,8 +83,10 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
       console.log("Missions supervisées récupérées:", data);
 
       // Filter missions for this intern
+      // Filtrer les missions pour cet intern
+      console.log(`Filtrage des missions pour l'intern ${internId}`);
       const internMissions = data.filter(
-        (mission: Mission) => mission.assigned_to === internId
+        (mission: Mission) => mission.assigned_to == internId
       );
 
       console.log(`Missions filtrées pour l'intern ${internId}:`, internMissions);
@@ -143,9 +145,12 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
         description: newMission.description,
         deadline: newMission.deadline,
         assigned_to: internId,
+        supervisor: user?.id, // Ajouter l'ID du superviseur (l'employé connecté)
       };
 
-      const response = await fetch(`${API_BASE_URL}/missions/`, {
+      console.log("Création d'une mission avec les données:", missionData);
+
+      const response = await fetch(`${API_BASE_URL}/api/missions/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -191,7 +196,7 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
     try {
       // Récupérer d'abord les détails complets de la mission pour obtenir le supervisor_id
       const getResponse = await fetch(
-        `${API_BASE_URL}/missions/${editingMission.id}/`,
+        `${API_BASE_URL}/api/missions/${editingMission.id}/`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -211,7 +216,7 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
 
       // Maintenant, mettre à jour la mission avec tous les champs requis
       const response = await fetch(
-        `${API_BASE_URL}/missions/${editingMission.id}/`,
+        `${API_BASE_URL}/api/missions/${editingMission.id}/`,
         {
           method: "PUT",
           headers: {
@@ -267,7 +272,7 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/missions/${missionId}/`, {
+      const response = await fetch(`${API_BASE_URL}/api/missions/${missionId}/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
