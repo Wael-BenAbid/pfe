@@ -36,6 +36,53 @@ def patch_mission_viewset():
             deadline__lt=today
         )
 
+        # Mettre à jour le statut des missions en retard
+        updated_count = 0
+        for mission in late_missions:
+            mission.status = 'late'
+            mission.save()
+            updated_count += 1
+
+            # Créer une notification pour l'assigné
+            Notification.objects.create(
+                user=mission.assigned_to,
+                title="Mission en retard",
+                message=f"La mission '{mission.title}' est maintenant en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}.",
+                type="error"
+            )
+
+            # Créer une notification pour le superviseur
+            if mission.supervisor:
+                Notification.objects.create(
+                    user=mission.supervisor,
+                    title="Mission supervisée en retard",
+                    message=f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} est maintenant en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}.",
+                    type="error"
+                )
+
+            # Envoyer un email à l'assigné
+            try:
+                subject = f"Mission en retard : {mission.title}"
+                message = (
+                    f"Bonjour {mission.assigned_to.first_name} {mission.assigned_to.last_name},\n\n"
+                    f"La mission suivante est maintenant en retard :\n\n"
+                    f"Titre : {mission.title}\n"
+                    f"Description : {mission.description}\n"
+                    f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y')}\n\n"
+                    f"Veuillez compléter cette mission dès que possible pour éviter une pénalité.\n\n"
+                    f"Cordialement,\n"
+                    f"L'équipe RH"
+                )
+
+                send_email_notification(subject, message, [mission.assigned_to.email])
+            except Exception as e:
+                print(f"Erreur lors de l'envoi de l'email à {mission.assigned_to.email}: {str(e)}")
+
+        return Response({
+            'status': 'late missions checked',
+            'updated_count': updated_count
+        })
+
     @action(detail=False, methods=['post'])
     def check_upcoming_deadlines(self, request):
         """
