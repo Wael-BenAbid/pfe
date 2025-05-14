@@ -3,8 +3,14 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
     inputs:
       sync_docker_k8s:
@@ -27,11 +33,16 @@ on:
         required: false
         default: false
         type: boolean
+      deploy_to_kubernetes:
+        description: 'Déployer sur Kubernetes'
+        required: false
+        default: true
+        type: boolean
 
 env:
   DOCKER_HUB_USERNAME: waelbenabid
   FRONTEND_IMAGE: rh-frontend
-  BACKEND_IMAGE: rh-backend
+  BACKEND_IMAGE: rh-system-backend
   KUBERNETES_NAMESPACE: rh-system
 
 jobs:
@@ -127,7 +138,7 @@ jobs:
           echo "DATABASE_PORT=5432" >> .env
           echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}" >> .env
           echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}" >> .env
-          echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'SG.default-key-for-testing' }}" >> .env
+          echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}" >> .env
         working-directory: ./back-end
 
       - name: Run Tests
@@ -292,7 +303,7 @@ jobs:
             SECRET_KEY=${{ secrets.SECRET_KEY || 'django-insecure-default-key-for-testing' }}
             EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}
             EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}
-            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'SG.default-key-for-testing' }}
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}
           secrets: |
             "DATABASE_URL=postgresql://postgres:postgres_test_password@postgres-db:5432/rh_v2"
 
@@ -347,7 +358,7 @@ jobs:
           SECRET_KEY="${{ secrets.SECRET_KEY || 'django-insecure-default-key-for-testing' }}"
           EMAIL_HOST_USER="${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}"
           EMAIL_HOST_PASSWORD="${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}"
-          SENDGRID_API_KEY="${{ secrets.SENDGRID_API_KEY || 'SG.default-key-for-testing' }}"
+          SENDGRID_API_KEY="${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}"
           DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD || 'postgres_password' }}"
 
           # Créer les secrets Kubernetes
@@ -718,7 +729,7 @@ jobs:
             SECRET_KEY=${{ secrets.SECRET_KEY || 'django-insecure-default-key-for-testing' }}
             EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}
             EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}
-            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'SG.default-key-for-testing' }}
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}
           secrets: |
             "DATABASE_URL=postgresql://postgres:postgres_test_password@postgres-db:5432/rh_v2"
 

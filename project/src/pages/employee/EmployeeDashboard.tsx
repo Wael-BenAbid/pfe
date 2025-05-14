@@ -24,6 +24,7 @@ import SupervisedInterns from "./SupervisedInterns";
 import WorkHours from "./WorkHours";
 import NotificationsPage from "./NotificationsPage";
 import EmployeeProfile from "./EmployeeProfile";
+import CalendarView from "../common/CalendarView";
 
 const EmployeeDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -43,6 +44,7 @@ const EmployeeDashboard: React.FC = () => {
   return (
     <Routes>
       <Route path="profile" element={<EmployeeProfile />} />
+      <Route path="calendar" element={<CalendarView />} />
       <Route path="*" element={
         <div className="min-h-screen bg-gray-50">
           <header className="bg-white shadow">
@@ -89,11 +91,12 @@ const EmployeeDashboard: React.FC = () => {
                   },
                   { id: "hours", label: "Work Hours", icon: ClockIcon },
                   { id: "notifications", label: "Notifications", icon: BellIcon },
+                  { id: "calendar", label: "Calendar", icon: CalendarIcon, onClick: () => navigate("/employee/calendar") },
                 ].map((tab) => (
                   <button
                     type="button"
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={tab.onClick || (() => setActiveTab(tab.id))}
                     className={`${
                       activeTab === tab.id
                         ? "border-blue-500 text-blue-600"

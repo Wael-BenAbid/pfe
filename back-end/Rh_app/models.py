@@ -51,6 +51,13 @@ class Leave(models.Model):
         ('rejected', 'Rejected'),
     )
 
+    LEAVE_TYPE_CHOICES = (
+        ('annual', 'Congé annuel'),
+        ('sick', 'Congé maladie'),
+        ('personal', 'Congé personnel'),
+        ('other', 'Autre'),
+    )
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -59,6 +66,12 @@ class Leave(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     reason = models.TextField()
+    leave_type = models.CharField(
+        max_length=20,
+        choices=LEAVE_TYPE_CHOICES,
+        default='annual',
+        help_text="Type de congé"
+    )
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,

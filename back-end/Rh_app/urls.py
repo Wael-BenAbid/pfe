@@ -22,6 +22,9 @@ from .views import (
     reset_password,
 )
 from .views_mission import MissionViewSet
+from .views_penalty import apply_penalty
+# Importer le patch pour MissionViewSet
+from .views_mission_patch import patch_mission_viewset
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -63,4 +66,13 @@ urlpatterns = [
     path('api/auth/refresh-token/', refresh_token, name='token_refresh_v2'),
     path('api/auth/forgot-password/', forgot_password, name='forgot_password_v2'),
     path('api/auth/reset-password/', reset_password, name='reset_password_v2'),
+
+    # Endpoint pour appliquer une pénalité
+    path('api/missions/<int:mission_id>/apply_penalty/', apply_penalty, name='apply_penalty'),
 ]
+
+# Appliquer le patch pour MissionViewSet
+try:
+    patch_mission_viewset()
+except NameError:
+    print("Fonction patch_mission_viewset non disponible")

@@ -583,7 +583,6 @@ class LeaveViewSet(viewsets.ModelViewSet):
             message = (
                 f"Une nouvelle demande de congé a été soumise :\n\n"
                 f"Employé : {leave.user.first_name} {leave.user.last_name}\n"
-                f"Type de congé : {leave.leave_type}\n"
                 f"Date de début : {leave.start_date.strftime('%d/%m/%Y')}\n"
                 f"Date de fin : {leave.end_date.strftime('%d/%m/%Y')}\n"
                 f"Nombre de jours : {days}\n"
@@ -618,7 +617,6 @@ class LeaveViewSet(viewsets.ModelViewSet):
             message = (
                 f"Bonjour {leave.user.first_name} {leave.user.last_name},\n\n"
                 f"Votre demande de congé a été approuvée :\n\n"
-                f"Type de congé : {leave.leave_type}\n"
                 f"Date de début : {leave.start_date.strftime('%d/%m/%Y')}\n"
                 f"Date de fin : {leave.end_date.strftime('%d/%m/%Y')}\n"
                 f"Nombre de jours : {days}\n"
@@ -651,7 +649,6 @@ class LeaveViewSet(viewsets.ModelViewSet):
             message = (
                 f"Bonjour {leave.user.first_name} {leave.user.last_name},\n\n"
                 f"Votre demande de congé a été refusée :\n\n"
-                f"Type de congé : {leave.leave_type}\n"
                 f"Date de début : {leave.start_date.strftime('%d/%m/%Y')}\n"
                 f"Date de fin : {leave.end_date.strftime('%d/%m/%Y')}\n"
                 f"Raison : {leave.reason}\n\n"

@@ -97,17 +97,32 @@ Pour utiliser Gmail comme serveur SMTP, vous devez :
    ./deploy.ps1
    ```
 
-3. Pour nettoyer l'environnement Docker :
+3. Pour construire et pousser les images Docker vers Docker Hub :
+   ```powershell
+   ./build-push-docker.ps1
+   ```
+
+4. Pour déployer l'application sur Kubernetes :
+   ```powershell
+   ./deploy-kubernetes.ps1
+   ```
+
+5. Pour redémarrer tous les services après un redémarrage du PC :
+   ```powershell
+   ./restart-services.ps1
+   ```
+
+6. Pour nettoyer l'environnement Docker :
    ```powershell
    ./clean-docker.ps1
    ```
 
-4. Pour sauvegarder la base de données :
+7. Pour sauvegarder la base de données :
    ```powershell
    ./backup.ps1
    ```
 
-5. Pour restaurer la base de données à partir d'une sauvegarde :
+8. Pour restaurer la base de données à partir d'une sauvegarde :
    ```powershell
    ./restore.ps1 ./backups/rh_v2_20250505_120000.sql
    ```
@@ -325,8 +340,10 @@ Des dashboards préconfigurés sont disponibles pour visualiser les logs du syst
 Le projet utilise GitHub Actions pour l'intégration continue et le déploiement continu. Le pipeline CI/CD :
 
 1. Exécute les tests du frontend et du backend
-2. Construit et pousse les images Docker vers Docker Hub
-3. Déploie l'application (si configuré)
+2. Effectue des scans de sécurité sur le code et les images Docker
+3. Construit et pousse les images Docker vers Docker Hub
+4. Déploie l'application sur Kubernetes (si configuré)
+5. Synchronise les images Docker entre Docker Hub et Docker Desktop local
 
 Pour que le pipeline CI/CD fonctionne correctement, vous devez configurer les secrets suivants dans votre dépôt GitHub :
 
@@ -334,6 +351,13 @@ Pour que le pipeline CI/CD fonctionne correctement, vous devez configurer les se
 - `SECRET_KEY` : Clé secrète Django
 - `EMAIL_HOST_USER` : Adresse email pour l'envoi d'emails
 - `EMAIL_HOST_PASSWORD` : Mot de passe d'application pour l'envoi d'emails
+
+Le workflow CI/CD peut être déclenché manuellement avec des options personnalisées :
+- Synchroniser Docker Desktop avec Kubernetes
+- Mettre à jour le frontend
+- Mettre à jour le backend
+- Utiliser les images Docker locales
+- Déployer sur Kubernetes
 
 ## Sécurité
 
