@@ -60,11 +60,11 @@ data:
         path('', api_root, name='api_root'),  # API root endpoint
         path('admin/', admin.site.urls, name='django_admin'),  # Interface d'administration Django
         # Suppression de la route 'django-admin/' pour éviter la confusion
-        path('api/', include(router.urls)),
-        path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-        path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
-        path('api/auth/login/', login_view, name='api_login'),
-        path('api/auth/logout/', api_logout, name='api_logout'),
+        path('', include(router.urls)),  # Suppression du préfixe api/
+        path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),  # Suppression du préfixe api/
+        path('auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),  # Suppression du préfixe api/
+        path('auth/login/', login_view, name='api_login'),  # Suppression du préfixe api/
+        path('auth/logout/', api_logout, name='api_logout'),  # Suppression du préfixe api/
 
         # Inclure toutes les URLs de l'application Rh_app
         path('', include('Rh_app.urls')),
