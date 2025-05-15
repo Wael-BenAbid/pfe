@@ -36,8 +36,8 @@ spec:
             port:
               number: 8000
 
-      # Backend API
-      - path: /api(/|$)(.*)
+      # Backend API endpoints (sans préfixe /api/)
+      - path: /(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth)(/|$)(.*)
         pathType: Prefix
         backend:
           service:

@@ -112,10 +112,10 @@ data:
             return 301 /admine/;
         }
 
-        # Route pour l'API
-        location /api/ {
-            # Proxy direct vers le backend sans préfixe supplémentaire
-            proxy_pass http://rh-backend:8000/api/;
+        # Route pour l'API (sans préfixe /api/)
+        location ~ ^/(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth)/ {
+            # Proxy direct vers le backend sans préfixe /api/
+            proxy_pass http://rh-backend:8000/$uri$is_args$args;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
