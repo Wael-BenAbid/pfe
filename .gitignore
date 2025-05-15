@@ -29,6 +29,7 @@ media/
 media_v2/
 staticfiles_v2/
 static/
+# Les scripts d'initialisation contiennent des informations personnelles
 back-end/entrypoint.sh
 back-end/docker-entrypoint.sh
 

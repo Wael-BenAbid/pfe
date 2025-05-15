@@ -304,6 +304,11 @@ jobs:
             EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}
             EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}
             SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}
+            ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME || 'admin' }}
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL || 'admin@example.com' }}
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD || 'admin_password' }}
+            ADMIN_FIRSTNAME=${{ secrets.ADMIN_FIRSTNAME || 'Admin' }}
+            ADMIN_LASTNAME=${{ secrets.ADMIN_LASTNAME || 'User' }}
           secrets: |
             "DATABASE_URL=postgresql://postgres:postgres_test_password@postgres-db:5432/rh_v2"
 
@@ -730,6 +735,11 @@ jobs:
             EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}
             EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}
             SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}
+            ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME || 'admin' }}
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL || 'admin@example.com' }}
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD || 'admin_password' }}
+            ADMIN_FIRSTNAME=${{ secrets.ADMIN_FIRSTNAME || 'Admin' }}
+            ADMIN_LASTNAME=${{ secrets.ADMIN_LASTNAME || 'User' }}
           secrets: |
             "DATABASE_URL=postgresql://postgres:postgres_test_password@postgres-db:5432/rh_v2"
 

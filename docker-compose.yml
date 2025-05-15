@@ -26,6 +26,12 @@ services:
     build:
       context: ./back-end
       dockerfile: Dockerfile
+      args:
+        ADMIN_USERNAME: wael
+        ADMIN_EMAIL: waelbenabid1@gmail.com
+        ADMIN_PASSWORD: Abidos$123
+        ADMIN_FIRSTNAME: Wael
+        ADMIN_LASTNAME: Ben Abid
     ports:
       - "8000:8000"
     env_file:
@@ -41,6 +47,9 @@ services:
       # doivent être définies dans le fichier .env, pas ici
     volumes:
       - ./back-end:/app
+      # Assurez-vous que les répertoires de médias et statiques persistent
+      - backend_media:/app/media_v2
+      - backend_static:/app/static
     networks:
       - app-network
     restart: unless-stopped
@@ -51,29 +60,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    # Commande simplifiée pour démarrer l'application
-    command: >
-      bash -c "
-        # Attendre que la base de données soit prête
-        echo 'Waiting for PostgreSQL to start...'
-        until pg_isready -h db -p 5432; do
-          echo 'PostgreSQL is unavailable - sleeping'
-          sleep 1
-        done
-        echo 'PostgreSQL started!'
-
-        # Appliquer les migrations
-        echo 'Applying migrations...'
-        python manage.py migrate --noinput
-
-        # Créer un superutilisateur si nécessaire
-        echo 'Creating superuser if needed...'
-        python manage.py shell -c \"from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='wael').exists() or User.objects.create_superuser('wael', 'wael@example.com', 'Azerty\$123'); print('Superuser created or already exists.')\"
-
-        # Démarrer le serveur
-        echo 'Starting server...'
-        python manage.py runserver 0.0.0.0:8000
-      "
+    # Utiliser le script entrypoint.sh pour démarrer l'application
+    entrypoint: ["/bin/bash", "/app/entrypoint.sh"]
 
   db:
     image: postgres:15-alpine
@@ -100,3 +88,5 @@ networks:
 
 volumes:
   postgres_data:
+  backend_media:
+  backend_static:
