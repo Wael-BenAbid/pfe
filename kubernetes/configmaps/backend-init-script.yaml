@@ -65,6 +65,15 @@ data:
         print(f"Error loading admin settings: {e}")
     EOF
 
+    # Appliquer le patch pour ajouter le modèle Message
+    echo 'Applying Message model patch...'
+    if [ -f "/scripts/add_message_model.sh" ]; then
+        bash /scripts/add_message_model.sh
+        echo 'Message model patch applied'
+    else
+        echo 'Message model patch file not found'
+    fi
+
     # Démarrer le serveur
     echo 'Starting server...'
     python manage.py runserver 0.0.0.0:8000

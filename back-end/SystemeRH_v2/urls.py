@@ -23,9 +23,10 @@ from django.conf.urls.static import static
 from Rh_app.views import (
     UserViewSet, LeaveViewSet, MissionViewSet,
     WorkHoursViewSet, InternshipViewSet, JobApplicationViewSet,
-    UserSessionViewSet, MeetingViewSet, NotificationViewSet,
+    UserSessionViewSet, MeetingViewSet,
     SystemActivityViewSet, login_view, api_logout
 )
+from Rh_app.views_notification import NotificationViewSet as NotificationViewSetCustom
 from rest_framework_simplejwt.views import TokenVerifyView
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
@@ -36,7 +37,7 @@ router.register(r'internships', InternshipViewSet)
 router.register(r'job-applications', JobApplicationViewSet)
 router.register(r'user-sessions', UserSessionViewSet)
 router.register(r'meetings', MeetingViewSet)
-router.register(r'notifications', NotificationViewSet)
+router.register(r'notifications', NotificationViewSetCustom)
 router.register(r'system-activities', SystemActivityViewSet)
 
 
@@ -58,14 +59,21 @@ urlpatterns = [
     path('', api_root, name='api_root'),  # API root endpoint
     path('admin/', admin.site.urls, name='django_admin'),  # Interface d'administration Django
     # Suppression de la route 'django-admin/' pour éviter la confusion
-    path('api/', include(router.urls)),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
-    path('api/auth/login/', login_view, name='api_login'),
-    path('api/auth/logout/', api_logout, name='api_logout'),
 
-    # Inclure toutes les URLs de l'application Rh_app
+    # Inclure toutes les URLs de l'application Rh_app en premier
+    # pour que les routes spécifiques de Rh_app aient priorité
     path('', include('Rh_app.urls')),
+
+    # Routes API (sans préfixe api/)
+    path('', include(router.urls)),  # Routes API principales
+    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
+    path('auth/login/', login_view, name='api_login'),
+    path('auth/logout/', api_logout, name='api_logout'),
+
+    # Routes spécifiques pour les utilisateurs par ID
+    # Cette route est déjà définie par le routeur, mais nous la redéfinissons ici pour être sûr
+    path('users/<int:pk>/', UserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user-detail'),
 ]
 
 # Ajouter les URLs pour servir les fichiers média et statiques

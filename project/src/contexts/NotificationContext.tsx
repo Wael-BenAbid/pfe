@@ -9,6 +9,7 @@ interface NotificationContextType {
   markAsRead: (id: number) => void;
   markAllAsRead: () => void;
   removeNotification: (id: number) => void;
+  removeAllNotifications: () => void;
 }
 
 export const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -174,6 +175,26 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
+  const removeAllNotifications = async () => {
+    if (!token || !user) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/notifications/delete_all/`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        // Rafraîchir les notifications après suppression
+        fetchNotifications();
+      }
+    } catch (error) {
+      console.error('Failed to delete all notifications:', error);
+    }
+  };
+
   return (
     <NotificationContext.Provider
       value={{
@@ -181,7 +202,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         addNotification,
         markAsRead,
         markAllAsRead,
-        removeNotification, // Ajout ici
+        removeNotification,
+        removeAllNotifications,
       }}
     >
       {children}

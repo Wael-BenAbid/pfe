@@ -1,8 +1,8 @@
 import React from "react";
 
 interface TextAreaProps {
-  label: string;
-  name: string;
+  label?: string;
+  name?: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
@@ -10,6 +10,7 @@ interface TextAreaProps {
   disabled?: boolean;
   rows?: number;
   className?: string;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
 const TextArea: React.FC<TextAreaProps> = ({
@@ -22,6 +23,7 @@ const TextArea: React.FC<TextAreaProps> = ({
   disabled = false,
   rows = 3,
   className = "",
+  onKeyDown,
 }) => {
   return (
     <div className={className}>
@@ -37,6 +39,7 @@ const TextArea: React.FC<TextAreaProps> = ({
         name={name}
         value={value}
         onChange={onChange}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         required={required}
         disabled={disabled}

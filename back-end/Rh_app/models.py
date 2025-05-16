@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import RegexValidator
 from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -79,6 +80,9 @@ class Leave(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    attachment = models.FileField(upload_to='leave_attachments/', null=True, blank=True, help_text="Pièce jointe pour la demande de congé")
+    attachment_name = models.CharField(max_length=255, null=True, blank=True, help_text="Nom original du fichier")
+    attachment_type = models.CharField(max_length=50, null=True, blank=True, help_text="Type MIME du fichier attaché")
 
     def __str__(self):
         return f"{self.user.username} - {self.start_date} to {self.end_date}"
@@ -346,3 +350,43 @@ class SystemActivity(models.Model):
         if self.user:
             return f"{self.action} by {self.user.email} at {self.created_at}"
         return f"{self.action} at {self.created_at}"
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    content = models.TextField(blank=True, default="")  # Permettre un contenu vide
+    is_important = models.BooleanField(default=False)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    attachment = models.FileField(upload_to='message_attachments/', null=True, blank=True)
+    attachment_name = models.CharField(max_length=255, null=True, blank=True, help_text="Nom original du fichier")
+    attachment_type = models.CharField(max_length=50, null=True, blank=True, help_text="Type MIME du fichier attaché")
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Message from {self.sender} to {self.recipient} ({self.created_at.strftime('%Y-%m-%d %H:%M')})"
+
+    @property
+    def formatted_date(self):
+        """Retourne une date formatée pour l'affichage"""
+        now = timezone.now()
+        diff = now - self.created_at
+
+        if diff.days == 0:
+            if diff.seconds < 60:
+                return "À l'instant"
+            elif diff.seconds < 3600:
+                minutes = diff.seconds // 60
+                return f"Il y a {minutes} minute{'s' if minutes > 1 else ''}"
+            else:
+                hours = diff.seconds // 3600
+                return f"Il y a {hours} heure{'s' if hours > 1 else ''}"
+        elif diff.days == 1:
+            return "Hier"
+        elif diff.days < 7:
+            return f"Il y a {diff.days} jour{'s' if diff.days > 1 else ''}"
+        else:
+            return self.created_at.strftime("%d/%m/%Y")

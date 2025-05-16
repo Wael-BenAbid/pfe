@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.db.models import Q
 from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
@@ -15,12 +16,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification, SystemActivity
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification, SystemActivity, Message
 from .serializers import (
     UserSerializer, LeaveSerializer, MissionSerializer,
     WorkHoursSerializer, InternshipSerializer, JobApplicationSerializer,
     UserSessionSerializer, MeetingSerializer, NotificationSerializer,
-    SystemActivitySerializer
+    SystemActivitySerializer, MessageSerializer
 )
 from .views_mission import MissionViewSet
 from .activity_logger import log_login, log_logout
@@ -502,7 +503,7 @@ def get_user_info(request):
         'username': user.username,
         'email': user.email,
         'user_type': user.user_type,
-        'is_approved': user.is_approved,
+        'is_approved': user.approved,
     })
 # ViewSets
 class UserViewSet(viewsets.ModelViewSet):
@@ -570,8 +571,46 @@ class LeaveViewSet(viewsets.ModelViewSet):
             return Leave.objects.all()
         return Leave.objects.filter(user=user)
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Supprimer une demande de congé
+        Seuls les administrateurs peuvent supprimer les demandes de congé
+        """
+        leave = self.get_object()
+
+        # Vérifier que l'utilisateur est un administrateur
+        if request.user.user_type != 'admin' and not request.user.is_superuser:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Enregistrer l'activité de suppression
+        from .models import SystemActivity
+        SystemActivity.objects.create(
+            action_type="delete",
+            action="Leave Request Deleted",
+            user=request.user,
+            details=f"Demande de congé supprimée: {leave.start_date} - {leave.end_date} pour {leave.user.first_name} {leave.user.last_name}"
+        )
+
+        # Supprimer la demande de congé
+        return super().destroy(request, *args, **kwargs)
+
     def perform_create(self, serializer):
-        leave = serializer.save(user=self.request.user)
+        # Récupérer les fichiers joints s'ils existent
+        attachment = self.request.FILES.get('attachment', None)
+        attachment_name = None
+        attachment_type = None
+
+        if attachment:
+            attachment_name = attachment.name
+            attachment_type = attachment.content_type
+
+        # Créer la demande de congé
+        leave = serializer.save(
+            user=self.request.user,
+            attachment=attachment,
+            attachment_name=attachment_name,
+            attachment_type=attachment_type
+        )
 
         # Envoyer un email aux administrateurs pour les informer de la nouvelle demande de congé
         from .utils import send_email_notification, get_admin_emails
@@ -586,9 +625,13 @@ class LeaveViewSet(viewsets.ModelViewSet):
                 f"Date de début : {leave.start_date.strftime('%d/%m/%Y')}\n"
                 f"Date de fin : {leave.end_date.strftime('%d/%m/%Y')}\n"
                 f"Nombre de jours : {days}\n"
-                f"Raison : {leave.reason}\n\n"
-                f"Connectez-vous au système pour approuver ou rejeter cette demande."
+                f"Raison : {leave.reason}\n"
             )
+
+            if attachment:
+                message += f"\nUne pièce jointe a été fournie : {attachment_name}\n"
+
+            message += f"\nConnectez-vous au système pour approuver ou rejeter cette demande."
 
             send_email_notification(subject, message, admin_emails)
 
@@ -609,6 +652,44 @@ class LeaveViewSet(viewsets.ModelViewSet):
         leave.user.leave_balance -= days
         leave.user.save()
 
+        # Mettre à jour les notifications de demande de congé en attente
+        from .models import Notification, Leave
+
+        # Vérifier s'il reste des demandes en attente
+        pending_leaves_count = Leave.objects.filter(status='pending').count()
+
+        # Log pour débogage
+        print(f"Nombre de demandes de congé en attente après approbation: {pending_leaves_count}")
+
+        # Rechercher les notifications liées aux demandes de congé en attente
+        pending_notifications = Notification.objects.filter(
+            user=request.user,  # Notifications pour l'admin
+            title__contains='Demandes de congé en attente'
+        )
+
+        if pending_leaves_count == 0:
+            # S'il n'y a plus de demandes en attente, supprimer toutes les notifications
+            if pending_notifications.exists():
+                count = pending_notifications.count()
+                pending_notifications.delete()
+                print(f"Toutes les notifications de congé supprimées pour l'admin {request.user.username} ({count})")
+        else:
+            # S'il reste des demandes en attente, mettre à jour la notification existante
+            if pending_notifications.exists():
+                notification = pending_notifications.first()
+                notification.message = f"Vous avez {pending_leaves_count} demande(s) de congé en attente d'approbation"
+                notification.save()
+                print(f"Notification de congé mise à jour pour l'admin {request.user.username}: {pending_leaves_count} en attente")
+            else:
+                # Créer une nouvelle notification si nécessaire
+                Notification.objects.create(
+                    user=request.user,
+                    title='Demandes de congé en attente',
+                    message=f"Vous avez {pending_leaves_count} demande(s) de congé en attente d'approbation",
+                    type='info'
+                )
+                print(f"Nouvelle notification de congé créée pour l'admin {request.user.username}: {pending_leaves_count} en attente")
+
         # Envoyer un email à l'employé
         if leave.user and leave.user.email:
             from .utils import send_email_notification
@@ -621,6 +702,13 @@ class LeaveViewSet(viewsets.ModelViewSet):
                 f"Date de fin : {leave.end_date.strftime('%d/%m/%Y')}\n"
                 f"Nombre de jours : {days}\n"
                 f"Raison : {leave.reason}\n\n"
+            )
+
+            # Ajouter des informations sur la pièce jointe si elle existe
+            if leave.attachment:
+                message += f"Pièce jointe : {leave.attachment_name}\n\n"
+
+            message += (
                 f"Approuvé par : {request.user.first_name} {request.user.last_name}\n\n"
                 f"Connectez-vous au système pour plus de détails."
             )
@@ -641,6 +729,44 @@ class LeaveViewSet(viewsets.ModelViewSet):
         leave.status = 'rejected'
         leave.save()
 
+        # Mettre à jour les notifications de demande de congé en attente
+        from .models import Notification, Leave
+
+        # Vérifier s'il reste des demandes en attente
+        pending_leaves_count = Leave.objects.filter(status='pending').count()
+
+        # Log pour débogage
+        print(f"Nombre de demandes de congé en attente après rejet: {pending_leaves_count}")
+
+        # Rechercher les notifications liées aux demandes de congé en attente
+        pending_notifications = Notification.objects.filter(
+            user=request.user,  # Notifications pour l'admin
+            title__contains='Demandes de congé en attente'
+        )
+
+        if pending_leaves_count == 0:
+            # S'il n'y a plus de demandes en attente, supprimer toutes les notifications
+            if pending_notifications.exists():
+                count = pending_notifications.count()
+                pending_notifications.delete()
+                print(f"Toutes les notifications de congé supprimées pour l'admin {request.user.username} ({count})")
+        else:
+            # S'il reste des demandes en attente, mettre à jour la notification existante
+            if pending_notifications.exists():
+                notification = pending_notifications.first()
+                notification.message = f"Vous avez {pending_leaves_count} demande(s) de congé en attente d'approbation"
+                notification.save()
+                print(f"Notification de congé mise à jour pour l'admin {request.user.username}: {pending_leaves_count} en attente")
+            else:
+                # Créer une nouvelle notification si nécessaire
+                Notification.objects.create(
+                    user=request.user,
+                    title='Demandes de congé en attente',
+                    message=f"Vous avez {pending_leaves_count} demande(s) de congé en attente d'approbation",
+                    type='info'
+                )
+                print(f"Nouvelle notification de congé créée pour l'admin {request.user.username}: {pending_leaves_count} en attente")
+
         # Envoyer un email à l'employé
         if leave.user and leave.user.email:
             from .utils import send_email_notification
@@ -652,6 +778,13 @@ class LeaveViewSet(viewsets.ModelViewSet):
                 f"Date de début : {leave.start_date.strftime('%d/%m/%Y')}\n"
                 f"Date de fin : {leave.end_date.strftime('%d/%m/%Y')}\n"
                 f"Raison : {leave.reason}\n\n"
+            )
+
+            # Ajouter des informations sur la pièce jointe si elle existe
+            if leave.attachment:
+                message += f"Pièce jointe : {leave.attachment_name}\n\n"
+
+            message += (
                 f"Refusé par : {request.user.first_name} {request.user.last_name}\n\n"
                 f"Connectez-vous au système pour plus de détails ou pour soumettre une nouvelle demande."
             )
@@ -1235,6 +1368,35 @@ class InternshipViewSet(viewsets.ModelViewSet):
         if user.user_type == 'intern':
             return Internship.objects.filter(intern=user)
         return Internship.objects.filter(supervisor=user)
+
+    @action(detail=True, methods=['get'])
+    def intern_details(self, request, pk=None):
+        """
+        Récupérer les détails d'un stagiaire pour un stage spécifique
+        """
+        internship = self.get_object()
+
+        # Vérifier que l'utilisateur a le droit de voir ces détails
+        if (request.user != internship.supervisor and
+            request.user != internship.intern and
+            request.user.user_type != 'admin' and
+            not request.user.is_superuser):
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Récupérer les détails du stagiaire
+        intern = internship.intern
+
+        # Retourner les détails du stagiaire
+        return Response({
+            'id': intern.id,
+            'username': intern.username,
+            'email': intern.email,
+            'first_name': intern.first_name,
+            'last_name': intern.last_name,
+            'profile_image': intern.profile_image.url if intern.profile_image else None,
+            'github_profile': intern.github_profile,
+            'user_type': intern.user_type
+        })
 
     def perform_create(self, serializer):
         """
@@ -1832,3 +1994,6 @@ class SystemActivityViewSet(viewsets.ReadOnlyModelViewSet):
                 pass
 
         return queryset
+
+
+# La classe MessageViewSet a été déplacée vers views_message.py

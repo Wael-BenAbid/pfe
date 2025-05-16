@@ -21,6 +21,18 @@ class NotificationViewSet(viewsets.ModelViewSet):
             return Notification.objects.all()
         return Notification.objects.filter(user=user)
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Supprimer une notification
+        """
+        notification = self.get_object()
+        if notification.user != request.user and not request.user.is_superuser and request.user.user_type != 'admin':
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        notification.delete()
+        logger.info(f"Notification {notification.id} deleted by user {request.user.username}")
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=False, methods=['post'])
     def mark_all_as_read(self, request):
         """
@@ -44,11 +56,11 @@ class NotificationViewSet(viewsets.ModelViewSet):
         # Marquer la notification comme lue au lieu de la supprimer
         notification.read = True
         notification.save()
-        
+
         logger.info(f"Notification {notification.id} marked as read by user {request.user.username}")
-        
+
         return Response({'status': 'notification marked as read'})
-        
+
     @action(detail=False, methods=['delete'])
     def delete_all_read(self, request):
         """
@@ -58,3 +70,83 @@ class NotificationViewSet(viewsets.ModelViewSet):
         count = notifications.count()
         notifications.delete()
         return Response({'status': f'{count} read notifications deleted'})
+
+    @action(detail=False, methods=['delete'])
+    def delete_all(self, request):
+        """
+        Supprimer toutes les notifications de l'utilisateur
+        """
+        notifications = Notification.objects.filter(user=request.user)
+        count = notifications.count()
+        notifications.delete()
+        logger.info(f"Toutes les notifications ({count}) supprimées par l'utilisateur {request.user.username}")
+        return Response({'status': f'{count} notifications deleted'})
+
+    @action(detail=False, methods=['delete'])
+    def clean_leave_notifications(self, request):
+        """
+        Nettoyer les notifications de congé obsolètes pour l'administrateur
+        """
+        logger.info(f"Méthode clean_leave_notifications appelée par {request.user.username}")
+
+        if request.user.user_type != 'admin' and not request.user.is_superuser:
+            logger.warning(f"Permission refusée pour {request.user.username} (type: {request.user.user_type})")
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Récupérer toutes les demandes de congé en attente
+        from .models import Leave
+        # Vérifier explicitement que le statut est 'pending' et pas autre chose
+        pending_leaves = Leave.objects.filter(status='pending').count()
+
+        # Log pour débogage
+        logger.info(f"Nombre de demandes de congé en attente: {pending_leaves}")
+
+        # Vérifier s'il y a des notifications pour des demandes qui ne sont plus en attente
+        all_leave_notifications = Notification.objects.filter(
+            title__contains='Demandes de congé en attente'
+        )
+
+        if all_leave_notifications.exists():
+            logger.info(f"Nombre de notifications de congé trouvées: {all_leave_notifications.count()}")
+
+            # Si aucune demande en attente mais des notifications existent, les supprimer
+            if pending_leaves == 0:
+                count = all_leave_notifications.count()
+                all_leave_notifications.delete()
+                logger.info(f"Suppression de toutes les notifications de congé car aucune demande en attente")
+                return Response({'status': f'{count} leave notifications deleted'})
+
+        # Maintenant, gérer les notifications pour l'utilisateur actuel
+        user_notifications = Notification.objects.filter(
+            user=request.user,
+            title__contains='Demandes de congé en attente'
+        )
+
+        # Si aucune demande en attente, supprimer toutes les notifications de congé
+        if pending_leaves == 0:
+            count = user_notifications.count()
+            if count > 0:
+                user_notifications.delete()
+                logger.info(f"Nettoyage des notifications de congé obsolètes pour {request.user.username}: {count} supprimées")
+                return Response({'status': f'{count} leave notifications deleted'})
+            else:
+                logger.info(f"Aucune notification de congé à supprimer pour {request.user.username}")
+                return Response({'status': 'no notifications to delete'})
+        else:
+            # Il y a des demandes en attente, mettre à jour ou créer une notification
+            if user_notifications.exists():
+                notification = user_notifications.first()
+                notification.message = f"Vous avez {pending_leaves} demande(s) de congé en attente d'approbation"
+                notification.save()
+                logger.info(f"Mise à jour de la notification de congé pour {request.user.username}: {pending_leaves} en attente")
+                return Response({'status': 'leave notification updated'})
+            else:
+                # Créer une nouvelle notification
+                Notification.objects.create(
+                    user=request.user,
+                    title='Demandes de congé en attente',
+                    message=f"Vous avez {pending_leaves} demande(s) de congé en attente d'approbation",
+                    type='info'
+                )
+                logger.info(f"Création d'une notification de congé pour {request.user.username}: {pending_leaves} en attente")
+                return Response({'status': 'leave notification created'})

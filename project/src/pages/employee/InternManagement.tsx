@@ -76,11 +76,18 @@ const InternManagement: React.FC = () => {
         const internsWithDetails = await Promise.all(
           supervisedInterns.map(async (internship) => {
             try {
-              const userResponse = await fetch(`${API_BASE_URL}/users/${internship.intern}/`, {
+              // Utiliser l'endpoint /internships/<id>/intern_details/ pour récupérer les détails du stagiaire
+              const userResponse = await fetch(`${API_BASE_URL}/internships/${internship.id}/intern_details/`, {
                 headers: {
                   'Authorization': `Bearer ${token}`
                 }
               });
+
+              // Si l'utilisateur n'est pas trouvé, on arrête là
+              if (!userResponse.ok) {
+                console.log(`Détails du stagiaire pour l'internship ${internship.id} non trouvés (statut: ${userResponse.status})`);
+                return internship;
+              }
 
               if (userResponse.ok) {
                 const userData = await userResponse.json();
@@ -269,10 +276,12 @@ const InternManagement: React.FC = () => {
                       <div className="flex-shrink-0 h-12 w-12 rounded-full overflow-hidden">
                         {intern.intern_details?.profile_image ? (
                           <img
-                            src={intern.intern_details.profile_image.startsWith('http')
+                            src={intern.intern_details?.profile_image?.startsWith('http')
                               ? intern.intern_details.profile_image
-                              : `${API_BASE_URL}/media/${intern.intern_details.profile_image}`}
-                            alt={`${intern.intern_details.first_name} ${intern.intern_details.last_name}`}
+                              : intern.intern_details?.profile_image
+                                ? `${API_BASE_URL}${intern.intern_details.profile_image}`
+                                : ''}
+                            alt={`${intern.intern_details?.first_name || ''} ${intern.intern_details?.last_name || ''}`}
                             className="h-full w-full object-cover"
                             onError={(e) => {
                               // Fallback en cas d'erreur de chargement de l'image
@@ -281,15 +290,15 @@ const InternManagement: React.FC = () => {
                               e.currentTarget.parentElement!.classList.add('bg-blue-100', 'flex', 'items-center', 'justify-center');
                               const span = document.createElement('span');
                               span.className = 'text-blue-800 font-semibold';
-                              span.textContent = `${intern.intern_details.first_name.charAt(0)}${intern.intern_details.last_name.charAt(0)}`;
+                              span.textContent = `${intern.intern_details?.first_name?.charAt(0) || ''}${intern.intern_details?.last_name?.charAt(0) || ''}`;
                               e.currentTarget.parentElement!.appendChild(span);
                             }}
                           />
                         ) : (
                           <div className="h-full w-full bg-blue-100 flex items-center justify-center">
                             <span className="text-blue-800 font-semibold">
-                              {intern.intern_details ? intern.intern_details.first_name.charAt(0) : ''}
-                              {intern.intern_details ? intern.intern_details.last_name.charAt(0) : ''}
+                              {intern.intern_details?.first_name?.charAt(0) || ''}
+                              {intern.intern_details?.last_name?.charAt(0) || ''}
                             </span>
                           </div>
                         )}
@@ -297,11 +306,11 @@ const InternManagement: React.FC = () => {
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
                           {intern.intern_details
-                            ? `${intern.intern_details.first_name} ${intern.intern_details.last_name}`
+                            ? `${intern.intern_details.first_name || ''} ${intern.intern_details.last_name || ''}`
                             : `Stagiaire #${intern.intern}`}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {intern.intern_details?.email || intern.title}
+                          {intern.intern_details?.email || intern.title || ''}
                         </div>
                         <div className="text-xs text-gray-500">
                           {new Date(intern.start_date).toLocaleDateString()} - {new Date(intern.end_date).toLocaleDateString()}
@@ -350,7 +359,7 @@ const InternManagement: React.FC = () => {
               <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-medium text-gray-900">
-                    Nouveau Rendez-vous avec {selectedIntern.intern_details?.first_name} {selectedIntern.intern_details?.last_name}
+                    Nouveau Rendez-vous avec {selectedIntern.intern_details?.first_name || ''} {selectedIntern.intern_details?.last_name || ''}
                   </h3>
                   <button
                     type="button"

@@ -63,7 +63,7 @@ export const fetchAndUpdateMissions = async (token: string): Promise<Mission[]> 
   try {
     // Appeler d'abord l'endpoint pour vérifier les missions en retard
     try {
-      await fetch(`${API_BASE_URL}/api/missions/check_late_missions/`, {
+      await fetch(`${API_BASE_URL}/missions/check_late_missions/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -77,7 +77,7 @@ export const fetchAndUpdateMissions = async (token: string): Promise<Mission[]> 
     }
 
     // Récupérer les missions
-    const response = await fetch(`${API_BASE_URL}/api/missions/`, {
+    const response = await fetch(`${API_BASE_URL}/missions/`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
