@@ -16,6 +16,7 @@ import Logo from "../../components/ui/Logo";
 import InternMissions from "./InternMissions";
 import InternMeetings from "./InternMeetings";
 import NotificationsPage from "./NotificationsPage";
+import InternNotifications from "./InternNotifications";
 import InternProfile from "./InternProfile";
 import InternChat from "./InternChat";
 import CalendarView from "../common/CalendarView";
@@ -76,6 +77,7 @@ const InternDashboard: React.FC = () => {
       <Route path="profile" element={<InternProfile />} />
       <Route path="calendar" element={<CalendarView />} />
       <Route path="chat" element={<InternChat />} />
+      <Route path="notifications" element={<InternNotifications />} />
       <Route path="*" element={
         <div className="min-h-screen bg-gray-50">
           <header className="bg-white shadow">

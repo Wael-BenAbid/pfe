@@ -3,7 +3,8 @@ import { API_BASE_URL } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { CalendarIcon, CheckIcon, XIcon } from "lucide-react";
+import { CalendarIcon, CheckIcon, XIcon, Trash2Icon } from "lucide-react";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 interface User {
   id: number;
@@ -32,11 +33,16 @@ const LeaveManagement: React.FC = () => {
     "all" | "pending" | "approved" | "rejected"
   >("all");
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState<boolean>(false);
+  const [deleteRequestId, setDeleteRequestId] = useState<number | null>(null);
 
   useEffect(() => {
     if (token) {
       console.log("Fetching leave requests with filter:", filter);
       fetchLeaveRequests();
+
+      // Nettoyer les notifications de congé obsolètes
+      cleanLeaveNotifications();
     }
   }, [token, filter]);
 
@@ -45,12 +51,53 @@ const LeaveManagement: React.FC = () => {
     console.log("Filter changed to:", filter);
   }, [filter]);
 
+  // Fonction pour nettoyer les notifications de congé obsolètes
+  const cleanLeaveNotifications = async () => {
+    try {
+      console.log('Tentative de nettoyage des notifications de congé...');
+
+      // Récupérer toutes les notifications
+      const notificationsResponse = await fetch(`${API_BASE_URL}/notifications/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (notificationsResponse.ok) {
+        const notifications = await notificationsResponse.json();
+
+        // Filtrer les notifications de congé
+        const leaveNotifications = notifications.filter(
+          (notification) => notification.title && notification.title.includes('Demandes de congé en attente')
+        );
+
+        console.log(`Trouvé ${leaveNotifications.length} notifications de congé à supprimer`);
+
+        // Supprimer chaque notification individuellement
+        for (const notification of leaveNotifications) {
+          await fetch(`${API_BASE_URL}/notifications/${notification.id}/`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+        }
+
+        console.log('Notifications de congé nettoyées avec succès');
+      } else {
+        console.error('Erreur lors de la récupération des notifications:', notificationsResponse.status, notificationsResponse.statusText);
+      }
+    } catch (error) {
+      console.error('Erreur lors du nettoyage des notifications de congé:', error);
+    }
+  };
+
   const fetchLeaveRequests = async () => {
     setLoading(true);
     try {
       // Récupérer toutes les demandes de congés, puis filtrer côté client
       // pour éviter les problèmes avec les filtres côté serveur
-      const url = `${API_BASE_URL}/api/leaves/`;
+      const url = `${API_BASE_URL}/leaves/`;
 
       const response = await fetch(url, {
         headers: {
@@ -66,7 +113,7 @@ const LeaveManagement: React.FC = () => {
           data.map(async (request: LeaveRequest) => {
             try {
               const userResponse = await fetch(
-                `${API_BASE_URL}/api/users/${request.user}/`,
+                `${API_BASE_URL}/users/${request.user}/`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -115,7 +162,7 @@ const LeaveManagement: React.FC = () => {
     setProcessingId(id);
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/leaves/${id}/approve_leave/`,
+        `${API_BASE_URL}/leaves/${id}/approve_leave/`,
         {
           method: "POST",
           headers: {
@@ -127,6 +174,8 @@ const LeaveManagement: React.FC = () => {
 
       if (response.ok) {
         await fetchLeaveRequests();
+        // Nettoyer les notifications après approbation
+        await cleanLeaveNotifications();
       } else {
         console.warn("Failed to approve request");
       }
@@ -141,7 +190,7 @@ const LeaveManagement: React.FC = () => {
     setProcessingId(id);
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/leaves/${id}/reject_leave/`,
+        `${API_BASE_URL}/leaves/${id}/reject_leave/`,
         {
           method: "POST",
           headers: {
@@ -153,6 +202,8 @@ const LeaveManagement: React.FC = () => {
 
       if (response.ok) {
         await fetchLeaveRequests();
+        // Nettoyer les notifications après rejet
+        await cleanLeaveNotifications();
       } else {
         console.warn("Failed to reject request");
       }
@@ -160,6 +211,40 @@ const LeaveManagement: React.FC = () => {
       console.error("Error rejecting leave request:", error);
     } finally {
       setProcessingId(null);
+    }
+  };
+
+  const handleDeleteRequest = (id: number) => {
+    setDeleteRequestId(id);
+    setConfirmDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteRequestId) return;
+
+    setProcessingId(deleteRequestId);
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/leaves/${deleteRequestId}/`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        await fetchLeaveRequests();
+      } else {
+        console.warn("Failed to delete request:", response.status);
+      }
+    } catch (error) {
+      console.error("Error deleting leave request:", error);
+    } finally {
+      setProcessingId(null);
+      setConfirmDeleteModal(false);
+      setDeleteRequestId(null);
     }
   };
 
@@ -202,6 +287,18 @@ const LeaveManagement: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6">
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={confirmDeleteModal}
+        onClose={() => setConfirmDeleteModal(false)}
+        onConfirm={confirmDelete}
+        title="Confirmation de suppression"
+        message="Êtes-vous sûr de vouloir supprimer cette demande de congé ?"
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        isProcessing={processingId === deleteRequestId}
+      />
+
       <h1 className="text-2xl font-semibold text-gray-900 mb-6">
         Leave Management
       </h1>
@@ -342,7 +439,7 @@ const LeaveManagement: React.FC = () => {
                       {getStatusBadge(request.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      {request.status === "pending" && (
+                      {request.status === "pending" ? (
                         <div className="flex justify-end space-x-2">
                           <Button
                             variant="success"
@@ -361,6 +458,18 @@ const LeaveManagement: React.FC = () => {
                             disabled={processingId === request.id}
                           >
                             Reject
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            icon={<Trash2Icon className="h-4 w-4" />}
+                            onClick={() => handleDeleteRequest(request.id)}
+                            disabled={processingId === request.id}
+                          >
+                            Delete
                           </Button>
                         </div>
                       )}

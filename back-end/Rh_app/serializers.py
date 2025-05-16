@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification, SystemActivity
+from .models import User, Leave, Mission, WorkHours, Internship, JobApplication, UserSession, Meeting, Notification, SystemActivity, Message
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -30,6 +30,28 @@ class LeaveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Leave
         fields = '__all__'
+
+    def validate_attachment(self, value):
+        """
+        Valider que le fichier attaché est un PDF, une image ou un document Word
+        """
+        if value:
+            # Obtenir l'extension du fichier
+            file_extension = value.name.split('.')[-1].lower()
+
+            # Liste des extensions autorisées
+            allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx']
+
+            if file_extension not in allowed_extensions:
+                raise serializers.ValidationError(
+                    f"Le type de fichier n'est pas autorisé. Les types autorisés sont : {', '.join(allowed_extensions)}"
+                )
+
+            # Limiter la taille du fichier à 5 Mo
+            if value.size > 5 * 1024 * 1024:  # 5 Mo en octets
+                raise serializers.ValidationError("La taille du fichier ne doit pas dépasser 5 Mo.")
+
+        return value
 
 class MissionSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.ReadOnlyField(source='assigned_to.username')
@@ -215,3 +237,118 @@ class SystemActivitySerializer(serializers.ModelSerializer):
 
     def get_formatted_date(self, obj):
         return obj.created_at.strftime("%d/%m/%Y %H:%M")
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.SerializerMethodField()
+    sender_type = serializers.SerializerMethodField()
+    recipient_name = serializers.SerializerMethodField()
+    recipient_type = serializers.SerializerMethodField()
+    formatted_date = serializers.ReadOnlyField()
+    content = serializers.CharField(allow_blank=True)  # Permettre un contenu vide
+
+    class Meta:
+        model = Message
+        fields = ['id', 'sender', 'sender_name', 'sender_type', 'recipient', 'recipient_name',
+                  'recipient_type', 'content', 'is_important', 'is_read', 'created_at', 'formatted_date',
+                  'attachment', 'attachment_name', 'attachment_type']
+        read_only_fields = ['sender', 'created_at', 'formatted_date']
+
+    def validate(self, data):
+        """
+        Valider que l'utilisateur peut envoyer un message au destinataire selon les règles :
+        - Admin peut contacter tout le monde
+        - Employé peut contacter admin, autres employés et ses stagiaires
+        - Stagiaire peut contacter admin et son employé superviseur
+        """
+        sender = self.context['request'].user
+        recipient = data.get('recipient')
+
+        if not recipient:
+            raise serializers.ValidationError("Le destinataire est requis.")
+
+        # Vérifier si une pièce jointe est présente dans la requête
+        request = self.context.get('request')
+        has_attachment = request and request.FILES and 'attachment' in request.FILES
+
+        # Si le contenu est vide et qu'il n'y a pas de pièce jointe, lever une erreur
+        if not data.get('content', '').strip() and not has_attachment:
+            raise serializers.ValidationError("Le message doit contenir du texte ou une pièce jointe.")
+
+        # Admin peut contacter tout le monde
+        if sender.user_type == 'admin':
+            return data
+
+        # Employé peut contacter admin, autres employés et ses stagiaires
+        elif sender.user_type == 'employee':
+            # Vérifier si le destinataire est un admin
+            if recipient.user_type == 'admin':
+                return data
+
+            # Vérifier si le destinataire est un autre employé
+            if recipient.user_type == 'employee':
+                return data
+
+            # Vérifier si le destinataire est un de ses stagiaires
+            if recipient.user_type == 'intern':
+                # Vérifier si l'employé est le superviseur du stagiaire
+                internship = Internship.objects.filter(supervisor=sender, intern=recipient).first()
+                if internship:
+                    return data
+                else:
+                    raise serializers.ValidationError("Vous ne pouvez pas envoyer de message à ce stagiaire car vous n'êtes pas son superviseur.")
+
+            raise serializers.ValidationError("Vous ne pouvez pas envoyer de message à ce destinataire.")
+
+        # Stagiaire peut contacter admin et son employé superviseur
+        elif sender.user_type == 'intern':
+            # Vérifier si le destinataire est un admin
+            if recipient.user_type == 'admin':
+                return data
+
+            # Vérifier si le destinataire est son employé superviseur
+            if recipient.user_type == 'employee':
+                # Vérifier si l'employé est le superviseur du stagiaire
+                internship = Internship.objects.filter(supervisor=recipient, intern=sender).first()
+                if internship:
+                    return data
+                else:
+                    raise serializers.ValidationError("Vous ne pouvez pas envoyer de message à cet employé car il n'est pas votre superviseur.")
+
+            raise serializers.ValidationError("Vous ne pouvez pas envoyer de message à ce destinataire.")
+
+        return data
+
+    def get_sender_name(self, obj):
+        return f"{obj.sender.first_name} {obj.sender.last_name}"
+
+    def get_sender_type(self, obj):
+        return obj.sender.user_type
+
+    def get_recipient_name(self, obj):
+        return f"{obj.recipient.first_name} {obj.recipient.last_name}"
+
+    def get_recipient_type(self, obj):
+        return obj.recipient.user_type
+
+    def validate_attachment(self, value):
+        """
+        Valider que le fichier attaché est un PDF, une image ou un document Word
+        """
+        if value:
+            # Obtenir l'extension du fichier
+            file_extension = value.name.split('.')[-1].lower()
+
+            # Liste des extensions autorisées
+            allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'doc', 'docx']
+
+            if file_extension not in allowed_extensions:
+                raise serializers.ValidationError(
+                    f"Le type de fichier n'est pas autorisé. Les types autorisés sont : {', '.join(allowed_extensions)}"
+                )
+
+            # Limiter la taille du fichier à 5 Mo
+            if value.size > 5 * 1024 * 1024:  # 5 Mo en octets
+                raise serializers.ValidationError("La taille du fichier ne doit pas dépasser 5 Mo.")
+
+        return value

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNotifications } from "../../hooks/useNotifications";
 import Button from "../../components/ui/Button";
+import AlertModal from "../../components/ui/AlertModal";
 import { API_URL } from "../../config/constants";
 import {
   CheckCircleIcon,
@@ -34,6 +35,17 @@ const InternMissions: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
 
   // Function to fetch missions
   const fetchMissions = async () => {
@@ -129,18 +141,38 @@ const InternMissions: React.FC = () => {
   const getDeadlineStatus = (deadline: string, status?: string) => {
     const deadlineDate = new Date(deadline);
 
-    // Si le statut est explicitement "late", afficher "Overdue" en rouge
+    // Si le statut est explicitement "late", afficher "Overdue" en rouge avec une icône d'alerte
     if (status === 'late') {
-      return <span className="text-red-600 font-medium">Overdue</span>;
+      return (
+        <span className="text-red-600 font-medium flex items-center">
+          <AlertCircleIcon className="h-4 w-4 mr-1" />
+          Overdue
+        </span>
+      );
     }
 
     if (isPast(deadlineDate) && !isToday(deadlineDate)) {
-      return <span className="text-red-600 font-medium">Overdue</span>;
+      return (
+        <span className="text-red-600 font-medium flex items-center">
+          <AlertCircleIcon className="h-4 w-4 mr-1" />
+          Overdue
+        </span>
+      );
     }
     if (isToday(deadlineDate)) {
-      return <span className="text-orange-600 font-medium">Due today</span>;
+      return (
+        <span className="text-orange-600 font-medium flex items-center">
+          <ClockIcon className="h-4 w-4 mr-1" />
+          Due today
+        </span>
+      );
     }
-    return <span className="text-green-600 font-medium">Upcoming</span>;
+    return (
+      <span className="text-green-600 font-medium flex items-center">
+        <ClockIcon className="h-4 w-4 mr-1" />
+        Upcoming
+      </span>
+    );
   };
 
   // Handle mission completion
@@ -171,11 +203,21 @@ const InternMissions: React.FC = () => {
       }
 
       // Show success message
-      alert('Mission marked as complete!');
+      setAlertModal({
+        isOpen: true,
+        title: 'Succès',
+        message: 'Mission marquée comme terminée !',
+        type: 'success'
+      });
 
     } catch (error) {
       console.error("Error completing mission:", error);
-      alert('Failed to mark mission as complete. Please try again.');
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur',
+        message: 'Impossible de marquer la mission comme terminée. Veuillez réessayer.',
+        type: 'error'
+      });
     }
   };
 
@@ -209,6 +251,14 @@ const InternMissions: React.FC = () => {
 
   return (
     <div>
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-medium text-gray-900">My Missions</h2>
         <div className="flex space-x-2">
@@ -255,7 +305,9 @@ const InternMissions: React.FC = () => {
           {filteredMissions.map((mission) => (
             <div
               key={mission.id}
-              className="bg-white border rounded-lg p-4 hover:shadow-md transition-shadow"
+              className={`bg-white border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                mission.status === 'late' ? 'border-red-500 bg-red-50' : ''
+              }`}
             >
               <div className="flex items-start justify-between">
                 <div>

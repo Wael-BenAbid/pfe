@@ -38,6 +38,9 @@ spec:
         volumeMounts:
         - name: init-script
           mountPath: /scripts
+        - name: add-message-model
+          mountPath: /scripts/add_message_model.sh
+          subPath: add_message_model.sh
         - name: admin-config
           mountPath: /app/SystemeRH_v2/admin_settings.py
           subPath: admin_settings.py
@@ -48,6 +51,21 @@ spec:
           mountPath: /app/media_v2
         - name: static-storage
           mountPath: /app/static
+        - name: get-user-info-fix
+          mountPath: /app/get_user_info_fix.py
+          subPath: get_user_info_fix.py
+        - name: message-api-fix
+          mountPath: /app/message_api_fix.py
+          subPath: message_api_fix.py
+        - name: message-model-fix
+          mountPath: /app/message_model.py
+          subPath: message_model.py
+        - name: message-serializer-fix
+          mountPath: /app/message_serializer.py
+          subPath: message_serializer.py
+        - name: models-patch
+          mountPath: /app/models_patch.py
+          subPath: models_patch.py
         env:
         - name: DEBUG
           valueFrom:
@@ -110,6 +128,10 @@ spec:
         configMap:
           name: backend-init-script
           defaultMode: 0755
+      - name: add-message-model
+        configMap:
+          name: add-message-model
+          defaultMode: 0755
       - name: admin-config
         configMap:
           name: django-admin-config
@@ -121,4 +143,19 @@ spec:
           claimName: media-pvc
       - name: static-storage
         emptyDir: {}
+      - name: get-user-info-fix
+        configMap:
+          name: get-user-info-fix
+      - name: message-api-fix
+        configMap:
+          name: message-api-fix
+      - name: message-model-fix
+        configMap:
+          name: message-model-fix
+      - name: message-serializer-fix
+        configMap:
+          name: message-serializer-fix
+      - name: models-patch
+        configMap:
+          name: models-patch
       restartPolicy: Always

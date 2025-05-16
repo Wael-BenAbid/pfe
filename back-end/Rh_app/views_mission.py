@@ -1,5 +1,5 @@
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
@@ -357,3 +357,76 @@ class MissionViewSet(viewsets.ModelViewSet):
             'new_leave_balance': user.leave_balance,
             'message': f"Pénalité de {penalty_days} jour(s) appliquée avec succès"
         })
+
+# Fonctions de vue pour les endpoints spécifiques
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def mission_supervised(request):
+    """
+    Récupérer les missions supervisées par l'utilisateur
+    """
+    viewset = MissionViewSet()
+    viewset.request = request
+    return viewset.supervised(request)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def mission_assigned(request):
+    """
+    Récupérer les missions assignées à l'utilisateur
+    """
+    viewset = MissionViewSet()
+    viewset.request = request
+    return viewset.assigned(request)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def mission_stats(request):
+    """
+    Récupérer les statistiques des missions pour l'utilisateur
+    """
+    viewset = MissionViewSet()
+    viewset.request = request
+    return viewset.stats(request)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def mission_check_late(request):
+    """
+    Vérifier les missions en retard et mettre à jour leur statut
+    """
+    viewset = MissionViewSet()
+    viewset.request = request
+    return viewset.check_late_missions(request)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def mission_check_upcoming(request):
+    """
+    Vérifier les missions dont la date limite approche et envoyer des notifications
+    """
+    viewset = MissionViewSet()
+    viewset.request = request
+    return viewset.check_upcoming_deadlines(request)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def mission_complete(request, pk):
+    """
+    Marquer une mission comme complétée
+    """
+    viewset = MissionViewSet()
+    viewset.request = request
+    viewset.kwargs = {'pk': pk}
+    return viewset.complete_mission(request)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def mission_apply_penalty(request, pk):
+    """
+    Appliquer une pénalité pour une mission en retard
+    """
+    viewset = MissionViewSet()
+    viewset.request = request
+    viewset.kwargs = {'pk': pk}
+    return viewset.apply_penalty(request)

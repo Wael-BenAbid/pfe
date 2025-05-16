@@ -45,6 +45,15 @@ spec:
             port:
               number: 8000
 
+      # Backend API endpoints (avec préfixe /api/ pour compatibilité)
+      - path: /api(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: rh-backend
+            port:
+              number: 8000
+
       # Media files
       - path: /media(/|$)(.*)
         pathType: Prefix

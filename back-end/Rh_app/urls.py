@@ -11,7 +11,6 @@ from .views import (
     JobApplicationViewSet,
     UserSessionViewSet,
     MeetingViewSet,
-    NotificationViewSet,
     SystemActivityViewSet,
     api_logout,
     api_signup,
@@ -21,7 +20,9 @@ from .views import (
     forgot_password,
     reset_password,
 )
-from .views_mission import MissionViewSet
+from .views_message import MessageViewSet
+from .views_notification import NotificationViewSet as NotificationViewSetCustom
+from .views_mission import MissionViewSet, mission_supervised, mission_assigned, mission_stats, mission_check_late, mission_check_upcoming, mission_complete, mission_apply_penalty
 # Les méthodes sont directement définies dans views_mission.py
 
 router = DefaultRouter()
@@ -33,8 +34,9 @@ router.register(r'internships', InternshipViewSet)
 router.register(r'job-applications', JobApplicationViewSet)
 router.register(r'user-sessions', UserSessionViewSet)
 router.register(r'meetings', MeetingViewSet)
-router.register(r'notifications', NotificationViewSet)
+router.register(r'notifications', NotificationViewSetCustom)
 router.register(r'system-activities', SystemActivityViewSet)
+router.register(r'messages', MessageViewSet)
 
 # Endpoints pour les missions
 mission_list = MissionViewSet.as_view({
@@ -56,14 +58,25 @@ mission_complete = MissionViewSet.as_view({'post': 'complete_mission'})
 mission_apply_penalty = MissionViewSet.as_view({'post': 'apply_penalty'})
 
 urlpatterns = [
+    # Endpoints pour les missions (placés avant le router pour éviter les conflits)
+    path('missions/supervised/', mission_supervised, name='missions-supervised'),
+    path('missions/assigned/', mission_assigned, name='missions-assigned'),
+    path('missions/stats/', mission_stats, name='missions-stats'),
+    path('missions/check_late_missions/', mission_check_late, name='missions-check-late'),
+    path('missions/check_upcoming_deadlines/', mission_check_upcoming, name='missions-check-upcoming'),
+    path('missions/<int:pk>/complete_mission/', mission_complete, name='mission-complete'),
+    path('missions/<int:pk>/apply_penalty/', mission_apply_penalty, name='mission-apply-penalty'),
+
+    # Inclure les routes du routeur après les routes spécifiques
     path('', include(router.urls)),
+
     # Custom user management endpoints
     path('users/request-access/', UserViewSet.as_view({'post': 'request_access'}), name='user-request-access'),
     path('users/<int:pk>/approve/', UserViewSet.as_view({'post': 'approve_user'}), name='user-approve'),
     path('users/<int:pk>/reject/', UserViewSet.as_view({'post': 'reject_user'}), name='user-reject'),
     # User endpoints
     path('users/me/', UserViewSet.as_view({'get': 'me'}), name='user-me'),
-    path('api/get-user-info/', get_user_info, name='get_user_info'),
+    path('get-user-info/', get_user_info, name='get_user_info'),
     # Authentication endpoints
     path('auth/signup/', api_signup, name='api_signup'),
     path('auth/login/', login_view, name='login'),
@@ -74,35 +87,11 @@ urlpatterns = [
     path('auth/forgot-password/', forgot_password, name='forgot_password'),
     path('auth/reset-password/', reset_password, name='reset_password'),
 
-    # Endpoints d'authentification API
-    path('api/auth/signup/', api_signup, name='api_signup_v2'),
-    path('api/auth/login/', login_view, name='login_v2'),
-    path('api/auth/logout/', api_logout, name='api_logout_v2'),
-    path('api/auth/token/obtain/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair_v2'),
-    path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify_v2'),
-    path('api/auth/refresh-token/', refresh_token, name='token_refresh_v2'),
-    path('api/auth/forgot-password/', forgot_password, name='forgot_password_v2'),
-    path('api/auth/reset-password/', reset_password, name='reset_password_v2'),
+    # Tous les endpoints d'authentification sont maintenant accessibles sans préfixe /api/
 
-    # Endpoint pour appliquer une pénalité
-    path('missions/<int:pk>/apply_penalty/', mission_apply_penalty, name='apply_penalty'),
+    # Endpoints pour nettoyer les notifications de congé
+    path('notifications/clean-leave-notifications/', NotificationViewSetCustom.as_view({'delete': 'clean_leave_notifications'}), name='clean-leave-notifications'),
 
-    # Endpoints pour les missions
-    path('missions/supervised/', mission_supervised, name='missions-supervised'),
-    path('missions/assigned/', mission_assigned, name='missions-assigned'),
-    path('missions/stats/', mission_stats, name='missions-stats'),
-    path('missions/check_late_missions/', mission_check_late, name='missions-check-late'),
-    path('missions/check_upcoming_deadlines/', mission_check_upcoming, name='missions-check-upcoming'),
-    path('missions/<int:pk>/complete_mission/', mission_complete, name='mission-complete'),
-
-    # Endpoints API pour les missions
-    path('api/missions/supervised/', mission_supervised, name='api-missions-supervised'),
-    path('api/missions/assigned/', mission_assigned, name='api-missions-assigned'),
-    path('api/missions/stats/', mission_stats, name='api-missions-stats'),
-    path('api/missions/check_late_missions/', mission_check_late, name='api-missions-check-late'),
-    path('api/missions/check_upcoming_deadlines/', mission_check_upcoming, name='api-missions-check-upcoming'),
-    path('api/missions/<int:pk>/complete_mission/', mission_complete, name='api-mission-complete'),
-    path('api/missions/<int:pk>/apply_penalty/', mission_apply_penalty, name='api-mission-apply-penalty'),
 ]
 
 # Le patch n'est plus nécessaire car les méthodes sont directement définies dans views_mission.py

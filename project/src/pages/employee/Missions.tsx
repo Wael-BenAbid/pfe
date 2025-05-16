@@ -11,6 +11,7 @@ interface Mission {
   deadline: string;
   status: "pending" | "in_progress" | "completed";
   supervisor_name: string;
+  supervisor: number;
   created_at: string;
 }
 
@@ -55,6 +56,7 @@ const Missions: React.FC = () => {
         // Continuer même si cette requête échoue
       }
 
+      // Récupérer toutes les missions
       const response = await fetch(`${API_BASE_URL}/missions/`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -63,7 +65,26 @@ const Missions: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setMissions(data);
+        console.log('Toutes les missions récupérées:', data);
+        console.log('Nombre total de missions:', data.length);
+
+        // Afficher les superviseurs uniques pour le débogage
+        const supervisors = [...new Set(data.map((mission: Mission) => mission.supervisor_name))];
+        console.log('Superviseurs uniques:', supervisors);
+
+        // Filtrer pour ne garder que les missions où le superviseur est "wael" (l'admin)
+        const adminMissions = data.filter(
+          (mission: Mission) => {
+            // Vérifier si le superviseur contient "wael" (insensible à la casse)
+            const isAdmin = mission.supervisor_name.toLowerCase().includes('wael');
+            console.log(`Mission ${mission.id} - Superviseur "${mission.supervisor_name}" - Est admin: ${isAdmin}`);
+            return isAdmin;
+          }
+        );
+
+        console.log('Nombre de missions filtrées (admin uniquement):', adminMissions.length);
+        console.log('Missions filtrées (admin uniquement):', adminMissions);
+        setMissions(adminMissions);
       }
     } catch (error) {
       console.error("Error fetching missions:", error);
@@ -135,12 +156,17 @@ const Missions: React.FC = () => {
       ) : (
         <div className="p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-6">
-            My Missions
+            Missions assignées par l'administrateur
           </h2>
 
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <ul className="divide-y divide-gray-200">
-              {missions.map((mission) => (
+          {missions.length === 0 ? (
+            <div className="bg-white shadow overflow-hidden sm:rounded-md p-6 text-center">
+              <p className="text-gray-500">Aucune mission assignée par l'administrateur n'a été trouvée.</p>
+            </div>
+          ) : (
+            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+              <ul className="divide-y divide-gray-200">
+                {missions.map((mission) => (
                 <li key={mission.id} className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -185,6 +211,7 @@ const Missions: React.FC = () => {
               ))}
             </ul>
           </div>
+          )}
         </div>
       )}
     </>

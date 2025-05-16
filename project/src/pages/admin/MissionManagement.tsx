@@ -54,7 +54,7 @@ const MissionManagement: React.FC = () => {
 
     try {
       // Appeler l'endpoint pour vérifier et mettre à jour les missions en retard dans le backend
-      await fetch(`${API_BASE_URL}/api/missions/check_late_missions/`, {
+      await fetch(`${API_BASE_URL}/missions/check_late_missions/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -65,7 +65,7 @@ const MissionManagement: React.FC = () => {
         // Continuer même si cette requête échoue
       });
 
-      const response = await fetch(`${API_BASE_URL}/api/missions/`, {
+      const response = await fetch(`${API_BASE_URL}/missions/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -88,7 +88,7 @@ const MissionManagement: React.FC = () => {
             const userId = mission.assigned_to || mission.user; // Utiliser assigned_to ou user (pour la compatibilité)
             if (userId) {
               const userResponse = await fetch(
-                `${API_BASE_URL}/api/users/${userId}/`,
+                `${API_BASE_URL}/users/${userId}/`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -137,7 +137,7 @@ const MissionManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/users/?user_type=employee`,
+        `${API_BASE_URL}/users/?user_type=employee`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -161,7 +161,7 @@ const MissionManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/users/?user_type=intern`,
+        `${API_BASE_URL}/users/?user_type=intern`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -210,7 +210,7 @@ const MissionManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/missions/`, {
+      const response = await fetch(`${API_BASE_URL}/missions/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -281,7 +281,7 @@ const MissionManagement: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/missions/${editingMission.id}/`, {
+      const response = await fetch(`${API_BASE_URL}/missions/${editingMission.id}/`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -325,7 +325,7 @@ const MissionManagement: React.FC = () => {
     if (!token || !deletingMissionId) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/missions/${deletingMissionId}/`, {
+      const response = await fetch(`${API_BASE_URL}/missions/${deletingMissionId}/`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -365,7 +365,7 @@ const MissionManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/missions/${completingMission.id}/complete_mission/`,
+        `${API_BASE_URL}/missions/${completingMission.id}/complete_mission/`,
         {
           method: "POST",
           headers: {
@@ -416,7 +416,7 @@ const MissionManagement: React.FC = () => {
     // S'assurer que la mission est marquée comme "late" dans le backend
     try {
       // Mettre à jour le statut de la mission dans le backend
-      const updateResponse = await fetch(`${API_BASE_URL}/api/missions/${id}/`, {
+      const updateResponse = await fetch(`${API_BASE_URL}/missions/${id}/`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -450,7 +450,7 @@ const MissionManagement: React.FC = () => {
 
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/missions/${penaltyMission.id}/apply_penalty/`,
+        `${API_BASE_URL}/missions/${penaltyMission.id}/apply_penalty/`,
         {
           method: "POST",
           headers: {

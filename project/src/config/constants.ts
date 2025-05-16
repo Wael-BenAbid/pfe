@@ -1,15 +1,15 @@
 // API configuration
-// Pour éviter les doublons de préfixe 'api/', nous définissons deux constantes:
-// - API_BASE_URL: URL de base sans le préfixe '/api' (pour les appels directs au backend)
-// - API_URL: URL complète avec le préfixe '/api' (pour les appels aux endpoints API)
+// Nous définissons deux constantes pour les appels API:
+// - API_BASE_URL: URL de base sans le préfixe '/api' (pour les appels directs au backend, comme les médias)
+// - API_URL: URL complète avec le préfixe '/api' (pour les appels aux endpoints API standard)
 export const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8000'
   : window.location.hostname === 'rh-system.local'
-    ? 'http://rh-system.local'
+    ? `${window.location.protocol}//${window.location.host}`
     : 'http://backend:8000';
 
-// URL pour les appels d'API (sans préfixe '/api')
-export const API_URL = API_BASE_URL;
+
+export const API_URL = `${API_BASE_URL}`;
 
 // Media URL configuration (for images, files, etc.)
 export const MEDIA_BASE_URL = window.location.hostname === 'localhost'
@@ -58,7 +58,7 @@ export const NOTIFICATION_TYPES = {
   ERROR: 'error'
 };
 
-// Sample notifications for testing
+/* Sample notifications for testing
 export const SAMPLE_NOTIFICATIONS = [
   {
     id: 1,
@@ -83,5 +83,4 @@ export const SAMPLE_NOTIFICATIONS = [
     date: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
     read: false,
     type: 'warning'
-  }
-];
+  }*/

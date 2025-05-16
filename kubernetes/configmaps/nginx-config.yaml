@@ -115,13 +115,59 @@ data:
         # Route pour l'API (sans préfixe /api/)
         location ~ ^/(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth)/ {
             # Proxy direct vers le backend sans préfixe /api/
-            proxy_pass http://rh-backend:8000/$uri$is_args$args;
+            proxy_pass http://rh-backend:8000$request_uri;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header X-Forwarded-Host $host;
             proxy_set_header X-Forwarded-Port $server_port;
+
+            # Ajouter des en-têtes pour éviter les problèmes CORS
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE, PATCH' always;
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+            add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+
+            # Gérer les requêtes OPTIONS pour le preflight CORS
+            if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' '*';
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE, PATCH';
+                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+                add_header 'Access-Control-Max-Age' 1728000;
+                add_header 'Content-Type' 'text/plain; charset=utf-8';
+                add_header 'Content-Length' 0;
+                return 204;
+            }
+        }
+
+        # Route pour l'API (avec préfixe /api/)
+        location ~ ^/api/ {
+            # Proxy vers le backend avec préfixe /api/
+            proxy_pass http://rh-backend:8000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-Port $server_port;
+
+            # Ajouter des en-têtes pour éviter les problèmes CORS
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE, PATCH' always;
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+            add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+
+            # Gérer les requêtes OPTIONS pour le preflight CORS
+            if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' '*';
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE, PATCH';
+                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+                add_header 'Access-Control-Max-Age' 1728000;
+                add_header 'Content-Type' 'text/plain; charset=utf-8';
+                add_header 'Content-Length' 0;
+                return 204;
+            }
         }
 
         # Route pour les médias
@@ -146,8 +192,8 @@ data:
             index index.html index.htm;
             try_files $uri $uri/ /index.html;
 
-            # Ajouter l'en-tête Content-Security-Policy pour autoriser les scripts inline
-            add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self';";
+            # Ajouter l'en-tête Content-Security-Policy pour autoriser les scripts inline et les connexions API
+            add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http://localhost:8000 https://localhost:8000 http://rh-system.local https://rh-system.local; font-src 'self' data:; connect-src 'self' http://localhost:8000 https://localhost:8000 http://rh-system.local https://rh-system.local;";
 
             # Configuration des types MIME pour les fichiers JavaScript
             location ~* \.(js|mjs)$ {

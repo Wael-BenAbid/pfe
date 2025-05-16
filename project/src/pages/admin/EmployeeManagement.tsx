@@ -51,7 +51,7 @@ const EmployeeManagement: React.FC = () => {
     if (!token) return;
 
     try {
-      let url = `${API_BASE_URL}/api/users/`;
+      let url = `${API_BASE_URL}/users/`;
       if (filterType !== "all") {
         url += `?user_type=${filterType}`;
       }

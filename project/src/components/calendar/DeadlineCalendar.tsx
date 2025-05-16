@@ -17,7 +17,7 @@ interface CalendarEvent {
   end: Date;
   allDay: boolean;
   resource: {
-    type: 'mission' | 'meeting';
+    type: 'mission' | 'meeting' | 'internship_end';
     status: string;
     description: string;
   };
@@ -30,6 +30,8 @@ interface Mission {
   deadline: string;
   status?: string;
   completed: boolean;
+  assigned_to: number;
+  created_at: string;
 }
 
 interface Meeting {
@@ -38,6 +40,17 @@ interface Meeting {
   description: string;
   date_time: string;
   duration_minutes: number;
+  status: string;
+}
+
+interface Internship {
+  id: number;
+  title: string;
+  description: string;
+  intern: number;
+  supervisor: number;
+  start_date: string;
+  end_date: string;
   status: string;
 }
 
@@ -58,7 +71,7 @@ const DeadlineCalendar: React.FC = () => {
     setLoading(true);
     try {
       // Récupérer les informations de l'utilisateur pour déterminer son type
-      const userInfoResponse = await fetch(`${API_BASE_URL}/api/get-user-info/`, {
+      const userInfoResponse = await fetch(`${API_BASE_URL}/users/me/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -86,12 +99,32 @@ const DeadlineCalendar: React.FC = () => {
         },
       });
 
-      if (!missionsResponse.ok || !meetingsResponse.ok) {
+      // Récupérer les stages
+      const internshipsResponse = await fetch(`${API_URL}/internships/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!missionsResponse.ok || !meetingsResponse.ok || !internshipsResponse.ok) {
         throw new Error('Failed to fetch data');
       }
 
       const missions = await missionsResponse.json();
       const meetings = await meetingsResponse.json();
+      const internships = await internshipsResponse.json();
+
+      console.log('Internships data:', internships); // Ajout de log pour déboguer
+
+      // Afficher les dates de fin de stage de manière plus détaillée
+      internships.forEach((internship: Internship) => {
+        console.log(`Stage ID: ${internship.id}, Titre: ${internship.title}`);
+        console.log(`  Date de début: ${internship.start_date}`);
+        console.log(`  Date de fin: ${internship.end_date}`);
+        console.log(`  Stagiaire: ${internship.intern}`);
+        console.log(`  Superviseur: ${internship.supervisor}`);
+        console.log(`  Statut: ${internship.status}`);
+      });
 
       // Convertir les missions en événements de calendrier
       const missionEvents = missions.map((mission: Mission) => {
@@ -132,8 +165,65 @@ const DeadlineCalendar: React.FC = () => {
         };
       });
 
+      // Convertir les dates de fin de stage en événements de calendrier
+      const internshipEndEvents = internships.map((internship: Internship) => {
+        console.log(`Traitement du stage: ID=${internship.id}, Titre=${internship.title}, Date de fin=${internship.end_date}`);
+
+        // Vérifier si la date est au format DD/MM/YYYY
+        let endDate: Date;
+
+        if (internship.end_date && internship.end_date.includes('/')) {
+          // Format DD/MM/YYYY
+          const [day, month, year] = internship.end_date.split('/').map(Number);
+          endDate = new Date(year, month - 1, day); // Mois est 0-indexé en JavaScript
+          console.log(`Date au format DD/MM/YYYY: jour=${day}, mois=${month}, année=${year}`);
+        } else {
+          // Essayer le format ISO
+          const dateStr = internship.end_date?.split('T')[0] || '';
+          endDate = new Date(dateStr);
+        }
+
+        console.log(`Date convertie: ${endDate.toISOString()}`);
+        console.log(`Mois: ${endDate.getMonth() + 1}, Année: ${endDate.getFullYear()}`); // +1 car les mois sont 0-indexés
+
+        // Vérifier si la date est valide
+        if (isNaN(endDate.getTime())) {
+          console.error(`Date de fin invalide pour le stage ${internship.id}:`, internship.end_date);
+          return null;
+        }
+
+        // Créer un événement avec une date de fin de stage
+        const event = {
+          id: internship.id,
+          title: `Fin de stage: ${internship.title || 'Stage'}`,
+          start: endDate,
+          end: endDate,
+          allDay: true,
+          resource: {
+            type: 'internship_end' as const,
+            status: 'info',
+            description: `Date de fin du stage ${internship.description || ''}`,
+          },
+        };
+
+        console.log(`Événement créé:`, event);
+        return event;
+      }).filter(Boolean); // Filtrer les événements null
+
+      console.log('Internship end events:', internshipEndEvents); // Ajout de log pour déboguer
+
       // Combiner les événements
-      setEvents([...missionEvents, ...meetingEvents]);
+      // Assurons-nous que les dates de fin de stage sont bien incluses
+      console.log('Nombre d\'événements de fin de stage:', internshipEndEvents.length);
+
+      // Nous n'utilisons plus d'événements manuels, nous nous appuyons uniquement sur les données réelles
+
+      // Inclure tous les événements, y compris les dates de fin de stage
+      const allEvents = [...missionEvents, ...meetingEvents, ...internshipEndEvents];
+
+      console.log('Nombre total d\'événements:', allEvents.length);
+
+      setEvents(allEvents);
     } catch (error) {
       console.error('Error fetching calendar data:', error);
     } finally {
@@ -149,6 +239,9 @@ const DeadlineCalendar: React.FC = () => {
   const eventStyleGetter = (event: CalendarEvent) => {
     let backgroundColor = '#3174ad';
     let borderColor = '#2c6496';
+    let fontWeight = 'normal';
+    let fontSize = '0.9em';
+    let opacity = 0.8;
 
     if (event.resource.type === 'mission') {
       if (event.resource.status === 'completed') {
@@ -172,6 +265,13 @@ const DeadlineCalendar: React.FC = () => {
         backgroundColor = '#2196f3';
         borderColor = '#1976d2';
       }
+    } else if (event.resource.type === 'internship_end') {
+      // Couleur rose pour les dates de fin de stage avec style plus visible
+      backgroundColor = '#e91e63';
+      borderColor = '#c2185b';
+      fontWeight = 'bold';
+      fontSize = '1em';
+      opacity = 1.0; // Pleine opacité pour les rendre plus visibles
     }
 
     return {
@@ -179,10 +279,13 @@ const DeadlineCalendar: React.FC = () => {
         backgroundColor,
         borderColor,
         borderRadius: '4px',
-        opacity: 0.8,
+        opacity,
         color: '#fff',
-        border: '1px solid ' + borderColor,
+        border: '2px solid ' + borderColor,
         display: 'block',
+        fontWeight,
+        fontSize,
+        padding: event.resource.type === 'internship_end' ? '2px' : '0px',
       },
     };
   };
@@ -193,6 +296,38 @@ const DeadlineCalendar: React.FC = () => {
 
   return (
     <div className="h-full">
+
+      {/* Légende du calendrier */}
+      <div className="mb-4 p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">Légende :</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-2" style={{ backgroundColor: '#2196f3' }}></div>
+            <span className="text-sm text-gray-600">Bleu : Réunions entre encadrant et stagiaire</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-2" style={{ backgroundColor: '#ff9800' }}></div>
+            <span className="text-sm text-gray-600">Orange : Missions en attente</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-2" style={{ backgroundColor: '#4caf50' }}></div>
+            <span className="text-sm text-gray-600">Vert : Missions/Réunions complétées</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-2" style={{ backgroundColor: '#f44336' }}></div>
+            <span className="text-sm text-gray-600">Rouge : Missions en retard</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-2" style={{ backgroundColor: '#9e9e9e' }}></div>
+            <span className="text-sm text-gray-600">Gris : Réunions annulées</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-2" style={{ backgroundColor: '#e91e63' }}></div>
+            <span className="text-sm text-gray-600">Rose : Dates de fin de stage</span>
+          </div>
+        </div>
+      </div>
+
       <Calendar
         localizer={localizer}
         events={events}
@@ -201,6 +336,9 @@ const DeadlineCalendar: React.FC = () => {
         style={{ height: 500 }}
         onSelectEvent={handleEventClick}
         eventPropGetter={eventStyleGetter}
+        defaultDate={new Date(2025, 4, 1)} // Forcer l'affichage de mai 2025
+        defaultView="month"
+        views={['month', 'week', 'day', 'agenda']}
       />
 
       {showEventDetails && selectedEvent && (
