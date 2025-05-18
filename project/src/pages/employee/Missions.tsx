@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../../components/ui/Button";
+import AlertModal from "../../components/ui/AlertModal";
 import { CheckCircleIcon, ClockIcon, RefreshCwIcon, PlusIcon } from "lucide-react";
 
 interface Mission {
@@ -21,6 +22,17 @@ const Missions: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
 
   useEffect(() => {
     fetchMissions();
@@ -131,15 +143,30 @@ const Missions: React.FC = () => {
 
       if (response.ok) {
         fetchMissions();
-        alert("Mission marquée comme complétée avec succès!");
+        setAlertModal({
+          isOpen: true,
+          title: 'Succès',
+          message: "Mission marquée comme complétée avec succès!",
+          type: 'success'
+        });
       } else {
         const errorData = await response.json();
         console.error("Failed to complete mission:", errorData);
-        alert("Échec de la complétion de la mission. Veuillez réessayer.");
+        setAlertModal({
+          isOpen: true,
+          title: 'Erreur',
+          message: "Échec de la complétion de la mission. Veuillez réessayer.",
+          type: 'error'
+        });
       }
     } catch (error) {
       console.error("Error completing mission:", error);
-      alert("Une erreur s'est produite lors de la complétion de la mission.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur',
+        message: "Une erreur s'est produite lors de la complétion de la mission.",
+        type: 'error'
+      });
     }
   };
 
@@ -174,6 +201,15 @@ const Missions: React.FC = () => {
 
   return (
     <>
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
+
       {loading ? (
         <div className="p-6 text-center text-gray-600">Loading missions...</div>
       ) : (
