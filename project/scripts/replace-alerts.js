@@ -17,14 +17,14 @@ import { execSync } from 'child_process';
 
 // Liste des fichiers à modifier
 const filesToModify = [
-  'project/src/pages/admin/InternshipManagement.tsx',
-  'project/src/pages/admin/MissionManagement.tsx',
-  'project/src/pages/admin/UserManagement.tsx',
-  'project/src/pages/employee/InternManagement.tsx',
-  'project/src/pages/employee/InternMissionManagement.tsx',
-  'project/src/pages/employee/LeaveRequests.tsx',
-  'project/src/pages/intern/InternMissions.tsx',
-  'project/src/pages/ApplicationForm.tsx'
+  'src/pages/admin/InternshipManagement.tsx',
+  'src/pages/admin/MissionManagement.tsx',
+  'src/pages/admin/UserManagement.tsx',
+  'src/pages/employee/InternManagement.tsx',
+  'src/pages/employee/InternMissionManagement.tsx',
+  'src/pages/employee/LeaveRequests.tsx',
+  'src/pages/intern/InternMissions.tsx',
+  'src/pages/ApplicationForm.tsx'
 ];
 
 // Fonction pour lire le contenu d'un fichier

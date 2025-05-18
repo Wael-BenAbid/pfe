@@ -6,6 +6,8 @@ import Button from "../../components/ui/Button";
 import TextInput from "../../components/ui/TextInput";
 import TextArea from "../../components/ui/TextArea";
 import DateInput from "../../components/ui/DateInput";
+import AlertModal from "../../components/ui/AlertModal";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import {
   CheckCircleIcon,
   ClockIcon,
@@ -77,6 +79,29 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
     title: "",
     description: "",
     deadline: "",
+  });
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info' | 'warning';
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info'
+  });
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
   });
 
   useEffect(() => {
@@ -187,7 +212,12 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
     today.setHours(0, 0, 0, 0); // Réinitialiser l'heure pour comparer uniquement les dates
 
     if (deadlineDate < today) {
-      alert("La date limite ne peut pas être dans le passé. Veuillez choisir une date future.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur',
+        message: "La date limite ne peut pas être dans le passé. Veuillez choisir une date future.",
+        type: 'error'
+      });
       return;
     }
 
@@ -225,10 +255,20 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
       // Afficher un message de confirmation avec mention de l'email
       resetForm();
       fetchMissions();
-      alert("Mission created successfully! An email notification has been sent to the intern.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Succès',
+        message: "Mission created successfully! An email notification has been sent to the intern.",
+        type: 'success'
+      });
     } catch (error) {
       console.error("Error creating mission:", error);
-      alert("Failed to create mission. Please try again.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur',
+        message: "Failed to create mission. Please try again.",
+        type: 'error'
+      });
     }
   };
 
@@ -242,7 +282,12 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
     today.setHours(0, 0, 0, 0); // Réinitialiser l'heure pour comparer uniquement les dates
 
     if (deadlineDate < today) {
-      alert("La date limite ne peut pas être dans le passé. Veuillez choisir une date future.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur',
+        message: "La date limite ne peut pas être dans le passé. Veuillez choisir une date future.",
+        type: 'error'
+      });
       return;
     }
 
@@ -307,48 +352,76 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
 
       // Afficher un message différent selon que la mission était complétée ou non
       if (wasCompleted) {
-        alert("Mission updated successfully! The mission has been set back to 'in progress' status. An email notification has been sent to the intern.");
+        setAlertModal({
+          isOpen: true,
+          title: 'Succès',
+          message: "Mission updated successfully! The mission has been set back to 'in progress' status. An email notification has been sent to the intern.",
+          type: 'success'
+        });
       } else {
-        alert("Mission updated successfully! An email notification has been sent to the intern.");
+        setAlertModal({
+          isOpen: true,
+          title: 'Succès',
+          message: "Mission updated successfully! An email notification has been sent to the intern.",
+          type: 'success'
+        });
       }
     } catch (error) {
       console.error("Error updating mission:", error);
-      alert("Failed to update mission. Please try again.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur',
+        message: "Failed to update mission. Please try again.",
+        type: 'error'
+      });
     }
   };
 
   const handleDelete = async (missionId: number, missionTitle: string) => {
     if (!token) return;
 
-    if (!confirm(`Are you sure you want to delete the mission "${missionTitle}"?`)) {
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Confirmation de suppression',
+      message: `Êtes-vous sûr de vouloir supprimer la mission "${missionTitle}" ?`,
+      onConfirm: async () => {
+        try {
+          const response = await fetch(`${API_URL}/missions/${missionId}/`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-    try {
-      const response = await fetch(`${API_URL}/missions/${missionId}/`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+          if (!response.ok) {
+            throw new Error("Failed to delete mission");
+          }
 
-      if (!response.ok) {
-        throw new Error("Failed to delete mission");
+          // Add notification for the intern
+          addNotification({
+            title: "Mission Deleted",
+            message: `The mission "${missionTitle}" has been deleted`,
+            type: "error",
+          });
+
+          fetchMissions();
+          setAlertModal({
+            isOpen: true,
+            title: 'Succès',
+            message: "Mission deleted successfully! An email notification has been sent to the intern.",
+            type: 'success'
+          });
+        } catch (error) {
+          console.error("Error deleting mission:", error);
+          setAlertModal({
+            isOpen: true,
+            title: 'Erreur',
+            message: "Failed to delete mission. Please try again.",
+            type: 'error'
+          });
+        }
       }
-
-      // Add notification for the intern
-      addNotification({
-        title: "Mission Deleted",
-        message: `The mission "${missionTitle}" has been deleted`,
-        type: "error",
-      });
-
-      fetchMissions();
-      alert("Mission deleted successfully! An email notification has been sent to the intern.");
-    } catch (error) {
-      console.error("Error deleting mission:", error);
-      alert("Failed to delete mission. Please try again.");
-    }
+    });
   };
 
   const handleEdit = (mission: Mission) => {
@@ -420,6 +493,26 @@ const InternMissionManagement: React.FC<InternMissionManagementProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          confirmModal.onConfirm();
+        }}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
       {/* Section des missions */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
         <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">

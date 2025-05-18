@@ -9,6 +9,7 @@ import {
   ClockIcon,
   AlertCircleIcon,
   Loader2Icon,
+  TrashIcon,
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 
