@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from django.utils import timezone
+from django.db.models import Q
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from .models import Mission, User, Notification, SystemActivity
@@ -152,35 +153,61 @@ class MissionViewSet(viewsets.ModelViewSet):
         # Récupérer toutes les missions en attente dont la date d'échéance est passée
         today = timezone.now().date()
 
+        # Récupérer à la fois les missions en attente et celles déjà marquées comme en retard
+        # pour s'assurer que les notifications sont créées pour toutes les missions en retard
         late_missions = Mission.objects.filter(
-            status='pending',
-            completed=False,
-            deadline__lt=today
+            Q(status='pending', completed=False, deadline__lt=today) |
+            Q(status='late', completed=False)
         )
 
         # Mettre à jour le statut des missions en retard
         updated_count = 0
+        notification_count = 0
         for mission in late_missions:
-            mission.status = 'late'
-            mission.save()
-            updated_count += 1
+            # Mettre à jour le statut si nécessaire
+            if mission.status != 'late':
+                mission.status = 'late'
+                mission.save()
+                updated_count += 1
 
-            # Créer une notification pour l'assigné
-            Notification.objects.create(
+            # Vérifier si une notification similaire existe déjà pour l'assigné
+            notification_message = f"La mission '{mission.title}' est en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}."
+            existing_notification = Notification.objects.filter(
                 user=mission.assigned_to,
                 title="Mission en retard",
-                message=f"La mission '{mission.title}' est maintenant en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}.",
+                message=notification_message,
                 type="error"
-            )
+            ).exists()
 
-            # Créer une notification pour le superviseur
-            if mission.supervisor:
+            # Créer une notification seulement si elle n'existe pas déjà
+            if not existing_notification:
                 Notification.objects.create(
-                    user=mission.supervisor,
-                    title="Mission supervisée en retard",
-                    message=f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} est maintenant en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}.",
+                    user=mission.assigned_to,
+                    title="Mission en retard",
+                    message=notification_message,
                     type="error"
                 )
+                notification_count += 1
+
+            # Vérifier si une notification similaire existe déjà pour le superviseur
+            if mission.supervisor:
+                supervisor_notification_message = f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} est en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}."
+                existing_supervisor_notification = Notification.objects.filter(
+                    user=mission.supervisor,
+                    title="Mission supervisée en retard",
+                    message=supervisor_notification_message,
+                    type="error"
+                ).exists()
+
+                # Créer une notification seulement si elle n'existe pas déjà
+                if not existing_supervisor_notification:
+                    Notification.objects.create(
+                        user=mission.supervisor,
+                        title="Mission supervisée en retard",
+                        message=supervisor_notification_message,
+                        type="error"
+                    )
+                    notification_count += 1
 
             # Envoyer un email à l'assigné
             try:
@@ -197,13 +224,24 @@ class MissionViewSet(viewsets.ModelViewSet):
                     f"L'équipe RH"
                 )
 
-                send_email_notification(subject, message, [mission.assigned_to.email])
+                # Utiliser le système de limitation d'emails
+                send_email_notification(
+                    subject=subject,
+                    message=message,
+                    recipient_list=[mission.assigned_to.email],
+                    email_type='late_mission',
+                    reference_id=mission.id
+                )
             except Exception as e:
                 print(f"Erreur lors de l'envoi de l'email à {mission.assigned_to.email}: {str(e)}")
 
+        print(f"Vérification des missions en retard terminée: {updated_count} missions mises à jour, {notification_count} notifications créées")
+
         return Response({
             'status': 'late missions checked',
-            'updated_count': updated_count
+            'updated_count': updated_count,
+            'notification_count': notification_count,
+            'message': f"{updated_count} missions mises à jour, {notification_count} notifications créées"
         })
 
     @action(detail=False, methods=['post'])
@@ -228,23 +266,46 @@ class MissionViewSet(viewsets.ModelViewSet):
 
         # Envoyer des notifications pour les missions dont la date limite approche
         notified_count = 0
+        notification_count = 0
         for mission in upcoming_missions:
-            # Créer une notification pour l'utilisateur assigné
-            Notification.objects.create(
+            # Vérifier si une notification similaire existe déjà pour l'utilisateur assigné
+            notification_message = f"La mission '{mission.title}' doit être terminée demain ({mission.deadline.strftime('%d/%m/%Y')})."
+            existing_notification = Notification.objects.filter(
                 user=mission.assigned_to,
                 title="Date limite de mission approche",
-                message=f"La mission '{mission.title}' doit être terminée demain ({mission.deadline.strftime('%d/%m/%Y')}).",
+                message=notification_message,
                 type="warning"
-            )
+            ).exists()
 
-            # Créer une notification pour le superviseur si c'est un employé
-            if mission.supervisor and mission.supervisor.user_type in ['employee', 'admin']:
+            # Créer une notification seulement si elle n'existe pas déjà
+            if not existing_notification:
                 Notification.objects.create(
-                    user=mission.supervisor,
-                    title="Date limite de mission supervisée approche",
-                    message=f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} doit être terminée demain ({mission.deadline.strftime('%d/%m/%Y')}).",
+                    user=mission.assigned_to,
+                    title="Date limite de mission approche",
+                    message=notification_message,
                     type="warning"
                 )
+                notification_count += 1
+
+            # Vérifier si une notification similaire existe déjà pour le superviseur
+            if mission.supervisor and mission.supervisor.user_type in ['employee', 'admin']:
+                supervisor_notification_message = f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} doit être terminée demain ({mission.deadline.strftime('%d/%m/%Y')})."
+                existing_supervisor_notification = Notification.objects.filter(
+                    user=mission.supervisor,
+                    title="Date limite de mission supervisée approche",
+                    message=supervisor_notification_message,
+                    type="warning"
+                ).exists()
+
+                # Créer une notification seulement si elle n'existe pas déjà
+                if not existing_supervisor_notification:
+                    Notification.objects.create(
+                        user=mission.supervisor,
+                        title="Date limite de mission supervisée approche",
+                        message=supervisor_notification_message,
+                        type="warning"
+                    )
+                    notification_count += 1
 
             # Envoyer un email à l'utilisateur assigné
             try:
@@ -261,14 +322,25 @@ class MissionViewSet(viewsets.ModelViewSet):
                     f"L'équipe RH"
                 )
 
-                send_email_notification(subject, message, [mission.assigned_to.email])
+                # Utiliser le système de limitation d'emails
+                send_email_notification(
+                    subject=subject,
+                    message=message,
+                    recipient_list=[mission.assigned_to.email],
+                    email_type='upcoming_deadline',
+                    reference_id=mission.id
+                )
                 notified_count += 1
             except Exception as e:
                 print(f"Erreur lors de l'envoi de l'email à {mission.assigned_to.email}: {str(e)}")
 
+        print(f"Vérification des deadlines approchantes terminée: {notification_count} notifications créées, {notified_count} emails envoyés")
+
         return Response({
             'status': 'upcoming deadlines checked',
-            'notified_count': notified_count
+            'notification_count': notification_count,
+            'email_count': notified_count,
+            'message': f"{notification_count} notifications créées, {notified_count} emails envoyés"
         })
 
     @action(detail=True, methods=['post'])

@@ -14,6 +14,7 @@ interface NotificationDropdownProps {
   notifications: Notification[];
   onMarkAsRead: (id: number) => void;
   onMarkAllAsRead: () => void;
+  onRemoveAllNotifications?: () => void;
   userType?: 'admin' | 'employee' | 'intern';
 }
 
@@ -21,6 +22,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
   notifications,
   onMarkAsRead,
   onMarkAllAsRead,
+  onRemoveAllNotifications,
   userType = 'employee'
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -102,15 +104,17 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg overflow-hidden z-50">
           <div className="py-2 px-3 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
             <span className="text-sm font-medium text-gray-700">Notifications</span>
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={onMarkAllAsRead}
-                className="text-xs text-blue-600 hover:text-blue-800"
-              >
-                Mark all as read
-              </button>
-            )}
+            <div className="flex space-x-2">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={onMarkAllAsRead}
+                  className="text-xs text-blue-600 hover:text-blue-800"
+                >
+                  Marquer tout comme lu
+                </button>
+              )}
+            </div>
           </div>
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
@@ -167,10 +171,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
               </div>
             )}
           </div>
-          <div className="py-2 px-3 bg-gray-100 border-t border-gray-200 text-xs text-center text-gray-500">
+          <div className="py-2 px-3 bg-gray-100 border-t border-gray-200 flex justify-between items-center">
             <a
               href="#"
-              className="text-blue-600 hover:text-blue-800"
+              className="text-blue-600 hover:text-blue-800 text-xs"
               onClick={(e) => {
                 e.preventDefault();
                 const url = userType === 'admin' ? '/admine/notifications' :
@@ -179,8 +183,47 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                 window.location.href = url;
               }}
             >
-              Voir toutes les notifications
+              Voir tout
             </a>
+            {notifications.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (onRemoveAllNotifications) {
+                    // Utiliser une fenêtre modale au lieu de window.confirm
+                    const confirmModal = document.createElement('div');
+                    confirmModal.className = 'fixed inset-0 flex items-center justify-center z-50';
+                    confirmModal.innerHTML = `
+                      <div class="fixed inset-0 bg-black opacity-50"></div>
+                      <div class="bg-white rounded-lg p-6 max-w-sm mx-auto z-10">
+                        <div class="text-center">
+                          <h3 class="text-lg font-medium text-gray-900 mb-4">Confirmation</h3>
+                          <p class="text-sm text-gray-500 mb-6">Êtes-vous sûr de vouloir supprimer toutes les notifications ?</p>
+                          <div class="flex justify-center space-x-4">
+                            <button id="confirm-cancel" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Annuler</button>
+                            <button id="confirm-ok" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                    document.body.appendChild(confirmModal);
+
+                    document.getElementById('confirm-cancel')?.addEventListener('click', () => {
+                      document.body.removeChild(confirmModal);
+                    });
+
+                    document.getElementById('confirm-ok')?.addEventListener('click', () => {
+                      onRemoveAllNotifications();
+                      setIsOpen(false);
+                      document.body.removeChild(confirmModal);
+                    });
+                  }
+                }}
+                className="text-xs text-red-600 hover:text-red-800"
+              >
+                Tout supprimer
+              </button>
+            )}
           </div>
         </div>
       )}

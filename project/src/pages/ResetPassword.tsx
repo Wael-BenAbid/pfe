@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import Button from "../components/ui/Button";
 import { TextInput } from "../components/ui/FormElements";
 import { API_BASE_URL } from "../config/constants";
-import { LockIcon } from "lucide-react";
+import { LockIcon, Eye, EyeOff } from "lucide-react";
 import logoImage from "../assets/images/logo.png";
 
 const ResetPassword: React.FC = () => {
@@ -14,6 +14,8 @@ const ResetPassword: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -172,29 +174,57 @@ const ResetPassword: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  <TextInput
-                    label="New Password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your new password"
-                    helper="At least 8 characters long"
-                    required
-                    autoComplete="new-password"
-                    icon={<LockIcon className="h-5 w-5 text-gray-400" />}
-                  />
+                  <div className="relative">
+                    <TextInput
+                      label="New Password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter your new password"
+                      helper="At least 8 characters long"
+                      required
+                      autoComplete="new-password"
+                      icon={<LockIcon className="h-5 w-5 text-gray-400" />}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-9 text-gray-500 hover:text-gray-700 focus:outline-none"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
 
-                  <TextInput
-                    label="Confirm New Password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm your new password"
-                    helper="Enter the same password again"
-                    required
-                    autoComplete="new-password"
-                    icon={<LockIcon className="h-5 w-5 text-gray-400" />}
-                  />
+                  <div className="relative">
+                    <TextInput
+                      label="Confirm New Password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm your new password"
+                      helper="Enter the same password again"
+                      required
+                      autoComplete="new-password"
+                      icon={<LockIcon className="h-5 w-5 text-gray-400" />}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-9 text-gray-500 hover:text-gray-700 focus:outline-none"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
 
                   {error && (
                     <div className="rounded-md bg-red-50 p-4">

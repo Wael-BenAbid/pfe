@@ -19,6 +19,7 @@ from .views import (
     refresh_token,
     forgot_password,
     reset_password,
+    check_pending_application,
 )
 from .views_message import MessageViewSet
 from .views_notification import NotificationViewSet as NotificationViewSetCustom
@@ -82,6 +83,8 @@ urlpatterns = [
     path('auth/login/', login_view, name='login'),
     path('auth/logout/', api_logout, name='api_logout'),
     path('auth/token/obtain/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # Endpoint public pour vérifier les candidatures en attente
+    path('public/check-pending-application/', check_pending_application, name='check_pending_application'),
     path('auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
     path('auth/refresh-token/', refresh_token, name='token_refresh'),
     path('auth/forgot-password/', forgot_password, name='forgot_password'),

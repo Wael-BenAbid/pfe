@@ -37,7 +37,7 @@ spec:
               number: 8000
 
       # Backend API endpoints (sans préfixe /api/)
-      - path: /(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth)(/|$)(.*)
+      - path: /(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth|messages)(/|$)(.*)
         pathType: Prefix
         backend:
           service:

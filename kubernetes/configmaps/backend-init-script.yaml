@@ -74,6 +74,36 @@ data:
         echo 'Message model patch file not found'
     fi
 
+    # Appliquer le correctif pour la fonctionnalité de chat
+    echo 'Applying message fix...'
+    # Créer le fichier views_message.py dans le répertoire Rh_app
+    if [ -d "/app/message_view_fix" ]; then
+        cp /app/message_view_fix/views_message.py /app/Rh_app/views_message.py
+        echo 'Message fix applied'
+    else
+        echo 'Message view fix directory not found'
+    fi
+
+    # Mettre à jour le fichier urls.py pour utiliser la nouvelle vue
+    if [ -f "/app/Rh_app/urls.py" ]; then
+        # Supprimer l'importation de MessageViewSet du fichier views.py
+        sed -i 's/MessageViewSet, //g' /app/Rh_app/urls.py
+
+        # Ajouter l'importation de MessageViewSet depuis views_message.py
+        if ! grep -q "from .views_message import MessageViewSet" /app/Rh_app/urls.py; then
+            sed -i '/from .views import (/a\    from .views_message import MessageViewSet' /app/Rh_app/urls.py
+            echo 'Updated urls.py to import MessageViewSet from views_message.py'
+        fi
+    fi
+
+    # Supprimer la classe MessageViewSet du fichier views.py
+    if [ -f "/app/Rh_app/views.py" ]; then
+        if grep -q "class MessageViewSet" /app/Rh_app/views.py; then
+            sed -i '/class MessageViewSet/,/return Response(contact_data)/c\# La classe MessageViewSet a été déplacée vers views_message.py' /app/Rh_app/views.py
+            echo 'Removed MessageViewSet class from views.py'
+        fi
+    fi
+
     # Démarrer le serveur
     echo 'Starting server...'
     python manage.py runserver 0.0.0.0:8000

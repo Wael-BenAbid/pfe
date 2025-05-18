@@ -6,6 +6,7 @@ import { useMissionStats } from "../../hooks/useMissionStats";
 import Button from "../../components/ui/Button";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import UserProfileDropdown from "../../components/ui/UserProfileDropdown";
+import { API_BASE_URL } from "../../config/constants";
 import {
   LogOut as LogOutIcon,
   Calendar as CalendarIcon,
@@ -26,6 +27,7 @@ import WorkHours from "./WorkHours";
 import NotificationsPage from "./NotificationsPage";
 import EmployeeProfile from "./EmployeeProfile";
 import EmployeeChat from "./EmployeeChat";
+import EmployeeMeetings from "./EmployeeMeetings";
 import CalendarView from "../common/CalendarView";
 
 const EmployeeDashboard: React.FC = () => {
@@ -37,6 +39,31 @@ const EmployeeDashboard: React.FC = () => {
   useEffect(() => {
     console.log(`Active tab changed to: ${activeTab}`);
   }, [activeTab]);
+
+  // Vérifier les missions en retard au chargement du tableau de bord
+  useEffect(() => {
+    const checkLateMissions = async () => {
+      if (!user) return;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/missions/check_late_missions/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+
+        if (response.ok) {
+          console.log("Late missions checked successfully");
+        }
+      } catch (error) {
+        console.error("Error checking late missions:", error);
+      }
+    };
+
+    checkLateMissions();
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -66,6 +93,7 @@ const EmployeeDashboard: React.FC = () => {
                         notifications={useNotifications().notifications}
                         onMarkAsRead={useNotifications().markAsRead}
                         onMarkAllAsRead={useNotifications().markAllAsRead}
+                        onRemoveAllNotifications={useNotifications().removeAllNotifications}
                         userType="employee"
                       />
                     </div>
@@ -93,6 +121,7 @@ const EmployeeDashboard: React.FC = () => {
                     icon: GraduationCapIcon,
                   },
                   { id: "hours", label: "Work Hours", icon: ClockIcon },
+                  { id: "meetings", label: "Réunions", icon: CalendarIcon },
                   { id: "notifications", label: "Notifications", icon: BellIcon },
                   { id: "messages", label: "Messages", icon: MessageSquareIcon, onClick: () => navigate("/employee/chat") },
                   { id: "calendar", label: "Calendar", icon: CalendarIcon, onClick: () => navigate("/employee/calendar") },
@@ -274,6 +303,7 @@ const EmployeeDashboard: React.FC = () => {
               {activeTab === "missions" && <Missions />}
               {activeTab === "interns" && <SupervisedInterns />}
               {activeTab === "hours" && <WorkHours />}
+              {activeTab === "meetings" && <EmployeeMeetings />}
               {activeTab === "notifications" && <NotificationsPage />}
             </div>
           </div>

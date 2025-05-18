@@ -1,0 +1,189 @@
+from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from django.db.models import Q
+from datetime import datetime
+import logging
+from Rh_app.models import Message, User, Internship, Notification, SystemActivity
+from Rh_app.serializers import MessageSerializer
+
+logger = logging.getLogger(__name__)
+
+class MessageViewSet(viewsets.ModelViewSet):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Limiter les résultats aux messages envoyés ou reçus par l'utilisateur
+        Si recipient_id est fourni, ne retourner que les messages entre l'utilisateur et ce destinataire
+        """
+        user = self.request.user
+        queryset = Message.objects.filter(
+            Q(sender=user) | Q(recipient=user)
+        ).order_by('-created_at')
+
+        # Si recipient_id est fourni, filtrer les messages entre l'utilisateur et ce destinataire
+        recipient_id = self.request.query_params.get('recipient_id')
+        if recipient_id:
+            try:
+                recipient_id = int(recipient_id)
+                queryset = queryset.filter(
+                    (Q(sender=user) & Q(recipient_id=recipient_id)) |
+                    (Q(recipient=user) & Q(sender_id=recipient_id))
+                )
+            except (ValueError, TypeError):
+                # Si recipient_id n'est pas un entier valide, ignorer ce paramètre
+                pass
+
+        return queryset
+
+    def perform_create(self, serializer):
+        # Récupérer le fichier attaché s'il existe
+        attachment = self.request.FILES.get('attachment')
+        attachment_name = None
+        attachment_type = None
+        content = serializer.validated_data.get('content', '').strip()
+
+        if attachment:
+            # Stocker le nom original du fichier
+            attachment_name = attachment.name
+
+            # Déterminer le type MIME du fichier
+            content_type = attachment.content_type
+            attachment_type = content_type
+
+            # Si le contenu est vide, ajouter un contenu par défaut
+            if not content:
+                serializer.validated_data['content'] = f"[Fichier joint: {attachment_name}]"
+
+        # Créer le message avec les informations du fichier attaché
+        message = serializer.save(
+            sender=self.request.user,
+            attachment_name=attachment_name,
+            attachment_type=attachment_type
+        )
+
+        # Si le message est marqué comme important, créer une notification pour le destinataire
+        if message.is_important:
+            Notification.objects.create(
+                user=message.recipient,
+                title="Message important",
+                message=f"Vous avez reçu un message important de {message.sender.first_name} {message.sender.last_name}",
+                type="warning"
+            )
+
+            # Envoyer un email si le message est important
+            try:
+                from django.core.mail import send_mail
+                from django.conf import settings
+                
+                subject = f"Message important de {message.sender.first_name} {message.sender.last_name}"
+                email_message = f"""
+                Bonjour {message.recipient.first_name},
+
+                Vous avez reçu un message important de {message.sender.first_name} {message.sender.last_name}.
+                
+                Message: {message.content}
+                
+                Veuillez vous connecter à la plateforme pour y répondre.
+                
+                Cordialement,
+                L'équipe RH
+                """
+                
+                send_mail(
+                    subject,
+                    email_message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [message.recipient.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                logger.error(f"Erreur lors de l'envoi de l'email pour le message important: {e}")
+
+        return message
+
+    @action(detail=False, methods=['get'])
+    def unread(self, request):
+        """
+        Récupérer la liste des messages non lus destinés à l'utilisateur
+        """
+        user = request.user
+        unread_messages = Message.objects.filter(recipient=user, is_read=False).order_by('-created_at')
+        serializer = self.get_serializer(unread_messages, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def mark_as_read(self, request, pk=None):
+        """
+        Marquer un message comme lu
+        """
+        message = self.get_object()
+        if message.recipient != request.user:
+            return Response({'error': 'Vous ne pouvez pas marquer ce message comme lu'}, status=status.HTTP_403_FORBIDDEN)
+        
+        message.is_read = True
+        message.save()
+        return Response({'status': 'message marked as read'})
+
+    @action(detail=False, methods=['get'])
+    def contacts(self, request):
+        """
+        Récupérer la liste des contacts selon les règles suivantes :
+        - Admin peut contacter tout le monde
+        - Employé peut contacter admin, autres employés et ses stagiaires
+        - Stagiaire peut contacter admin et son employé superviseur
+        """
+        user = request.user
+        
+        try:
+            # Utiliser des QuerySets au lieu de listes pour une meilleure performance
+            if user.user_type == 'admin':
+                # Admin peut contacter tout le monde
+                contacts = User.objects.exclude(id=user.id)
+            
+            elif user.user_type == 'employee':
+                # Employé peut contacter admin, autres employés et ses stagiaires
+                
+                # Admins et autres employés
+                contacts = User.objects.filter(
+                    Q(user_type='admin') | 
+                    (Q(user_type='employee') & ~Q(id=user.id))
+                )
+                
+                # Ajouter ses stagiaires (via la relation Internship)
+                intern_ids = Internship.objects.filter(supervisor=user).values_list('intern', flat=True)
+                if intern_ids:
+                    contacts = contacts | User.objects.filter(id__in=intern_ids)
+            
+            elif user.user_type == 'intern':
+                # Stagiaire peut contacter admin et son employé superviseur
+                
+                # Admins
+                contacts = User.objects.filter(user_type='admin')
+                
+                # Son employé superviseur
+                supervisor_ids = Internship.objects.filter(intern=user).values_list('supervisor', flat=True)
+                if supervisor_ids:
+                    contacts = contacts | User.objects.filter(id__in=supervisor_ids)
+            
+            else:
+                # Type d'utilisateur non reconnu
+                return Response(
+                    {'error': f'Type d\'utilisateur non reconnu: {user.user_type}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Sérialiser les contacts avec les informations nécessaires
+            from Rh_app.serializers import UserSerializer
+            serializer = UserSerializer(contacts, many=True)
+            return Response(serializer.data)
+            
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des contacts: {e}")
+            return Response(
+                {'error': f'Une erreur est survenue lors de la récupération des contacts: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

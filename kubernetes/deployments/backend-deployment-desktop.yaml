@@ -48,6 +48,8 @@ spec:
           mountPath: /app/media_v2
         - name: static-storage
           mountPath: /app/static
+        - name: message-view-fix
+          mountPath: /app/message_view_fix
         env:
         - name: DEBUG
           valueFrom:
@@ -121,4 +123,7 @@ spec:
           claimName: media-pvc
       - name: static-storage
         emptyDir: {}
+      - name: message-view-fix
+        configMap:
+          name: message-view-fix
       restartPolicy: Always

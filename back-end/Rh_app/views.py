@@ -130,18 +130,22 @@ def login_view(request):
         if not user:
             # Vérifier si c'est une candidature en attente
             try:
+                # Vérifier d'abord avec l'email fourni
                 application = JobApplication.objects.filter(
                     email=username,
                     status='pending'
                 ).first()
 
                 if application:
+                    logger.info(f"Candidature en attente trouvée pour l'email: {username}")
+                    response_data = {
+                        "detail": "Votre candidature est en attente d'approbation.",
+                        "status": "pending",
+                        "application_id": application.id
+                    }
+                    logger.info(f"Envoi de la réponse 403 avec données: {response_data}")
                     return Response(
-                        {
-                            "detail": "Votre candidature est en attente d'approbation.",
-                            "status": "pending",
-                            "application_id": application.id
-                        },
+                        response_data,
                         status=status.HTTP_403_FORBIDDEN
                     )
 
@@ -152,6 +156,7 @@ def login_view(request):
                 ).first()
 
                 if application:
+                    logger.info(f"Candidature rejetée trouvée pour l'email: {username}")
                     return Response(
                         {
                             "detail": "Votre candidature a été rejetée.",
@@ -159,7 +164,50 @@ def login_view(request):
                         },
                         status=status.HTTP_403_FORBIDDEN
                     )
-            except:
+
+                # Si aucune candidature n'est trouvée avec l'email, vérifier si c'est un nom d'utilisateur
+                # et chercher une candidature avec l'email associé
+                try:
+                    # Vérifier si un utilisateur existe avec ce nom d'utilisateur
+                    user_with_username = User.objects.filter(username=username).first()
+                    if user_with_username:
+                        # Chercher une candidature avec l'email de cet utilisateur
+                        application = JobApplication.objects.filter(
+                            email=user_with_username.email,
+                            status='pending'
+                        ).first()
+
+                        if application:
+                            logger.info(f"Candidature en attente trouvée pour l'utilisateur: {username} avec email: {user_with_username.email}")
+                            return Response(
+                                {
+                                    "detail": "Votre candidature est en attente d'approbation.",
+                                    "status": "pending",
+                                    "application_id": application.id
+                                },
+                                status=status.HTTP_403_FORBIDDEN
+                            )
+
+                        # Vérifier si c'est une candidature rejetée
+                        application = JobApplication.objects.filter(
+                            email=user_with_username.email,
+                            status='rejected'
+                        ).first()
+
+                        if application:
+                            logger.info(f"Candidature rejetée trouvée pour l'utilisateur: {username} avec email: {user_with_username.email}")
+                            return Response(
+                                {
+                                    "detail": "Votre candidature a été rejetée.",
+                                    "status": "rejected"
+                                },
+                                status=status.HTTP_403_FORBIDDEN
+                            )
+                except Exception as e:
+                    logger.error(f"Erreur lors de la vérification de candidature par nom d'utilisateur: {str(e)}")
+                    pass
+            except Exception as e:
+                logger.error(f"Erreur lors de la vérification de candidature: {str(e)}")
                 pass
 
             return Response({'error': 'Invalid credentials'},
@@ -174,6 +222,7 @@ def login_view(request):
             ).first()
 
             if application:
+                logger.info(f"Utilisateur authentifié mais non approuvé avec candidature en attente: {user.username} (email: {user.email})")
                 return Response(
                     {
                         "detail": "Votre candidature est en attente d'approbation.",
@@ -183,10 +232,27 @@ def login_view(request):
                     status=status.HTTP_403_FORBIDDEN
                 )
             else:
-                return Response(
-                    {"detail": "Votre compte n'est pas approuvé. Veuillez contacter un administrateur."},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+                # Vérifier s'il a une candidature rejetée
+                application = JobApplication.objects.filter(
+                    email=user.email,
+                    status='rejected'
+                ).first()
+
+                if application:
+                    logger.info(f"Utilisateur authentifié mais non approuvé avec candidature rejetée: {user.username} (email: {user.email})")
+                    return Response(
+                        {
+                            "detail": "Votre candidature a été rejetée.",
+                            "status": "rejected"
+                        },
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                else:
+                    logger.info(f"Utilisateur authentifié mais non approuvé sans candidature: {user.username} (email: {user.email})")
+                    return Response(
+                        {"detail": "Votre compte n'est pas approuvé. Veuillez contacter un administrateur."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
 
         # Create a new user session
         from .models import UserSession
@@ -504,6 +570,40 @@ def get_user_info(request):
         'email': user.email,
         'user_type': user.user_type,
         'is_approved': user.approved,
+    })
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def check_pending_application(request):
+    """
+    Endpoint public pour vérifier si une candidature est en attente
+    Peut être appelé avec un email
+    """
+    identifier = request.query_params.get('identifier')
+    if not identifier:
+        return Response({'error': 'Email parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    logger.info(f"Vérification de candidature en attente pour l'email: {identifier}")
+
+    # Chercher une candidature en attente avec cet email
+    application = JobApplication.objects.filter(
+        email=identifier,
+        status='pending'
+    ).first()
+
+    if not application:
+        logger.info(f"Aucune candidature en attente trouvée pour l'email: {identifier}")
+        return Response({'status': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
+
+    logger.info(f"Candidature en attente trouvée pour l'email: {identifier}, ID: {application.id}")
+    return Response({
+        'status': 'pending',
+        'application_id': application.id,
+        'first_name': application.first_name,
+        'last_name': application.last_name,
+        'position': application.position,
+        'application_type': application.application_type,
+        'created_at': application.created_at
     })
 # ViewSets
 class UserViewSet(viewsets.ModelViewSet):
@@ -1424,7 +1524,13 @@ class InternshipViewSet(viewsets.ModelViewSet):
                 f"Connectez-vous au système pour plus de détails.\n\n"
                 f"Nous vous souhaitons un excellent stage !"
             )
-            send_email_notification(intern_subject, intern_message, [internship.intern.email])
+            send_email_notification(
+                subject=intern_subject,
+                message=intern_message,
+                recipient_list=[internship.intern.email],
+                email_type='internship_assigned',
+                reference_id=internship.id
+            )
 
         # Email au superviseur
         if internship.supervisor and internship.supervisor.email:
@@ -1441,7 +1547,13 @@ class InternshipViewSet(viewsets.ModelViewSet):
                 f"Email du stagiaire : {internship.intern.email}\n\n"
                 f"Connectez-vous au système pour gérer ce stage et assigner des missions au stagiaire."
             )
-            send_email_notification(supervisor_subject, supervisor_message, [internship.supervisor.email])
+            send_email_notification(
+                subject=supervisor_subject,
+                message=supervisor_message,
+                recipient_list=[internship.supervisor.email],
+                email_type='internship_assigned',
+                reference_id=internship.id
+            )
 
     @action(detail=True, methods=['post'])
     def change_status(self, request, pk=None):
@@ -1483,7 +1595,13 @@ class InternshipViewSet(viewsets.ModelViewSet):
                     f"Email du superviseur : {internship.supervisor.email}\n\n"
                     f"Connectez-vous au système pour plus de détails."
                 )
-                send_email_notification(intern_subject, intern_message, [internship.intern.email])
+                send_email_notification(
+                    subject=intern_subject,
+                    message=intern_message,
+                    recipient_list=[internship.intern.email],
+                    email_type='internship_status_change',
+                    reference_id=internship.id
+                )
 
             # Email au superviseur si l'admin a fait le changement
             if request.user.user_type == 'admin' and internship.supervisor and internship.supervisor.email:
@@ -1499,7 +1617,13 @@ class InternshipViewSet(viewsets.ModelViewSet):
                     f"Email du stagiaire : {internship.intern.email}\n\n"
                     f"Connectez-vous au système pour plus de détails."
                 )
-                send_email_notification(supervisor_subject, supervisor_message, [internship.supervisor.email])
+                send_email_notification(
+                    subject=supervisor_subject,
+                    message=supervisor_message,
+                    recipient_list=[internship.supervisor.email],
+                    email_type='internship_status_change',
+                    reference_id=internship.id
+                )
 
             return Response({'status': f'internship status changed to {status_value}'})
         return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
@@ -1543,9 +1667,57 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_permissions(self):
-        if self.action in ['create']:
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+        if self.action in ['create', 'pending_by_email']:
+            logger.info(f"Autorisation AllowAny pour l'action: {self.action}")
+            return [AllowAny()]
+        logger.info(f"Autorisation IsAuthenticated pour l'action: {self.action}")
+        return [IsAuthenticated()]
+
+    @action(detail=False, methods=['get'])
+    def pending_by_email(self, request):
+        """
+        Récupérer une candidature en attente par email ou nom d'utilisateur
+        """
+        identifier = request.query_params.get('email')
+        if not identifier:
+            return Response({'error': 'Email or username parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        logger.info(f"Recherche de candidature en attente pour l'identifiant: {identifier}")
+
+        # Chercher une candidature en attente avec cet email
+        application = JobApplication.objects.filter(
+            email=identifier,
+            status='pending'
+        ).first()
+
+        if not application:
+            logger.info(f"Aucune candidature en attente trouvée directement pour l'email: {identifier}")
+
+            # Vérifier si c'est un nom d'utilisateur et chercher l'utilisateur correspondant
+            try:
+                user = User.objects.filter(username=identifier).first()
+                if user:
+                    logger.info(f"Utilisateur trouvé avec le nom d'utilisateur: {identifier}, email: {user.email}")
+                    # Chercher une candidature avec l'email de cet utilisateur
+                    application = JobApplication.objects.filter(
+                        email=user.email,
+                        status='pending'
+                    ).first()
+
+                    if application:
+                        logger.info(f"Candidature en attente trouvée pour l'utilisateur: {identifier} avec email: {user.email}")
+                    else:
+                        logger.info(f"Aucune candidature en attente trouvée pour l'utilisateur: {identifier} avec email: {user.email}")
+            except Exception as e:
+                logger.error(f"Erreur lors de la recherche d'utilisateur par nom d'utilisateur: {str(e)}")
+
+        if not application:
+            logger.info(f"Aucune candidature en attente trouvée pour l'identifiant: {identifier}")
+            return Response({'error': 'No pending application found for this email or username'}, status=status.HTTP_404_NOT_FOUND)
+
+        logger.info(f"Candidature en attente trouvée pour l'identifiant: {identifier}, ID: {application.id}")
+        serializer = self.get_serializer(application)
+        return Response(serializer.data)
 
     def get_queryset(self):
         """
@@ -1840,7 +2012,13 @@ class MeetingViewSet(viewsets.ModelViewSet):
                     f"L'équipe RH"
                 )
 
-                send_email_notification(subject, message, [participant.email])
+                send_email_notification(
+                    subject=subject,
+                    message=message,
+                    recipient_list=[participant.email],
+                    email_type='meeting_scheduled',
+                    reference_id=meeting.id
+                )
 
     @action(detail=True, methods=['post'])
     def add_participant(self, request, pk=None):
@@ -1889,7 +2067,13 @@ class MeetingViewSet(viewsets.ModelViewSet):
                     f"Email de l'organisateur : {meeting.organizer.email}\n\n"
                     f"Connectez-vous au système pour plus de détails."
                 )
-                send_email_notification(subject, message, [participant.email])
+                send_email_notification(
+                    subject=subject,
+                    message=message,
+                    recipient_list=[participant.email],
+                    email_type='meeting_invitation',
+                    reference_id=meeting.id
+                )
 
             return Response({'status': 'participant added'})
         except User.DoesNotExist:
@@ -1937,8 +2121,55 @@ class MeetingViewSet(viewsets.ModelViewSet):
         if status_value not in ['scheduled', 'completed', 'cancelled']:
             return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Si le statut est "cancelled", récupérer la raison d'annulation
+        if status_value == 'cancelled':
+            cancellation_reason = request.data.get('cancellation_reason')
+            if cancellation_reason:
+                meeting.cancellation_reason = cancellation_reason
+
+                # Envoyer un email aux participants pour les informer de l'annulation
+                from .utils import send_email_notification
+
+                for participant in meeting.participants.all():
+                    if participant.email:
+                        subject = f"Réunion annulée : {meeting.title}"
+                        message = (
+                            f"Bonjour {participant.first_name} {participant.last_name},\n\n"
+                            f"La réunion suivante a été annulée :\n\n"
+                            f"Titre : {meeting.title}\n"
+                            f"Date et heure : {meeting.date_time.strftime('%d/%m/%Y à %H:%M')}\n"
+                            f"Organisateur : {meeting.organizer.first_name} {meeting.organizer.last_name}\n\n"
+                            f"Raison de l'annulation : {cancellation_reason}\n\n"
+                            f"Connectez-vous au système pour plus de détails."
+                        )
+                        send_email_notification(
+                            subject=subject,
+                            message=message,
+                            recipient_list=[participant.email],
+                            email_type='meeting_cancelled',
+                            reference_id=meeting.id
+                        )
+
         meeting.status = status_value
         meeting.save()
+
+        # Créer une notification pour tous les participants
+        from .models import Notification
+
+        status_text = {
+            'scheduled': 'planifiée',
+            'completed': 'terminée',
+            'cancelled': 'annulée'
+        }.get(status_value, status_value)
+
+        for participant in meeting.participants.all():
+            Notification.objects.create(
+                user=participant,
+                title=f"Statut de réunion modifié",
+                message=f"La réunion '{meeting.title}' a été marquée comme {status_text}.",
+                type="info" if status_value != 'cancelled' else "warning"
+            )
+
         return Response({'status': f'meeting status changed to {status_value}'})
 
 

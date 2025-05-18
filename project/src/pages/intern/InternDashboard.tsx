@@ -5,6 +5,7 @@ import { useNotifications } from "../../hooks/useNotifications";
 import Button from "../../components/ui/Button";
 import NotificationDropdown from "../../components/ui/NotificationDropdown";
 import UserProfileDropdown from "../../components/ui/UserProfileDropdown";
+import { API_BASE_URL } from "../../config/constants";
 import {
   LogOut as LogOutIcon,
   Briefcase as BriefcaseIcon,
@@ -56,6 +57,9 @@ const InternDashboard: React.FC = () => {
           );
           const missionsData = await getMissions(user.id, "assignee");
           setMissions(missionsData || []);
+
+          // Vérifier les missions en retard
+          await checkLateMissions();
         } catch (error) {
           console.error("Error fetching missions:", error);
           setMissions([]);
@@ -65,6 +69,27 @@ const InternDashboard: React.FC = () => {
 
     fetchMissions();
   }, [user?.id]);
+
+  // Fonction pour vérifier les missions en retard
+  const checkLateMissions = async () => {
+    if (!user) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/missions/check_late_missions/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
+
+      if (response.ok) {
+        console.log("Late missions checked successfully");
+      }
+    } catch (error) {
+      console.error("Error checking late missions:", error);
+    }
+  };
 
   useEffect(() => {
     // Count unread notifications (pending missions and upcoming meetings)
@@ -95,6 +120,7 @@ const InternDashboard: React.FC = () => {
                       notifications={useNotifications().notifications}
                       onMarkAsRead={useNotifications().markAsRead}
                       onMarkAllAsRead={useNotifications().markAllAsRead}
+                      onRemoveAllNotifications={useNotifications().removeAllNotifications}
                       userType="intern"
                     />
                   </div>

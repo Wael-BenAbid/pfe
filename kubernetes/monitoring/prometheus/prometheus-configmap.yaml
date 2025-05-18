@@ -66,6 +66,9 @@ data:
       - job_name: 'node-exporter'
         kubernetes_sd_configs:
         - role: endpoints
+          namespaces:
+            names:
+            - monitoring
         relabel_configs:
         - source_labels: [__meta_kubernetes_endpoints_name]
           regex: node-exporter
@@ -75,25 +78,42 @@ data:
       - job_name: 'kube-state-metrics'
         kubernetes_sd_configs:
         - role: endpoints
+          namespaces:
+            names:
+            - monitoring
         relabel_configs:
         - source_labels: [__meta_kubernetes_endpoints_name]
           regex: kube-state-metrics
           action: keep
 
-      # Scrape RH System backend
-      - job_name: 'rh-backend'
+      # Scrape RH System pods via Kubernetes service discovery
+      - job_name: 'rh-system-pods'
         kubernetes_sd_configs:
-        - role: endpoints
+        - role: pod
           namespaces:
             names:
             - rh-system
         relabel_configs:
-        - source_labels: [__meta_kubernetes_service_name]
-          regex: rh-backend
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
           action: keep
-        - source_labels: [__meta_kubernetes_pod_container_port_name]
-          regex: http
-          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
 
       # Scrape PostgreSQL exporter
       - job_name: 'postgres-exporter'

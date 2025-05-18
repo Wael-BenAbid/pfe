@@ -140,14 +140,15 @@ Pour utiliser Gmail comme serveur SMTP, vous devez :
    ```
 
 L'application sera accessible à :
-- Frontend : http://localhost:5173/
-- Backend API : http://localhost:8000/api/
+- Frontend : http://localhost:5174/
+- Backend API : http://localhost:8000/
 - Interface d'administration Django : http://localhost:8000/admin/
 
 ### Informations d'identification par défaut
 
-- Nom d'utilisateur : wael
-- Mot de passe : Azerty$123
+- Admin : wael / Abidos$123
+- Employé : user2 / Azerty$123
+- Stagiaire : user3 / Azerty$123
 
 ### Sans Docker (développement local)
 
@@ -172,11 +173,14 @@ npm run dev
 
 - Gestion des employés et des stagiaires
 - Gestion des missions
+- Suivi des heures de travail
 - Gestion des congés
-- Gestion des candidatures
-- Notifications par email
+- Messagerie interne avec support pour les fichiers (images, PDF, Word)
+- Notifications par email et dans l'application
 - Suivi des candidatures
 - Récupération de mot de passe
+- Calendrier des événements
+- Statistiques et rapports
 
 ## Déploiement sur Kubernetes
 
