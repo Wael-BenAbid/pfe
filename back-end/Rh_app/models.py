@@ -289,6 +289,7 @@ class Meeting(models.Model):
         choices=STATUS_CHOICES,
         default='scheduled'
     )
+    cancellation_reason = models.TextField(blank=True, null=True, help_text="Raison de l'annulation de la réunion")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -390,3 +391,45 @@ class Message(models.Model):
             return f"Il y a {diff.days} jour{'s' if diff.days > 1 else ''}"
         else:
             return self.created_at.strftime("%d/%m/%Y")
+
+
+class EmailLog(models.Model):
+    """
+    Modèle pour suivre les emails envoyés aux utilisateurs
+    afin de limiter le nombre d'emails par jour
+    """
+    EMAIL_TYPES = (
+        ('late_mission', 'Mission en retard'),
+        ('upcoming_deadline', 'Deadline approche'),
+        ('meeting_cancelled', 'Réunion annulée'),
+        ('meeting_scheduled', 'Réunion planifiée'),
+        ('other', 'Autre'),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_logs')
+    email_type = models.CharField(max_length=50, choices=EMAIL_TYPES)
+    reference_id = models.IntegerField(null=True, blank=True, help_text="ID de l'objet concerné (mission, réunion, etc.)")
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-sent_at']
+
+    def __str__(self):
+        return f"Email {self.email_type} envoyé à {self.user.email} le {self.sent_at.strftime('%Y-%m-%d %H:%M')}"
+
+    @classmethod
+    def can_send_email(cls, user, email_type, reference_id=None):
+        """
+        Vérifie si un email peut être envoyé à l'utilisateur aujourd'hui
+        en fonction du type d'email et du nombre d'emails déjà envoyés
+        """
+        today = timezone.now().date()
+        # Compter les emails du même type envoyés aujourd'hui
+        count = cls.objects.filter(
+            user=user,
+            email_type=email_type,
+            sent_at__date=today
+        ).count()
+
+        # Limiter à 2 emails par jour par type
+        return count < 2

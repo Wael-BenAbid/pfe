@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../../components/ui/Button";
-import { CheckCircleIcon, ClockIcon } from "lucide-react";
+import { CheckCircleIcon, ClockIcon, RefreshCwIcon, PlusIcon } from "lucide-react";
 
 interface Mission {
   id: number;
@@ -19,27 +19,50 @@ const Missions: React.FC = () => {
   const { token } = useAuth();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchMissions();
   }, [token]);
 
+  const [checkingLateMissions, setCheckingLateMissions] = useState(false);
+  const [checkResult, setCheckResult] = useState<string | null>(null);
+
+  const checkLateMissions = async () => {
+    try {
+      setCheckingLateMissions(true);
+      setCheckResult(null);
+
+      const response = await fetch(`${API_BASE_URL}/missions/check_late_missions/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Vérification des missions en retard effectuée:', data);
+        setCheckResult(`Vérification réussie: ${data.message || 'Missions mises à jour'}`);
+
+        // Rafraîchir les missions après la vérification
+        fetchMissions();
+      } else {
+        setCheckResult('Erreur lors de la vérification des missions en retard');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification des missions en retard:', error);
+      setCheckResult('Erreur lors de la vérification des missions en retard');
+    } finally {
+      setCheckingLateMissions(false);
+    }
+  };
+
   const fetchMissions = async () => {
     try {
-      // Vérifier d'abord les missions en retard
-      try {
-        await fetch(`${API_BASE_URL}/missions/check_late_missions/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log('Vérification des missions en retard effectuée');
-      } catch (checkError) {
-        console.warn('Erreur lors de la vérification des missions en retard:', checkError);
-        // Continuer même si cette requête échoue
-      }
+      // Pas besoin de vérifier les missions en retard ici car nous avons un bouton dédié maintenant
 
       // Vérifier les missions dont la date limite approche
       try {
@@ -155,9 +178,28 @@ const Missions: React.FC = () => {
         <div className="p-6 text-center text-gray-600">Loading missions...</div>
       ) : (
         <div className="p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-6">
-            Missions assignées par l'administrateur
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-medium text-gray-900">
+              Missions assignées par l'administrateur
+            </h2>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                onClick={checkLateMissions}
+                disabled={loading || checkingLateMissions}
+                size="sm"
+              >
+                <RefreshCwIcon className="h-4 w-4 mr-1" />
+                {checkingLateMissions ? 'Vérification...' : 'Vérifier les missions en retard'}
+              </Button>
+            </div>
+          </div>
+
+          {checkResult && (
+            <div className={`mb-4 p-3 rounded-md ${checkResult.includes('Erreur') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+              {checkResult}
+            </div>
+          )}
 
           {missions.length === 0 ? (
             <div className="bg-white shadow overflow-hidden sm:rounded-md p-6 text-center">

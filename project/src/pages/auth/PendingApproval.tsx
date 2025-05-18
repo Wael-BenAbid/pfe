@@ -32,13 +32,64 @@ const PendingApproval: React.FC = () => {
       // Essayer de récupérer l'ID de l'application depuis l'état de location
       const applicationId = location.state?.applicationId;
 
+      console.log("PendingApproval: Application ID from location state:", applicationId);
+
       if (!applicationId) {
-        // Si pas d'ID spécifique, afficher juste la page générique
+        // Si pas d'ID spécifique, essayer de récupérer l'application en attente par email
+        console.log("No application ID provided, trying to find pending application by email");
+
+        // Récupérer l'email depuis le localStorage
+        const storedEmail = localStorage.getItem('last_login_email');
+
+        if (storedEmail) {
+          try {
+            console.log(`Trying to find pending application for email: ${storedEmail}`);
+            // Utiliser l'endpoint public pour vérifier les candidatures en attente
+            const response = await fetch(`${API_BASE_URL}/public/check-pending-application/?identifier=${encodeURIComponent(storedEmail)}`, {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+              },
+            });
+
+            console.log("Response status:", response.status);
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Found pending application data:", data);
+              if (data && data.application_id) {
+                console.log("Setting application data:", data);
+                setApplication({
+                  id: data.application_id,
+                  status: data.status,
+                  first_name: data.first_name,
+                  last_name: data.last_name,
+                  position: data.position,
+                  application_type: data.application_type,
+                  created_at: data.created_at
+                });
+              }
+            } else {
+              console.log("No pending application found for identifier or API endpoint not available");
+              try {
+                const errorData = await response.text();
+                console.log("Error response:", errorData);
+              } catch (e) {
+                console.error("Could not parse error response:", e);
+              }
+            }
+          } catch (error) {
+            console.error("Error finding pending application by identifier:", error);
+          }
+        }
+
+        // Même si on ne trouve pas d'application spécifique, on continue à afficher la page générique
         setLoading(false);
         return;
       }
 
       try {
+        console.log(`Fetching application info for ID: ${applicationId}`);
         const response = await fetch(`${API_BASE_URL}/job-applications/${applicationId}/`, {
           method: "GET",
           headers: {
@@ -47,10 +98,12 @@ const PendingApproval: React.FC = () => {
         });
 
         if (!response.ok) {
+          console.error(`Failed to fetch application info, status: ${response.status}`);
           throw new Error("Failed to fetch application information");
         }
 
         const data = await response.json();
+        console.log("Application data received:", data);
         setApplication(data);
       } catch (error) {
         console.error("Error fetching application:", error);
@@ -63,10 +116,10 @@ const PendingApproval: React.FC = () => {
     fetchApplicationInfo();
   }, [location.state]);
 
-  // Si l'application est rejetée, rediriger vers une page 404
+  // Si l'application est rejetée, rediriger vers la page de rejet
   useEffect(() => {
     if (application && application.status === "rejected") {
-      navigate("/not-found", { replace: true });
+      navigate("/application-rejected", { replace: true });
     }
   }, [application, navigate]);
 

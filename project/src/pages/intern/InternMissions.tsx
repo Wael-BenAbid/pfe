@@ -58,20 +58,7 @@ const InternMissions: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Vérifier d'abord les missions en retard
-      try {
-        await fetch(`${API_URL}/missions/check_late_missions/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log('Vérification des missions en retard effectuée');
-      } catch (checkError) {
-        console.warn('Erreur lors de la vérification des missions en retard:', checkError);
-        // Continuer même si cette requête échoue
-      }
+      // Pas besoin de vérifier les missions en retard ici car nous avons un bouton dédié maintenant
 
       // Vérifier les missions dont la date limite approche
       try {
@@ -259,6 +246,7 @@ const InternMissions: React.FC = () => {
         message={alertModal.message}
         type={alertModal.type}
       />
+
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-medium text-gray-900">My Missions</h2>
         <div className="flex space-x-2">

@@ -9,7 +9,7 @@ data:
     path.config: /usr/share/logstash/pipeline
     xpack.monitoring.enabled: true
     xpack.monitoring.elasticsearch.hosts: ["http://elasticsearch:9200"]
-  
+
   logstash.conf: |
     input {
       beats {
@@ -18,7 +18,15 @@ data:
     }
 
     filter {
-      if [kubernetes][labels][app] == "rh-frontend" {
+      # Check for app field added by Filebeat
+      if [app] == "rh-system" {
+        mutate {
+          add_field => { "[@metadata][system]" => "rh-system" }
+        }
+      }
+
+      # Process frontend logs
+      if [kubernetes][labels][app] == "rh-frontend" or [kubernetes][container][name] =~ /^rh-frontend/ {
         mutate {
           add_field => { "[@metadata][app_type]" => "frontend" }
         }
@@ -26,8 +34,9 @@ data:
           match => { "message" => "%{COMBINEDAPACHELOG}" }
         }
       }
-      
-      if [kubernetes][labels][app] == "rh-backend" {
+
+      # Process backend logs
+      if [kubernetes][labels][app] == "rh-backend" or [kubernetes][container][name] =~ /^rh-backend/ {
         mutate {
           add_field => { "[@metadata][app_type]" => "backend" }
         }
@@ -35,8 +44,9 @@ data:
           match => { "message" => "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:log_level} %{GREEDYDATA:log_message}" }
         }
       }
-      
-      if [kubernetes][labels][app] == "postgres-db" {
+
+      # Process database logs
+      if [kubernetes][labels][app] == "postgres-db" or [kubernetes][container][name] =~ /^postgres-db/ {
         mutate {
           add_field => { "[@metadata][app_type]" => "database" }
         }
@@ -44,7 +54,8 @@ data:
           match => { "message" => "%{TIMESTAMP_ISO8601:timestamp} %{WORD:log_level} %{GREEDYDATA:log_message}" }
         }
       }
-      
+
+      # Tag error logs
       if [log_level] == "ERROR" or [log_level] == "FATAL" {
         mutate {
           add_tag => ["error"]
@@ -56,5 +67,7 @@ data:
       elasticsearch {
         hosts => ["elasticsearch:9200"]
         index => "rh-system-logs-%{[@metadata][app_type]}-%{+YYYY.MM.dd}"
+        document_type => "_doc"
+        manage_template => false
       }
     }

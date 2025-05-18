@@ -11,17 +11,21 @@ data:
         folder: Alerts
         interval: 60s
         rules:
-          - title: High CPU Usage
+          - uid: high_cpu_usage
+            title: High CPU Usage
             name: High CPU Usage
             condition: B
             data:
               - refId: A
-                datasourceUid: prometheus
+                datasourceUid: Prometheus
                 model:
                   expr: sum(rate(container_cpu_usage_seconds_total{namespace="rh-system", container!=""}[5m])) by (pod)
                   intervalMs: 1000
                   maxDataPoints: 43200
                   refId: A
+                  relativeTimeRange:
+                    from: 600
+                    to: 0
               - refId: B
                 datasourceUid: __expr__
                 model:
@@ -40,101 +44,8 @@ data:
                         type: last
                       type: query
                   refId: B
+                  type: classic_conditions
             noDataState: NoData
             execErrState: Error
             for: 5m
-            annotations:
-              summary: High CPU usage detected
-              description: Pod {{ $labels.pod }} has high CPU usage ({{ $value }})
-            labels:
-              severity: warning
-
-  memory-usage-alert.yaml: |
-    apiVersion: 1
-    groups:
-      - name: memory-usage
-        folder: Alerts
-        interval: 60s
-        rules:
-          - title: High Memory Usage
-            name: High Memory Usage
-            condition: B
-            data:
-              - refId: A
-                datasourceUid: prometheus
-                model:
-                  expr: sum(container_memory_usage_bytes{namespace="rh-system", container!=""}) by (pod) / 1024 / 1024 / 1024
-                  intervalMs: 1000
-                  maxDataPoints: 43200
-                  refId: A
-              - refId: B
-                datasourceUid: __expr__
-                model:
-                  conditions:
-                    - evaluator:
-                        params:
-                          - 1.5
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                          - A
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                  refId: B
-            noDataState: NoData
-            execErrState: Error
-            for: 5m
-            annotations:
-              summary: High memory usage detected
-              description: Pod {{ $labels.pod }} has high memory usage ({{ $value }} GB)
-            labels:
-              severity: warning
-
-  postgres-connections-alert.yaml: |
-    apiVersion: 1
-    groups:
-      - name: postgres-connections
-        folder: Alerts
-        interval: 60s
-        rules:
-          - title: High PostgreSQL Connections
-            name: High PostgreSQL Connections
-            condition: B
-            data:
-              - refId: A
-                datasourceUid: prometheus
-                model:
-                  expr: pg_stat_activity_count{datname="rh_v2"}
-                  intervalMs: 1000
-                  maxDataPoints: 43200
-                  refId: A
-              - refId: B
-                datasourceUid: __expr__
-                model:
-                  conditions:
-                    - evaluator:
-                        params:
-                          - 50
-                        type: gt
-                      operator:
-                        type: and
-                      query:
-                        params:
-                          - A
-                      reducer:
-                        params: []
-                        type: last
-                      type: query
-                  refId: B
-            noDataState: NoData
-            execErrState: Error
-            for: 5m
-            annotations:
-              summary: High PostgreSQL connections detected
-              description: Database {{ $labels.datname }} has high number of connections ({{ $value }})
-            labels:
-              severity: warning
+            isPaused: false

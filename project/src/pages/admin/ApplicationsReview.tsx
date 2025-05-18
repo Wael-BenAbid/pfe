@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { API_BASE_URL, APPLICATION_STATUSES } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
-import { FileTextIcon, CheckIcon, XIcon, EyeIcon } from "lucide-react";
+import { FileTextIcon, CheckIcon, XIcon, EyeIcon, ArrowLeft } from "lucide-react";
 import AlertModal from "../../components/ui/AlertModal";
+import BackButton from "../../components/ui/BackButton";
 
 interface Application {
   id: number;
@@ -24,6 +26,7 @@ interface Application {
 
 const ApplicationsReview: React.FC = () => {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedApplication, setSelectedApplication] =
@@ -213,9 +216,12 @@ const ApplicationsReview: React.FC = () => {
         type={alertModal.type}
       />
 
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-        Applications Review
-      </h1>
+      <div className="flex items-center mb-6">
+        <BackButton to="/admine" label="Back to Dashboard" />
+        <h1 className="text-2xl font-semibold text-gray-900 ml-4">
+          Applications Review
+        </h1>
+      </div>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden mb-6">
         <div className="p-4 border-b border-gray-200 bg-gray-50">

@@ -1,7 +1,7 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import Notification
+from .models import Notification, User
 from .serializers import NotificationSerializer
 import logging
 
@@ -15,11 +15,28 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Limiter les résultats aux notifications de l'utilisateur connecté
+        Chaque utilisateur ne voit que ses propres notifications
         """
         user = self.request.user
-        if user.is_superuser or user.user_type == 'admin':
-            return Notification.objects.all()
         return Notification.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        """
+        Associer la notification à l'utilisateur spécifié ou à l'utilisateur connecté
+        """
+        user_id = self.request.data.get('user')
+        if user_id:
+            # Si un ID utilisateur est fourni, créer la notification pour cet utilisateur
+            try:
+                user = User.objects.get(id=user_id)
+                serializer.save(user=user)
+                logger.info(f"Notification créée pour l'utilisateur {user.username} (ID: {user.id}) par {self.request.user.username}")
+            except User.DoesNotExist:
+                raise serializers.ValidationError({'user': 'User does not exist'})
+        else:
+            # Sinon, associer la notification à l'utilisateur connecté
+            serializer.save(user=self.request.user)
+            logger.info(f"Notification créée pour l'utilisateur connecté {self.request.user.username}")
 
     def destroy(self, request, *args, **kwargs):
         """

@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { TextInput } from "../../components/ui/FormElements";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
-import { UserIcon } from "lucide-react";
+import { UserIcon, Eye, EyeOff } from "lucide-react";
 import logoImage from "../../assets/images/logo.png";
 
 const Login: React.FC = () => {
@@ -15,6 +15,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const from = location.state?.from?.pathname || "/";
 
@@ -22,6 +23,16 @@ const Login: React.FC = () => {
     e.preventDefault();
     setErrorMessage("");
     setIsSubmitting(true);
+
+    // Stocker l'email utilisé pour la connexion
+    // Si c'est un email, le stocker directement
+    if (username.includes('@')) {
+      localStorage.setItem('last_login_email', username);
+      console.log("Stored login email:", username);
+    } else {
+      // Si c'est un nom d'utilisateur, ne pas le stocker pour la vérification de candidature
+      console.log("Username provided, not storing for pending application check");
+    }
 
     try {
       await login(username, password);
@@ -40,22 +51,56 @@ const Login: React.FC = () => {
     } catch (error) {
       console.error("Login error:", error);
       if (error instanceof Error) {
+        console.log("Error message:", error.message);
+
+        console.log("Processing error message:", error.message);
+
         if (error.message.includes("credentials")) {
           setErrorMessage("Invalid username or password");
         } else if (error.message.startsWith("pending:")) {
           // Extraire l'ID de l'application
           const applicationId = error.message.split(":")[1];
+          console.log("Redirecting to pending approval page with ID:", applicationId);
           setErrorMessage("Your application is pending approval");
-          navigate("/pending-approval", {
-            state: { applicationId }
-          });
+
+          // Utiliser setTimeout pour s'assurer que la redirection se produit après le rendu
+          setTimeout(() => {
+            navigate("/pending-approval", {
+              state: { applicationId }
+            });
+          }, 100);
         } else if (error.message === "rejected") {
+          console.log("Redirecting to application rejected page");
           setErrorMessage("Your application has been rejected");
-          navigate("/not-found", { replace: true });
+
+          // Utiliser setTimeout pour s'assurer que la redirection se produit après le rendu
+          setTimeout(() => {
+            navigate("/application-rejected", { replace: true });
+          }, 100);
+        } else if (error.message.includes("en attente")) {
+          // Cas où le message contient "en attente" mais pas d'ID
+          console.log("Application pending detected from message");
+          setErrorMessage("Your application is pending approval");
+
+          // Utiliser setTimeout pour s'assurer que la redirection se produit après le rendu
+          setTimeout(() => {
+            navigate("/pending-approval");
+          }, 100);
+        } else if (error.message === "pending") {
+          // Cas simple où le message est juste "pending"
+          console.log("Simple pending status detected");
+          setErrorMessage("Your application is pending approval");
+
+          // Utiliser setTimeout pour s'assurer que la redirection se produit après le rendu
+          setTimeout(() => {
+            navigate("/pending-approval");
+          }, 100);
         } else {
-          setErrorMessage("An error occurred. Please try again.");
+          console.log("Generic error:", error.message);
+          setErrorMessage(error.message || "An error occurred. Please try again.");
         }
       } else {
+        console.log("Non-Error object thrown:", error);
         setErrorMessage("An error occurred. Please try again.");
       }
     } finally {
@@ -108,14 +153,28 @@ const Login: React.FC = () => {
               helper="You can use either your email or username to log in"
             />
 
-            <TextInput
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
+            <div className="relative">
+              <TextInput
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-9 text-gray-500 hover:text-gray-700 focus:outline-none"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center">

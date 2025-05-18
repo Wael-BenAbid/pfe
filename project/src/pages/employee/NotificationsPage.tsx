@@ -4,9 +4,10 @@ import { BellIcon, CheckIcon, TrashIcon } from "lucide-react";
 import { useNotifications } from "../../hooks/useNotifications";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 
 const NotificationsPage: React.FC = () => {
-  const { notifications, markAsRead, markAllAsRead, removeNotification } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, removeNotification, removeAllNotifications } = useNotifications();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMarkAllAsRead = async () => {
@@ -25,6 +26,31 @@ const NotificationsPage: React.FC = () => {
     setIsLoading(true);
     await removeNotification(id);
     setIsLoading(false);
+  };
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
+  const handleRemoveAllNotifications = async () => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Confirmation',
+      message: 'Êtes-vous sûr de vouloir supprimer toutes les notifications ?',
+      onConfirm: async () => {
+        setIsLoading(true);
+        await removeAllNotifications();
+        setIsLoading(false);
+      }
+    });
   };
 
   const getNotificationTypeStyles = (type: string) => {
@@ -56,18 +82,42 @@ const NotificationsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          confirmModal.onConfirm();
+        }}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Notifications</h1>
-        {notifications.filter(n => !n.read).length > 0 && (
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={handleMarkAllAsRead}
-            icon={<CheckIcon className="h-4 w-4" />}
-          >
-            Marquer tout comme lu
-          </Button>
-        )}
+        <div className="flex space-x-2">
+          {notifications.filter(n => !n.read).length > 0 && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              icon={<CheckIcon className="h-4 w-4" />}
+            >
+              Marquer tout comme lu
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleRemoveAllNotifications}
+              icon={<TrashIcon className="h-4 w-4" />}
+            >
+              Tout supprimer
+            </Button>
+          )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (

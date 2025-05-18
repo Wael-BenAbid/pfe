@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apply-message-fix
+  namespace: rh-system
+data:
+  apply_message_fix.sh: |
+    #!/bin/bash
+
+    # Script pour appliquer le correctif de la fonctionnalité de chat
+
+    # Vérifier si le fichier views_message.py existe
+    if [ ! -f "/app/Rh_app/views_message.py" ]; then
+        echo "Création du fichier views_message.py..."
+        cp /app/message_view_fix/views_message.py /app/Rh_app/views_message.py
+        echo "Fichier views_message.py créé avec succès."
+    else
+        echo "Le fichier views_message.py existe déjà."
+    fi
+
+    # Mettre à jour le fichier urls.py pour utiliser la nouvelle vue
+    echo "Mise à jour du fichier urls.py..."
+    
+    # Vérifier si l'importation existe déjà
+    if ! grep -q "from .views_message import MessageViewSet" /app/Rh_app/urls.py; then
+        # Supprimer l'importation de MessageViewSet du fichier views.py
+        sed -i 's/MessageViewSet, //g' /app/Rh_app/urls.py
+        
+        # Ajouter l'importation de MessageViewSet depuis views_message.py
+        sed -i '/from .views import (/a\    from .views_message import MessageViewSet' /app/Rh_app/urls.py
+        echo "Importation de MessageViewSet mise à jour dans urls.py."
+    else
+        echo "L'importation de MessageViewSet depuis views_message.py existe déjà."
+    fi
+
+    # Supprimer la classe MessageViewSet du fichier views.py
+    echo "Suppression de la classe MessageViewSet du fichier views.py..."
+    if grep -q "class MessageViewSet" /app/Rh_app/views.py; then
+        sed -i '/class MessageViewSet/,/return Response(contact_data)/c\# La classe MessageViewSet a été déplacée vers views_message.py' /app/Rh_app/views.py
+        echo "Classe MessageViewSet supprimée du fichier views.py."
+    else
+        echo "La classe MessageViewSet n'existe pas dans le fichier views.py."
+    fi
+
+    echo "Correctif appliqué avec succès!"

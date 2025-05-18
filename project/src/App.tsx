@@ -9,6 +9,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import EmployeeDashboard from './pages/employee/EmployeeDashboard';
 import InternDashboard from './pages/intern/InternDashboard';
 import PendingApproval from './pages/auth/PendingApproval';
+import ApplicationRejected from './pages/auth/ApplicationRejected';
 import Login from './pages/auth/Login';
 import ApplicationSuccess from './pages/ApplicationSuccess';
 import ForgotPassword from './pages/ForgotPassword';
@@ -36,6 +37,7 @@ function AppWithAlerts() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/application-success" element={<ApplicationSuccess />} />
           <Route path="/pending-approval" element={<PendingApproval />} />
+          <Route path="/application-rejected" element={<ApplicationRejected />} />
           <Route path="/not-found" element={<NotFound />} />
 
           {/* Routes protégées */}

@@ -216,26 +216,68 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       } else {
         // Gérer les différents cas d'erreur
         try {
-          const errorData = await response.json();
+          console.log('Response status:', response.status);
+          console.log('Response headers:', response.headers);
+
+          // Cloner la réponse pour pouvoir la lire plusieurs fois
+          const responseClone = response.clone();
+
+          // Essayer de lire le corps de la réponse comme texte d'abord
+          const responseText = await responseClone.text();
+          console.log('Raw response text:', responseText);
+
+          // Puis essayer de le parser comme JSON
+          let errorData;
+          try {
+            errorData = JSON.parse(responseText);
+            console.log('Parsed error data:', errorData);
+          } catch (jsonError) {
+            console.error('Failed to parse response as JSON:', jsonError);
+            errorData = { detail: responseText };
+          }
+
+          console.log('Login error response:', response.status, errorData);
 
           if (response.status === 403) {
             // Candidature en attente ou rejetée
+            console.log('Detected 403 status, checking for pending or rejected application');
+            console.log('Error data received:', errorData);
+
             if (errorData.status === 'pending') {
+              console.log('Pending application detected, ID:', errorData.application_id);
               throw new Error(`pending:${errorData.application_id}`);
             } else if (errorData.status === 'rejected') {
+              console.log('Rejected application detected');
               throw new Error('rejected');
+            } else if (errorData.detail && errorData.detail.includes("en attente")) {
+              // Cas où le message contient "en attente" mais pas de status explicite
+              console.log('Pending application detected from detail message');
+              const appId = errorData.application_id || '';
+              throw new Error(`pending:${appId}`);
+            } else {
+              // Cas où le statut n'est pas explicitement défini mais la réponse est 403
+              console.log('403 response without explicit status, assuming pending');
+              const appId = errorData.application_id || '';
+              throw new Error(`pending:${appId}`);
             }
           }
 
           // Si l'erreur contient un message détaillé, l'utiliser
           if (errorData.detail) {
+            console.log('Error detail:', errorData.detail);
             throw new Error(errorData.detail);
           } else if (errorData.error) {
+            console.log('Error message:', errorData.error);
             throw new Error(errorData.error);
           }
         } catch (parseError) {
           // Si l'erreur n'est pas au format JSON ou n'a pas les champs attendus
           console.error('Error parsing error response:', parseError);
+          if (response.status === 403) {
+            // Si c'est une erreur 403, supposer que c'est une candidature en attente
+            console.log('Assuming pending application due to 403 status');
+            throw new Error('pending');
+          }
         }
 
         throw new Error('Invalid credentials');

@@ -14,6 +14,7 @@ import {
   ACCEPTED_FILE_TYPES,
   MAX_FILE_SIZE,
 } from "../config/constants";
+import { Eye, EyeOff } from "lucide-react";
 
 import logoImage from "../assets/images/logo.png";
 
@@ -71,6 +72,7 @@ const ApplicationForm: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false);
 
   const validateStep = (step: number): boolean => {
     const newErrors: FormErrors = {};
@@ -353,15 +355,29 @@ const ApplicationForm: React.FC = () => {
               helper="Share your GitHub profile to showcase your projects"
             />
 
-            <TextInput
-              label="Password"
-              type="password"
-              placeholder="Create a password for your account"
-              value={formData.password}
-              onChange={(e) => handleChange("password", e.target.value)}
-              error={errors.password}
-              helper="You'll use this password to log in if your application is approved"
-            />
+            <div className="relative">
+              <TextInput
+                label="Password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Create a password for your account"
+                value={formData.password}
+                onChange={(e) => handleChange("password", e.target.value)}
+                error={errors.password}
+                helper="You'll use this password to log in if your application is approved"
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-9 text-gray-500 hover:text-gray-700 focus:outline-none"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
         );
       case 3:

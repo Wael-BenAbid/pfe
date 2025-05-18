@@ -212,8 +212,12 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ className }) => {
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <h3 className="text-md font-medium text-gray-900">Contacts</h3>
             {user?.user_type === 'intern' && (
-              <div className="mt-2 text-xs text-gray-600 bg-blue-50 p-2 rounded">
-                <p>En tant que stagiaire, vous pouvez uniquement contacter l'administrateur et votre encadrant.</p>
+              <div className="mt-2 text-xs text-gray-700 bg-blue-100 p-3 rounded border border-blue-200">
+                <p className="font-medium mb-1">Restrictions de messagerie :</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>En tant que stagiaire, vous pouvez uniquement contacter l'administrateur et votre encadrant.</li>
+                  <li>Si vous ne voyez pas un contact dans la liste, c'est que vous n'êtes pas autorisé à lui envoyer des messages.</li>
+                </ul>
               </div>
             )}
           </div>

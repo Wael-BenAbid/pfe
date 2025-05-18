@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
 import { useAlert } from "../../contexts/AlertContext";
@@ -6,8 +7,9 @@ import Button from "../../components/ui/Button";
 import TextInput from "../../components/ui/TextInput";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
 import Modal from "../../components/ui/Modal";
-import { PlusIcon, CheckIcon, XIcon, ClipboardListIcon, AlertTriangleIcon } from "lucide-react";
+import { PlusIcon, CheckIcon, XIcon, ClipboardListIcon, AlertTriangleIcon, ArrowLeft } from "lucide-react";
 import { updateMissionStatuses, isMissionLate, Mission as MissionType } from "../../utils/missionUtils";
+import BackButton from "../../components/ui/BackButton";
 
 interface User {
   id: number;
@@ -23,6 +25,7 @@ interface Mission extends MissionType {}
 
 const MissionManagement: React.FC = () => {
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [missions, setMissions] = useState<Mission[]>([]);
   const [employees, setEmployees] = useState<User[]>([]);
   const [interns, setInterns] = useState<User[]>([]);
@@ -520,9 +523,12 @@ const MissionManagement: React.FC = () => {
 
   return (
     <div className="container mx-auto py-6">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">
-        Mission Management
-      </h1>
+      <div className="flex items-center mb-6">
+        <BackButton to="/admine" label="Back to Dashboard" />
+        <h1 className="text-2xl font-semibold text-gray-900 ml-4">
+          Mission Management
+        </h1>
+      </div>
 
       {/* Onglets pour filtrer les missions */}
       <div className="flex border-b border-gray-200 mb-6">

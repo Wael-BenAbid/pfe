@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button';
 import TextInput from '../../components/ui/TextInput';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import InternMissionManagement from './InternMissionManagement';
+import AlertModal from '../../components/ui/AlertModal';
 import { Calendar as CalendarIcon, Briefcase as BriefcaseIcon, GraduationCap as GraduationCapIcon, X as XIcon } from 'lucide-react';
 
 interface InternDetails {
@@ -37,6 +38,13 @@ const InternManagement: React.FC = () => {
 
   // États pour les formulaires
   const [showMeetingForm, setShowMeetingForm] = useState(false);
+  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'info' | 'warning'
+  });
 
   const [newMeeting, setNewMeeting] = useState({
     title: '',
@@ -55,6 +63,11 @@ const InternManagement: React.FC = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  // Effet pour réinitialiser l'état formSubmitted lors du montage du composant
+  useEffect(() => {
+    setFormSubmitted(false);
+  }, []);
 
   const fetchInterns = async () => {
     setLoading(true);
@@ -122,15 +135,28 @@ const InternManagement: React.FC = () => {
 
     if (!selectedIntern) return;
 
+    // Marquer le formulaire comme soumis
+    setFormSubmitted(true);
+
     try {
       // Vérifier que les champs obligatoires sont remplis
-      if (newMeeting.location_type === 'online' && !newMeeting.meeting_link) {
-        alert('Veuillez fournir un lien de réunion pour les réunions en ligne.');
+      if (newMeeting.location_type === 'online' && !newMeeting.meeting_link && formSubmitted) {
+        setAlertModal({
+          isOpen: true,
+          title: 'Champs requis',
+          message: 'Veuillez fournir un lien de réunion pour les réunions en ligne.',
+          type: 'error'
+        });
         return;
       }
 
-      if ((newMeeting.location_type === 'office' || newMeeting.location_type === 'external') && !newMeeting.location_details) {
-        alert('Veuillez fournir les détails du lieu pour les réunions en présentiel.');
+      if ((newMeeting.location_type === 'office' || newMeeting.location_type === 'external') && !newMeeting.location_details && formSubmitted) {
+        setAlertModal({
+          isOpen: true,
+          title: 'Champs requis',
+          message: 'Veuillez fournir les détails du lieu pour les réunions en présentiel.',
+          type: 'error'
+        });
         return;
       }
 
@@ -138,8 +164,13 @@ const InternManagement: React.FC = () => {
       const meetingDate = new Date(newMeeting.date_time);
       const now = new Date();
 
-      if (meetingDate < now) {
-        alert("La date et l'heure du rendez-vous ne peuvent pas être dans le passé. Veuillez choisir une date et une heure futures.");
+      if (meetingDate < now && formSubmitted) {
+        setAlertModal({
+          isOpen: true,
+          title: 'Date invalide',
+          message: "La date et l'heure du rendez-vous ne peuvent pas être dans le passé. Veuillez choisir une date et une heure futures.",
+          type: 'error'
+        });
         return;
       }
 
@@ -205,7 +236,13 @@ const InternManagement: React.FC = () => {
               participant_id: 0
             });
             setShowMeetingForm(false);
-            alert('Rendez-vous créé avec succès !');
+            setFormSubmitted(false);
+            setAlertModal({
+              isOpen: true,
+              title: 'Succès',
+              message: 'Rendez-vous créé avec succès !',
+              type: 'success'
+            });
           } else {
             let errorText = '';
             try {
@@ -216,13 +253,23 @@ const InternManagement: React.FC = () => {
               errorText = await addParticipantResponse.text();
             }
             console.error('Failed to add participant:', errorText);
-            alert(`Échec de l'ajout du participant au rendez-vous: ${errorText}`);
+            setAlertModal({
+              isOpen: true,
+              title: 'Erreur',
+              message: `Échec de l'ajout du participant au rendez-vous: ${errorText}`,
+              type: 'error'
+            });
           }
         } catch (parseError) {
           console.error('Error parsing meeting response:', parseError);
           const responseText = await response.text();
           console.log('Raw response:', responseText);
-          alert('Erreur lors de la création du rendez-vous: Réponse invalide du serveur');
+          setAlertModal({
+            isOpen: true,
+            title: 'Erreur',
+            message: 'Erreur lors de la création du rendez-vous: Réponse invalide du serveur',
+            type: 'error'
+          });
         }
       } else {
         // Gérer les erreurs de réponse
@@ -237,11 +284,21 @@ const InternManagement: React.FC = () => {
           errorMessage += responseText;
           console.error('Failed to create meeting, raw response:', responseText);
         }
-        alert(`Échec de la création du rendez-vous: ${errorMessage}`);
+        setAlertModal({
+          isOpen: true,
+          title: 'Erreur',
+          message: `Échec de la création du rendez-vous: ${errorMessage}`,
+          type: 'error'
+        });
       }
     } catch (error) {
       console.error('Error creating meeting:', error);
-      alert(`Erreur lors de la création du rendez-vous: ${error instanceof Error ? error.message : String(error)}`);
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur',
+        message: `Erreur lors de la création du rendez-vous: ${error instanceof Error ? error.message : String(error)}`,
+        type: 'error'
+      });
     }
   };
 
@@ -251,6 +308,14 @@ const InternManagement: React.FC = () => {
 
   return (
     <div className="p-6">
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
       <h2 className="text-lg font-medium text-gray-900 mb-6">Gestion des Stagiaires</h2>
 
       {interns.length === 0 ? (
@@ -364,7 +429,10 @@ const InternManagement: React.FC = () => {
                   <button
                     type="button"
                     className="text-gray-400 hover:text-gray-500"
-                    onClick={() => setShowMeetingForm(false)}
+                    onClick={() => {
+                      setShowMeetingForm(false);
+                      setFormSubmitted(false);
+                    }}
                     title="Fermer le formulaire"
                   >
                     <XIcon className="h-6 w-6" />
@@ -472,7 +540,10 @@ const InternManagement: React.FC = () => {
                       variant="outline"
                       size="md"
                       className="w-full"
-                      onClick={() => setShowMeetingForm(false)}
+                      onClick={() => {
+                        setShowMeetingForm(false);
+                        setFormSubmitted(false);
+                      }}
                     >
                       Annuler
                     </Button>

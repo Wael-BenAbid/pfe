@@ -26,7 +26,7 @@ interface AdminHeaderProps {
 
 // Wrapper component for NotificationDropdown
 const NotificationDropdownWrapper: React.FC<{ pendingCount: number }> = ({ pendingCount }) => {
-  const { notifications, markAsRead, markAllAsRead, addNotification } = useNotifications();
+  const { notifications, markAsRead, markAllAsRead, addNotification, removeAllNotifications } = useNotifications();
   const { token } = useAuth();
   const [pendingLeaves, setPendingLeaves] = useState<number>(0);
   const [notificationsInitialized, setNotificationsInitialized] = useState<boolean>(false);
@@ -87,6 +87,7 @@ const NotificationDropdownWrapper: React.FC<{ pendingCount: number }> = ({ pendi
       notifications={notifications}
       onMarkAsRead={markAsRead}
       onMarkAllAsRead={markAllAsRead}
+      onRemoveAllNotifications={removeAllNotifications}
       userType="admin"
     />
   );
