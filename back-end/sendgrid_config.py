@@ -1,20 +1,21 @@
 """
-Module pour l'envoi d'emails via l'API SendGrid.
+Module pour l'envoi d'emails via l'API SendGrid avec des améliorations pour la délivrabilité.
 """
 
 import requests
 import json
 from django.conf import settings
 
-def send_email(subject, message, recipient_list, from_email=None):
+def send_email(subject, message, recipient_list, from_email=None, html_content=None):
     """
-    Envoie un email via l'API SendGrid.
+    Envoie un email via l'API SendGrid avec des améliorations pour la délivrabilité.
 
     Args:
         subject (str): Sujet de l'email
-        message (str): Corps de l'email
+        message (str): Corps de l'email en texte brut
         recipient_list (list): Liste des destinataires
         from_email (str, optional): Adresse email de l'expéditeur. Par défaut settings.DEFAULT_FROM_EMAIL.
+        html_content (str, optional): Version HTML du message. Si None, le message texte sera utilisé.
 
     Returns:
         bool: True si l'email a été envoyé avec succès, False sinon
@@ -39,7 +40,7 @@ def send_email(subject, message, recipient_list, from_email=None):
         print(f"À: {to_email}")
         print(f"Sujet: {subject}")
 
-        # Créer la structure de données pour l'API SendGrid
+        # Créer la structure de données pour l'API SendGrid avec des améliorations
         data = {
             "personalizations": [
                 {
@@ -48,10 +49,25 @@ def send_email(subject, message, recipient_list, from_email=None):
                             "email": to_email if isinstance(to_email, str) else recipient_list[0]
                         }
                     ],
-                    "subject": subject
+                    "subject": subject,
+                    "headers": {
+                        "X-Priority": "1",
+                        "Importance": "High",
+                        "Precedence": "bulk",
+                        "Auto-Submitted": "auto-generated",
+                        "X-Auto-Response-Suppress": "OOF, DR, RN, NRN, AutoReply",
+                        "List-Unsubscribe": f"<mailto:{from_email_address}?subject=Unsubscribe>",
+                        "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+                        "X-Report-Abuse": f"Please report abuse here: mailto:{from_email_address}?subject=Abuse",
+                        "X-Mailer": "RH System Mailer"
+                    }
                 }
             ],
             "from": {
+                "email": from_email_address,
+                "name": from_name
+            },
+            "reply_to": {
                 "email": from_email_address,
                 "name": from_name
             },
@@ -60,8 +76,48 @@ def send_email(subject, message, recipient_list, from_email=None):
                     "type": "text/plain",
                     "value": message
                 }
-            ]
+            ],
+            "tracking_settings": {
+                "click_tracking": {
+                    "enable": True,
+                    "enable_text": True
+                },
+                "open_tracking": {
+                    "enable": True
+                },
+                "subscription_tracking": {
+                    "enable": True,
+                    "text": "Pour vous désabonner, cliquez ici: <%unsubscribe%>",
+                    "html": "<p>Pour vous désabonner, <a href='<%unsubscribe%>'>cliquez ici</a>.</p>"
+                }
+            },
+            "mail_settings": {
+                "footer": {
+                    "enable": True,
+                    "text": "\n\nCe message est généré automatiquement par RH System. Pour vous désabonner, répondez à cet email avec 'Désabonner' comme sujet.",
+                    "html": "<p>Ce message est généré automatiquement par RH System. Pour vous désabonner, répondez à cet email avec 'Désabonner' comme sujet.</p>"
+                },
+                "spam_check": {
+                    "enable": True,
+                    "threshold": 3,
+                    "post_to_url": "https://spamcop.net/fom"
+                },
+                "bypass_list_management": {
+                    "enable": False
+                }
+            },
+            "asm": {
+                "group_id": 12345,
+                "groups_to_display": [12345]
+            }
         }
+
+        # Ajouter le contenu HTML si fourni
+        if html_content:
+            data["content"].append({
+                "type": "text/html",
+                "value": html_content
+            })
 
         # Envoyer l'email
         url = "https://api.sendgrid.com/v3/mail/send"

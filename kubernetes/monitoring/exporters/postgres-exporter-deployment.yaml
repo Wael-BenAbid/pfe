@@ -17,26 +17,20 @@ spec:
     spec:
       containers:
       - name: postgres-exporter
-        image: prometheuscommunity/postgres-exporter:v0.13.2
+        image: prometheuscommunity/postgres-exporter:v0.11.1
         env:
         - name: DATA_SOURCE_NAME
           valueFrom:
             secretKeyRef:
               name: postgres-exporter-secret
-              key: data-source-name
+              key: DATA_SOURCE_NAME
         ports:
         - containerPort: 9187
-          name: metrics
+          name: http
         resources:
-          limits:
-            cpu: 100m
-            memory: 256Mi
           requests:
-            cpu: 50m
+            cpu: 100m
             memory: 128Mi
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 9187
-          initialDelaySeconds: 10
-          timeoutSeconds: 5
+          limits:
+            cpu: 200m
+            memory: 256Mi

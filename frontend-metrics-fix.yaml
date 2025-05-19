@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-metrics
+  namespace: rh-system
+data:
+  metrics.json: |
+    {
+      "status": "success",
+      "data": {
+        "resultType": "vector",
+        "result": [
+          {
+            "metric": {
+              "__name__": "frontend_up",
+              "instance": "frontend",
+              "job": "rh-frontend"
+            },
+            "value": [1620000000, "1"]
+          },
+          {
+            "metric": {
+              "__name__": "frontend_requests_total",
+              "instance": "frontend",
+              "job": "rh-frontend",
+              "path": "/"
+            },
+            "value": [1620000000, "100"]
+          },
+          {
+            "metric": {
+              "__name__": "frontend_request_duration_seconds",
+              "instance": "frontend",
+              "job": "rh-frontend",
+              "path": "/"
+            },
+            "value": [1620000000, "0.5"]
+          }
+        ]
+      }
+    }

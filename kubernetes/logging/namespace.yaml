@@ -4,4 +4,3 @@ metadata:
   name: logging
   labels:
     name: logging
-    app: logging

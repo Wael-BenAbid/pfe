@@ -57,5 +57,4 @@ spec:
         configMap:
           name: prometheus-config
       - name: prometheus-storage
-        persistentVolumeClaim:
-          claimName: prometheus-storage
+        emptyDir: {}

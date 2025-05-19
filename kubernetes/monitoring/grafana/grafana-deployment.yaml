@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: grafana
-        image: grafana/grafana:10.0.3
+        image: grafana/grafana:9.5.2
         ports:
         - containerPort: 3000
           name: http
@@ -33,26 +33,14 @@ spec:
               name: grafana-credentials
               key: admin-password
         - name: GF_INSTALL_PLUGINS
-          value: "grafana-clock-panel,grafana-simple-json-datasource,grafana-piechart-panel"
-        readinessProbe:
-          httpGet:
-            path: /api/health
-            port: 3000
-          initialDelaySeconds: 30
-          timeoutSeconds: 30
-        livenessProbe:
-          httpGet:
-            path: /api/health
-            port: 3000
-          initialDelaySeconds: 30
-          timeoutSeconds: 30
+          value: "grafana-clock-panel,grafana-simple-json-datasource"
         resources:
           requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
             cpu: 200m
             memory: 256Mi
-          limits:
-            cpu: 500m
-            memory: 512Mi
         volumeMounts:
         - name: grafana-storage
           mountPath: /var/lib/grafana

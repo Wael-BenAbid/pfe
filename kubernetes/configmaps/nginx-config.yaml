@@ -186,6 +186,24 @@ data:
             add_header Content-Security-Policy "upgrade-insecure-requests";
         }
 
+        # Route pour les métriques Prometheus du frontend
+        location = /metrics.json {
+            root /usr/share/nginx/html;
+            default_type application/json;
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+            add_header Pragma "no-cache";
+            add_header Expires "0";
+        }
+
+        # Route pour les métriques Prometheus du backend
+        location ~ ^/metrics/?$ {
+            proxy_pass http://rh-backend:8000/metrics;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
         # Route par défaut pour le frontend
         location / {
             root /usr/share/nginx/html;
