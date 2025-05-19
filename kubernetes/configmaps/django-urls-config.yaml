@@ -88,6 +88,9 @@ data:
         path('admin/', admin.site.urls, name='django_admin'),  # Interface d'administration Django
         # Suppression de la route 'django-admin/' pour éviter la confusion
 
+        # Métriques Prometheus
+        path('', include('django_prometheus.urls')),
+
         # Routes sans préfixe api/
         path('', include(router.urls)),  # Routes API sans préfixe
         path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

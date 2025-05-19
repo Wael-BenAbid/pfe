@@ -23,20 +23,17 @@ services:
     restart: unless-stopped
 
   backend:
-    build:
-      context: ./back-end
-      dockerfile: Dockerfile
-      args:
-        ADMIN_USERNAME: wael
-        ADMIN_EMAIL: waelbenabid1@gmail.com
-        ADMIN_PASSWORD: Abidos$123
-        ADMIN_FIRSTNAME: Wael
-        ADMIN_LASTNAME: Ben Abid
+    image: waelbenabid/rh-backend-desktop:latest
     ports:
       - "8000:8000"
     env_file:
       - ./back-end/.env
     environment:
+      - ADMIN_USERNAME=wael
+      - ADMIN_EMAIL=waelbenabid1@gmail.com
+      - ADMIN_PASSWORD=Abidos$123
+      - ADMIN_FIRSTNAME=Wael
+      - ADMIN_LASTNAME=Ben Abid
       - DEBUG=True
       - DATABASE_NAME=rh_v2
       - DATABASE_USER=postgres

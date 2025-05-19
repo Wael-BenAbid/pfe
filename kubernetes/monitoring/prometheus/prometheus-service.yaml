@@ -5,9 +5,6 @@ metadata:
   namespace: monitoring
   labels:
     app: prometheus
-  annotations:
-    prometheus.io/scrape: 'true'
-    prometheus.io/port: '9090'
 spec:
   selector:
     app: prometheus
@@ -16,4 +13,3 @@ spec:
     targetPort: 9090
     protocol: TCP
     name: http
-  type: ClusterIP

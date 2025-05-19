@@ -56,24 +56,31 @@ def django_admin_view(request, path=''):
     pass
 
 urlpatterns = [
-    path('', api_root, name='api_root'),  # API root endpoint
-    path('admin/', admin.site.urls, name='django_admin'),  # Interface d'administration Django
-    # Suppression de la route 'django-admin/' pour éviter la confusion
+    # Interface d'administration Django directement à la racine
+    path('', admin.site.urls, name='django_admin'),
 
-    # Inclure toutes les URLs de l'application Rh_app en premier
-    # pour que les routes spécifiques de Rh_app aient priorité
-    path('', include('Rh_app.urls')),
+    # Ancienne route d'administration pour la compatibilité
+    path('admin/', admin.site.urls, name='django_admin_legacy'),
 
-    # Routes API (sans préfixe api/)
-    path('', include(router.urls)),  # Routes API principales
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
-    path('auth/login/', login_view, name='api_login'),
-    path('auth/logout/', api_logout, name='api_logout'),
+    # API root endpoint accessible via /api/
+    path('api/', api_root, name='api_root'),
+
+    # Inclure toutes les URLs de l'application Rh_app avec préfixe api/
+    path('api/', include('Rh_app.urls')),
+
+    # Métriques Prometheus
+    path('', include('django_prometheus.urls')),
+
+    # Routes API avec préfixe api/
+    path('api/', include(router.urls)),  # Routes API principales
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify'),
+    path('api/auth/login/', login_view, name='api_login'),
+    path('api/auth/logout/', api_logout, name='api_logout'),
 
     # Routes spécifiques pour les utilisateurs par ID
     # Cette route est déjà définie par le routeur, mais nous la redéfinissons ici pour être sûr
-    path('users/<int:pk>/', UserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user-detail'),
+    path('api/users/<int:pk>/', UserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update', 'delete': 'destroy'}), name='user-detail'),
 ]
 
 # Ajouter les URLs pour servir les fichiers média et statiques

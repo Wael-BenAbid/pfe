@@ -16,16 +16,24 @@ spec:
     spec:
       serviceAccountName: filebeat
       terminationGracePeriodSeconds: 30
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: filebeat
-        image: docker.elastic.co/beats/filebeat:7.17.10
+        image: docker.elastic.co/beats/filebeat:7.17.0
         args: [
           "-c", "/etc/filebeat.yml",
           "-e",
         ]
         env:
+        - name: ELASTICSEARCH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-credentials
+              key: username
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-credentials
+              key: password
         - name: NODE_NAME
           valueFrom:
             fieldRef:
@@ -36,7 +44,6 @@ spec:
           #privileged: true
         resources:
           limits:
-            cpu: 200m
             memory: 200Mi
           requests:
             cpu: 100m

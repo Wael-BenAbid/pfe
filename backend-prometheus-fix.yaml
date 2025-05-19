@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-prometheus-fix
+  namespace: rh-system
+data:
+  install-prometheus.sh: |
+    #!/bin/bash
+    
+    # Installer django-prometheus
+    echo "Installing django-prometheus..."
+    pip install django-prometheus
+    
+    # Modifier settings.py
+    echo "Configuring django-prometheus in settings.py..."
+    SETTINGS_FILE="/app/SystemeRH_v2/settings.py"
+    
+    # Vérifier si django_prometheus est déjà dans INSTALLED_APPS
+    if ! grep -q "django_prometheus" "$SETTINGS_FILE"; then
+      # Ajouter django_prometheus aux INSTALLED_APPS
+      sed -i "s/INSTALLED_APPS = \[/INSTALLED_APPS = \[\n    'django_prometheus',/" "$SETTINGS_FILE"
+      
+      # Ajouter les middlewares Prometheus
+      sed -i "s/MIDDLEWARE = \[/MIDDLEWARE = \[\n    'django_prometheus.middleware.PrometheusBeforeMiddleware',/" "$SETTINGS_FILE"
+      sed -i "s/]  # Middleware pour vérifier les missions en retard/,\n    'django_prometheus.middleware.PrometheusAfterMiddleware'\n]  # Middleware pour vérifier les missions en retard/" "$SETTINGS_FILE"
+      
+      echo "django-prometheus added to settings.py"
+    else
+      echo "django-prometheus already in settings.py"
+    fi
+    
+    # Modifier urls.py
+    echo "Configuring django-prometheus in urls.py..."
+    URLS_FILE="/app/SystemeRH_v2/urls.py"
+    
+    # Vérifier si django_prometheus.urls est déjà inclus
+    if ! grep -q "django_prometheus.urls" "$URLS_FILE"; then
+      # Ajouter l'import include s'il n'existe pas
+      if ! grep -q "from django.urls import path, include" "$URLS_FILE"; then
+        sed -i "s/from django.urls import path/from django.urls import path, include/" "$URLS_FILE"
+      fi
+      
+      # Ajouter l'URL des métriques Prometheus
+      sed -i "s/urlpatterns = \[/urlpatterns = \[\n    path('', include('django_prometheus.urls')),/" "$URLS_FILE"
+      
+      echo "django-prometheus URLs added to urls.py"
+    else
+      echo "django-prometheus URLs already in urls.py"
+    fi
+    
+    echo "django-prometheus configuration completed"

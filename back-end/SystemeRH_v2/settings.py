@@ -47,9 +47,11 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'django_crontab',
+    'django_prometheus',
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',  # Doit être en premier
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -59,6 +61,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Rh_app.middleware.CheckLateMissionsMiddleware',  # Middleware pour vérifier les missions en retard
+    'Rh_app.prometheus_metrics.PrometheusMiddleware',  # Middleware pour les métriques personnalisées
+    'django_prometheus.middleware.PrometheusAfterMiddleware',  # Doit être en dernier
 ]
 
 IGNORABLE_404_URLS = [
@@ -196,10 +200,24 @@ SIMPLE_JWT = {
 }
 
 # Email Configuration
-SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
-EMAIL_BACKEND = 'django.core.mail.backends.dummy.EmailBackend'  # Utiliser un backend factice pour Django
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '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')
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Utiliser SMTP pour envoyer de vrais emails
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'apikey'  # Ceci doit être 'apikey' pour SendGrid
+EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'RH System <waelbenabid1@gmail.com>')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+
+# Paramètres supplémentaires pour améliorer la délivrabilité des emails
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+ADMINS = [('Admin', 'waelbenabid1@gmail.com')]
+MANAGERS = ADMINS
+
+# Configuration des en-têtes d'email
+EMAIL_SUBJECT_PREFIX = '[RH System] '
+EMAIL_USE_LOCALTIME = True
 
 # Configuration de journalisation
 LOGGING = {

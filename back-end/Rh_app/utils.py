@@ -50,6 +50,107 @@ Ghar El Melh, 7033 TUN
 Ce message est généré automatiquement, merci de ne pas y répondre.
 """
 
+    # Créer une version HTML du message pour améliorer la délivrabilité
+    # Remplacer les sauts de ligne par des balises <br> pour l'affichage HTML
+    message_html = message.replace('\n', '<br>')
+
+    # Créer le template HTML sans utiliser de f-string avec des backslashes
+    html_message = """
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>""" + subject + """</title>
+    <style>
+        @media only screen and (max-width: 600px) {
+            .main-container {
+                width: 100% !important;
+                padding: 10px !important;
+            }
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -ms-text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
+            background-color: #f8f9fa;
+        }
+        .main-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background-color: #4a89dc;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+        .header h2 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px;
+            background-color: #ffffff;
+        }
+        .footer {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            font-size: 12px;
+            color: #777777;
+            text-align: center;
+            border-top: 1px solid #eeeeee;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4a89dc;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        a {
+            color: #4a89dc;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h2>RH System</h2>
+        </div>
+        <div class="content">
+            <p>Bonjour,</p>
+            <p>""" + message_html + """</p>
+            <p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
+        </div>
+        <div class="footer">
+            <p>Cordialement,<br>
+            L'équipe RH System<br>
+            Ghar El Melh, 7033 TUN</p>
+            <p><small>Ce message est généré automatiquement. Pour vous désabonner ou signaler un abus, veuillez répondre à cet email avec "Désabonner" comme sujet.</small></p>
+        </div>
+    </div>
+</body>
+</html>
+"""
+
     # Vérifier la limite d'emails par jour pour chaque destinataire
     from .models import User, EmailLog
 
@@ -63,12 +164,13 @@ Ce message est généré automatiquement, merci de ne pas y répondre.
             can_send = force_send or EmailLog.can_send_email(user, email_type, reference_id)
 
             if can_send:
-                # Envoyer l'email via SendGrid
+                # Envoyer l'email via SendGrid avec la version HTML
                 result = send_email(
                     subject=subject,
                     message=formatted_message,
                     recipient_list=[recipient_email],
-                    from_email=settings.DEFAULT_FROM_EMAIL
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    html_content=html_message
                 )
 
                 if result:
@@ -91,7 +193,8 @@ Ce message est généré automatiquement, merci de ne pas y répondre.
                 subject=subject,
                 message=formatted_message,
                 recipient_list=[recipient_email],
-                from_email=settings.DEFAULT_FROM_EMAIL
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                html_content=html_message
             )
             if not result:
                 success = False

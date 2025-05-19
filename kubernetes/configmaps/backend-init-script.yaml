@@ -65,6 +65,44 @@ data:
         print(f"Error loading admin settings: {e}")
     EOF
 
+    # Configurer django-prometheus dans settings.py
+    echo 'Configuring django-prometheus in settings.py...'
+    python -c "
+    import os
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'SystemeRH_v2.settings')
+    import django
+    django.setup()
+    from django.conf import settings
+
+    # Vérifier si django_prometheus est dans INSTALLED_APPS
+    if 'django_prometheus' not in settings.INSTALLED_APPS:
+        settings_path = '/app/SystemeRH_v2/settings.py'
+        with open(settings_path, 'r') as f:
+            content = f.read()
+
+        # Ajouter django_prometheus aux INSTALLED_APPS
+        content = content.replace(
+            'INSTALLED_APPS = [',
+            'INSTALLED_APPS = [\\n    \"django_prometheus\",')
+
+        # Ajouter les middlewares Prometheus
+        content = content.replace(
+            'MIDDLEWARE = [',
+            'MIDDLEWARE = [\\n    \"django_prometheus.middleware.PrometheusBeforeMiddleware\",')
+
+        content = content.replace(
+            ']  # Middleware pour vérifier les missions en retard',
+            ',\\n    \"django_prometheus.middleware.PrometheusAfterMiddleware\"\\n]  # Middleware pour vérifier les missions en retard')
+
+        # Écrire les modifications
+        with open(settings_path, 'w') as f:
+            f.write(content)
+
+        print('django-prometheus configured in settings.py')
+    else:
+        print('django-prometheus already configured in settings.py')
+    "
+
     # Appliquer le patch pour ajouter le modèle Message
     echo 'Applying Message model patch...'
     if [ -f "/scripts/add_message_model.sh" ]; then

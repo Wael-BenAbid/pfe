@@ -1,80 +1,44 @@
-# Centralisation des Logs pour le Système de Gestion RH
+# Logging pour RH System
 
-Ce répertoire contient les configurations nécessaires pour mettre en place la centralisation des logs de l'application RH System sur Kubernetes avec la stack ELK (Elasticsearch, Logstash, Kibana).
+Ce dossier contient les fichiers de configuration pour le logging de RH System.
 
-## Structure des fichiers
+## Structure
 
-- `elasticsearch/` : Contient les configurations pour Elasticsearch
-- `logstash/` : Contient les configurations pour Logstash
-- `kibana/` : Contient les configurations pour Kibana
-- `filebeat/` : Contient les configurations pour Filebeat
+- `elasticsearch/` : Configuration d'Elasticsearch
+- `kibana/` : Configuration de Kibana
+- `filebeat/` : Configuration de Filebeat pour collecter les logs
 
-## Prérequis
+## Installation
 
-- Un cluster Kubernetes fonctionnel avec l'application RH System déployée
-- kubectl configuré pour communiquer avec votre cluster
-- Helm v3 installé (pour le déploiement via Helm)
-- Au moins 8 Go de RAM disponible dans le cluster pour la stack ELK
-
-## Déploiement
-
-### Option 1: Déploiement manuel avec kubectl
-
-Pour déployer manuellement la stack ELK :
+Pour installer le logging, exécutez le script suivant :
 
 ```bash
-# Créer le namespace pour la centralisation des logs
-kubectl apply -f namespace.yaml
-
-# Déployer Elasticsearch
-kubectl apply -f elasticsearch/
-
-# Déployer Logstash
-kubectl apply -f logstash/
-
-# Déployer Kibana
-kubectl apply -f kibana/
-
-# Déployer Filebeat
-kubectl apply -f filebeat/
+bash install-logging.sh
 ```
 
-### Option 2: Déploiement avec Helm (recommandé)
-
-Pour déployer la stack ELK avec Helm, utilisez le script `install-logging.sh` :
-
-```bash
-chmod +x install-logging.sh
-./install-logging.sh
-```
-
-## Accès à Kibana
-
-Une fois déployé, Kibana sera accessible à l'URL suivante :
+## Accès
 
 - Kibana : http://kibana.rh-system.local
+  - Utilisateur : elastic
+  - Mot de passe : elastic123
 
-Pour un environnement de développement local, vous devrez ajouter cette entrée à votre fichier hosts :
+## Configuration
 
-```
-127.0.0.1 kibana.rh-system.local
-```
+### Elasticsearch
 
-## Dashboards Kibana
+Elasticsearch est configuré en mode single-node pour stocker les logs.
 
-Plusieurs dashboards sont préconfigurés :
+### Kibana
 
-1. **Vue d'ensemble du système** : Affiche les logs système de tous les nœuds
-2. **Logs d'application** : Affiche les logs spécifiques à l'application (frontend et backend)
-3. **Logs de base de données** : Affiche les logs de PostgreSQL
-4. **Logs d'accès** : Affiche les logs d'accès HTTP (requêtes, codes de statut, temps de réponse)
-5. **Logs de sécurité** : Affiche les logs liés à la sécurité (authentification, autorisations)
+Kibana est configuré pour se connecter à Elasticsearch et fournir une interface utilisateur pour visualiser les logs.
 
-## Requêtes utiles
+### Filebeat
 
-Voici quelques exemples de requêtes Kibana pour rechercher des informations spécifiques :
+Filebeat est configuré pour collecter les logs des conteneurs et les envoyer à Elasticsearch.
 
-- Erreurs dans le backend : `kubernetes.labels.app:rh-backend AND log:*error*`
-- Requêtes HTTP lentes : `kubernetes.labels.app:rh-frontend AND response_time:>1000`
-- Tentatives d'authentification échouées : `kubernetes.labels.app:rh-backend AND log:*authentication failed*`
-- Logs d'un pod spécifique : `kubernetes.pod.name:rh-backend-5d4d7b9f68-2c6xj`
+## Utilisation
+
+1. Accédez à Kibana via l'URL http://kibana.rh-system.local
+2. Connectez-vous avec les identifiants fournis
+3. Créez un index pattern pour les logs Filebeat
+4. Explorez les logs dans la section "Discover"

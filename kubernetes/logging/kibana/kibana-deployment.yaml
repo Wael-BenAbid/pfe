@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: kibana
   namespace: logging
+  labels:
+    app: kibana
 spec:
   replicas: 1
   selector:
@@ -15,27 +17,27 @@ spec:
     spec:
       containers:
       - name: kibana
-        image: docker.elastic.co/kibana/kibana:7.17.10
-        resources:
-          limits:
-            cpu: 1000m
-            memory: 1Gi
-          requests:
-            cpu: 500m
-            memory: 512Mi
+        image: docker.elastic.co/kibana/kibana:7.17.0
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: http://elasticsearch:9200
+        - name: ELASTICSEARCH_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-credentials
+              key: username
+        - name: ELASTICSEARCH_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-credentials
+              key: password
         ports:
         - containerPort: 5601
           name: http
-        env:
-        - name: ELASTICSEARCH_URL
-          value: http://elasticsearch:9200
-        - name: ELASTICSEARCH_HOSTS
-          value: http://elasticsearch:9200
-        volumeMounts:
-        - name: kibana-config
-          mountPath: /usr/share/kibana/config/kibana.yml
-          subPath: kibana.yml
-      volumes:
-      - name: kibana-config
-        configMap:
-          name: kibana-config
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi

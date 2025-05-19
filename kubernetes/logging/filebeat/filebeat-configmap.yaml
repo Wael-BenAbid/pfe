@@ -16,26 +16,12 @@ data:
             - logs_path:
                 logs_path: "/var/log/containers/"
 
-    # Specific inputs for RH System
-    - type: container
-      paths:
-        - /var/log/containers/rh-backend-*.log
-        - /var/log/containers/rh-frontend-*.log
-        - /var/log/containers/postgres-db-*.log
-      processors:
-        - add_kubernetes_metadata:
-            host: ${NODE_NAME}
-            matchers:
-            - logs_path:
-                logs_path: "/var/log/containers/"
-        - add_fields:
-            target: ''
-            fields:
-              app: 'rh-system'
+    output.elasticsearch:
+      hosts: ['elasticsearch:9200']
+      username: ${ELASTICSEARCH_USERNAME}
+      password: ${ELASTICSEARCH_PASSWORD}
 
-    processors:
-      - add_cloud_metadata:
-      - add_host_metadata:
-
-    output.logstash:
-      hosts: ["logstash:5044"]
+    setup.kibana:
+      host: "kibana:5601"
+      username: ${ELASTICSEARCH_USERNAME}
+      password: ${ELASTICSEARCH_PASSWORD}
