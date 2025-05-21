@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zipkin-prometheus-config
+  namespace: monitoring
+data:
+  prometheus-job.yml: |
+    - job_name: 'zipkin'
+      scrape_interval: 15s
+      metrics_path: '/prometheus'
+      static_configs:
+        - targets: ['zipkin:9411']

@@ -1,7 +1,7 @@
 // API configuration
 // Nous définissons deux constantes pour les appels API:
-// - API_BASE_URL: URL de base sans le préfixe '/api' (pour les appels directs au backend, comme les médias)
-// - API_URL: URL complète avec le préfixe '/api' (pour les appels aux endpoints API standard)
+// - API_BASE_URL: URL de base pour tous les appels au backend
+// - API_URL: Même URL que API_BASE_URL (pour maintenir la compatibilité avec le code existant)
 export const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8000'
   : window.location.hostname === 'rh-system.local'

@@ -8,7 +8,7 @@ import os
 import sys
 
 # Clé API SendGrid
-API_KEY = "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"
+API_KEY = "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"
 
 def send_simple_email(to_email, subject, message, from_email="RH System <waelbenabid1@gmail.com>"):
     """

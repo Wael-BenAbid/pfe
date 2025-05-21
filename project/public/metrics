@@ -1,0 +1,9 @@
+# HELP frontend_up Frontend up status
+# TYPE frontend_up gauge
+frontend_up{instance="frontend",job="rh-frontend"} 1
+# HELP frontend_requests_total Total number of requests
+# TYPE frontend_requests_total counter
+frontend_requests_total{instance="frontend",job="rh-frontend",path="/"} 100
+# HELP frontend_request_duration_seconds Request duration in seconds
+# TYPE frontend_request_duration_seconds gauge
+frontend_request_duration_seconds{instance="frontend",job="rh-frontend",path="/"} 0.5

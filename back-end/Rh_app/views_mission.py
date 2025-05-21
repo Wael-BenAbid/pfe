@@ -137,6 +137,21 @@ class MissionViewSet(viewsets.ModelViewSet):
                 type="success"
             )
 
+        # Enregistrer l'activité système
+        from .models import SystemActivity
+        SystemActivity.objects.create(
+            action_type="complete",
+            action="Mission Completed",
+            user=request.user,
+            details=f"Mission '{mission.title}' completed",
+            resource_type="Mission",
+            resource_id=mission.id
+        )
+
+        # Enregistrer la métrique Prometheus
+        from .prometheus_metrics import mission_actions_total
+        mission_actions_total.labels(action='completed', user_type=request.user.user_type).inc()
+
         return Response({
             'status': 'mission completed',
             'work_duration': str(mission.work_duration) if mission.work_duration else None

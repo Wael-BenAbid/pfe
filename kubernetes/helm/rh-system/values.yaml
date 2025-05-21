@@ -32,7 +32,7 @@ frontend:
     targetCPUUtilizationPercentage: 70
     targetMemoryUtilizationPercentage: 80
   config:
-    apiBaseUrl: http://rh-backend:8000
+    apiBaseUrl: //rh-system.local
     nodeEnv: production
 
 # Backend configuration
@@ -111,11 +111,19 @@ ingress:
   hosts:
     - host: rh-system.local
       paths:
-        - path: /api(/|$)(.*)
+        - path: /(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth|messages|public)(/|$)(.*)
           pathType: Prefix
           backend: rh-backend
           port: 8000
         - path: /admin(/|$)(.*)
+          pathType: Prefix
+          backend: rh-backend
+          port: 8000
+        - path: /media(/|$)(.*)
+          pathType: Prefix
+          backend: rh-backend
+          port: 8000
+        - path: /static(/|$)(.*)
           pathType: Prefix
           backend: rh-backend
           port: 8000

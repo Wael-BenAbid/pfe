@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-metrics-view
+  namespace: rh-system
+data:
+  prometheus_metrics_view.py: |
+    from django.http import HttpResponse
+    from django.views.decorators.csrf import csrf_exempt
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+
+    @csrf_exempt
+    def metrics_view(request):
+        """
+        View that exposes Prometheus metrics without authentication.
+        """
+        return HttpResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)

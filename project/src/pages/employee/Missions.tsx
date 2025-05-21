@@ -3,7 +3,7 @@ import { API_BASE_URL } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../../components/ui/Button";
 import AlertModal from "../../components/ui/AlertModal";
-import { CheckCircleIcon, ClockIcon, RefreshCwIcon, PlusIcon } from "lucide-react";
+import { CheckCircleIcon, ClockIcon, PlusIcon } from "lucide-react";
 
 interface Mission {
   id: number;
@@ -38,44 +38,10 @@ const Missions: React.FC = () => {
     fetchMissions();
   }, [token]);
 
-  const [checkingLateMissions, setCheckingLateMissions] = useState(false);
-  const [checkResult, setCheckResult] = useState<string | null>(null);
 
-  const checkLateMissions = async () => {
-    try {
-      setCheckingLateMissions(true);
-      setCheckResult(null);
-
-      const response = await fetch(`${API_BASE_URL}/missions/check_late_missions/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Vérification des missions en retard effectuée:', data);
-        setCheckResult(`Vérification réussie: ${data.message || 'Missions mises à jour'}`);
-
-        // Rafraîchir les missions après la vérification
-        fetchMissions();
-      } else {
-        setCheckResult('Erreur lors de la vérification des missions en retard');
-      }
-    } catch (error) {
-      console.error('Erreur lors de la vérification des missions en retard:', error);
-      setCheckResult('Erreur lors de la vérification des missions en retard');
-    } finally {
-      setCheckingLateMissions(false);
-    }
-  };
 
   const fetchMissions = async () => {
     try {
-      // Pas besoin de vérifier les missions en retard ici car nous avons un bouton dédié maintenant
-
       // Vérifier les missions dont la date limite approche
       try {
         await fetch(`${API_BASE_URL}/missions/check_upcoming_deadlines/`, {
@@ -110,9 +76,10 @@ const Missions: React.FC = () => {
         // Filtrer pour ne garder que les missions où le superviseur est "wael" (l'admin)
         const adminMissions = data.filter(
           (mission: Mission) => {
-            // Vérifier si le superviseur contient "wael" (insensible à la casse)
-            const isAdmin = mission.supervisor_name.toLowerCase().includes('wael');
-            console.log(`Mission ${mission.id} - Superviseur "${mission.supervisor_name}" - Est admin: ${isAdmin}`);
+            // Vérifier si le superviseur existe et contient "wael" (insensible à la casse)
+            const supervisorName = mission.supervisor_name || '';
+            const isAdmin = supervisorName.toLowerCase().includes('wael');
+            console.log(`Mission ${mission.id} - Superviseur "${supervisorName}" - Est admin: ${isAdmin}`);
             return isAdmin;
           }
         );
@@ -218,24 +185,9 @@ const Missions: React.FC = () => {
             <h2 className="text-lg font-medium text-gray-900">
               Missions assignées par l'administrateur
             </h2>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={checkLateMissions}
-                disabled={loading || checkingLateMissions}
-                size="sm"
-              >
-                <RefreshCwIcon className="h-4 w-4 mr-1" />
-                {checkingLateMissions ? 'Vérification...' : 'Vérifier les missions en retard'}
-              </Button>
-            </div>
           </div>
 
-          {checkResult && (
-            <div className={`mb-4 p-3 rounded-md ${checkResult.includes('Erreur') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-              {checkResult}
-            </div>
-          )}
+
 
           {missions.length === 0 ? (
             <div className="bg-white shadow overflow-hidden sm:rounded-md p-6 text-center">

@@ -6,6 +6,8 @@ metadata:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
     cert-manager.io/cluster-issuer: "selfsigned-issuer"
     nginx.ingress.kubernetes.io/use-regex: "true"
+    # Taille maximale des requêtes
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
   name: rh-system-ingress
   namespace: rh-system
 spec:
@@ -36,17 +38,8 @@ spec:
             port:
               number: 8000
 
-      # Backend API endpoints (sans préfixe /api/)
-      - path: /(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth|messages)(/|$)(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: rh-backend
-            port:
-              number: 8000
-
-      # Backend API endpoints (avec préfixe /api/ pour compatibilité)
-      - path: /api(/|$)(.*)
+      # Backend API endpoints
+      - path: /(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth|messages|public)(/|$)(.*)
         pathType: Prefix
         backend:
           service:
@@ -73,7 +66,7 @@ spec:
               number: 8000
 
       # Frontend default route
-      - path: /(.*)
+      - path: /
         pathType: Prefix
         backend:
           service:

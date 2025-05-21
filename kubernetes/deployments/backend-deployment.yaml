@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rh-backend
+  namespace: rh-system
+  labels:
+    app: rh-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rh-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: rh-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+        prometheus.io/scheme: "http"
+    spec:
+      containers:
+      - name: rh-backend
+        image: waelbenabid/rh-backend-desktop:latest
+        imagePullPolicy: Always
+        command: ["/bin/bash", "/scripts/init.sh"]
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        env:
+        - name: DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: DEBUG
+        - name: ALLOWED_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: ALLOWED_HOSTS
+        - name: DATABASE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: DATABASE_NAME
+        - name: DATABASE_USER
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rh-backend-secrets
+              key: DATABASE_PASSWORD
+        - name: DATABASE_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: DATABASE_HOST
+        - name: DATABASE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: DATABASE_PORT
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: rh-backend-secrets
+              key: SECRET_KEY
+        - name: EMAIL_HOST_USER
+          valueFrom:
+            secretKeyRef:
+              name: rh-backend-secrets
+              key: EMAIL_HOST_USER
+        - name: EMAIL_HOST_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: rh-backend-secrets
+              key: EMAIL_HOST_PASSWORD
+        - name: SENDGRID_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: rh-backend-secrets
+              key: SENDGRID_API_KEY
+        volumeMounts:
+        - name: init-script
+          mountPath: /scripts
+        - name: admin-config
+          mountPath: /app/SystemeRH_v2/admin_settings.py
+          subPath: admin_settings.py
+        - name: urls-config
+          mountPath: /app/SystemeRH_v2/urls.py
+          subPath: urls.py
+        - name: media-storage
+          mountPath: /app/media_v2
+        - name: static-storage
+          mountPath: /app/static
+        - name: message-view-fix
+          mountPath: /app/message_view_fix
+        - name: prometheus-metrics-view
+          mountPath: /app/Rh_app/prometheus_metrics_view.py
+          subPath: prometheus_metrics_view.py
+        - name: prometheus-metrics
+          mountPath: /app/Rh_app/prometheus_metrics.py
+          subPath: prometheus_metrics.py
+      volumes:
+      - name: init-script
+        configMap:
+          name: backend-init-script
+          defaultMode: 0755
+      - name: admin-config
+        configMap:
+          name: django-admin-config
+      - name: urls-config
+        configMap:
+          name: django-urls-config
+      - name: media-storage
+        persistentVolumeClaim:
+          claimName: media-pvc
+      - name: static-storage
+        emptyDir: {}
+      - name: message-view-fix
+        configMap:
+          name: message-view-fix
+      - name: prometheus-metrics-view
+        configMap:
+          name: prometheus-metrics-view
+      - name: prometheus-metrics
+        configMap:
+          name: prometheus-metrics

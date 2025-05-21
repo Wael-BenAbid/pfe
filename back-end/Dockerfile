@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y \
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir py-zipkin opentracing django-zipkin
 
 # Copy project files
 COPY . .

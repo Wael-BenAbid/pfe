@@ -16,8 +16,12 @@ import re
 from dotenv import load_dotenv
 from datetime import timedelta
 
-# Charger les variables d'environnement depuis le fichier .env
-load_dotenv()
+# Charger les variables d'environnement depuis le fichier .env.local s'il existe, sinon depuis .env
+env_local_path = Path(__file__).resolve().parent.parent / '.env.local'
+if env_local_path.exists():
+    load_dotenv(dotenv_path=env_local_path)
+else:
+    load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -61,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Rh_app.middleware.CheckLateMissionsMiddleware',  # Middleware pour vérifier les missions en retard
+    'Rh_app.zipkin_middleware.ZipkinMiddleware',  # Middleware pour le traçage Zipkin
     'Rh_app.prometheus_metrics.PrometheusMiddleware',  # Middleware pour les métriques personnalisées
     'django_prometheus.middleware.PrometheusAfterMiddleware',  # Doit être en dernier
 ]
@@ -199,21 +204,37 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# Email Configuration
-SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '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')
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Utiliser SMTP pour envoyer de vrais emails
-EMAIL_HOST = 'smtp.sendgrid.net'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'apikey'  # Ceci doit être 'apikey' pour SendGrid
-EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+# Email Configuration - SendGrid avec fallback sur le backend de console
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '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')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'RH System <waelbenabid1@gmail.com>')
+
+# Paramètres pour le backend de console (utilisé comme fallback)
+EMAIL_CONSOLE_STDOUT = True  # Forcer l'affichage sur stdout
+EMAIL_CONSOLE_STDERR = False  # Ne pas afficher sur stderr
+
+# Configuration SMTP pour SendGrid
+if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend':
+    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.sendgrid.net')
+    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
+    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'apikey')
+    EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 # Paramètres supplémentaires pour améliorer la délivrabilité des emails
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 ADMINS = [('Admin', 'waelbenabid1@gmail.com')]
 MANAGERS = ADMINS
+
+# Configuration Zipkin
+# Désactiver Zipkin par défaut pour éviter les erreurs
+ZIPKIN_ENABLED = os.getenv('ZIPKIN_ENABLED', 'False').lower() in ('true', '1', 't')
+# Utiliser l'URL du service Zipkin dans Docker Compose
+ZIPKIN_SERVER_URL = os.getenv('ZIPKIN_SERVER_URL', 'http://zipkin:9411')
+ZIPKIN_SERVICE_NAME = os.getenv('ZIPKIN_SERVICE_NAME', 'rh-backend')
+# Réduire le taux d'échantillonnage pour limiter le nombre de traces
+ZIPKIN_SAMPLE_RATE = float(os.getenv('ZIPKIN_SAMPLE_RATE', '10.0'))
 
 # Configuration des en-têtes d'email
 EMAIL_SUBJECT_PREFIX = '[RH System] '
