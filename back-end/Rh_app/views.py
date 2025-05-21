@@ -269,6 +269,10 @@ def login_view(request):
                 details=f"Login via web from {ip_address}"
             )
             logger.info(f"Login activity recorded for user {user.email}")
+
+            # Enregistrer la métrique Prometheus pour la connexion
+            from .prometheus_metrics import login_total
+            login_total.labels(status='success', user_type=user.user_type).inc()
         except Exception as e:
             logger.error(f"Error recording login activity: {str(e)}")
             import traceback
@@ -352,8 +356,9 @@ def api_logout(request):
                 existing_record = WorkHours.objects.filter(user=request.user, date=today).first()
 
                 if existing_record:
-                    # Update existing record
-                    existing_record.hours_worked += hours_worked
+                    # Update existing record - Convertir en Decimal pour éviter les erreurs de type
+                    from decimal import Decimal
+                    existing_record.hours_worked += Decimal(str(hours_worked))
                     existing_record.save()
                     logger.info(f"Updated work hours record for {request.user.username} on {today}: added {hours_worked} hours, new total: {existing_record.hours_worked}")
                 else:
@@ -382,6 +387,14 @@ def api_logout(request):
         # Enregistrer l'activité de déconnexion
         log_logout(request.user, request)
         logger.info(f"Logout activity recorded for user {request.user.username}")
+
+        # Enregistrer la métrique Prometheus pour la déconnexion
+        from .prometheus_metrics import logout_total, session_duration_seconds
+        logout_total.labels(user_type=request.user.user_type).inc()
+
+        # Enregistrer la durée de la session si elle est valide
+        if hours_worked > 0 and hours_worked <= 24:
+            session_duration_seconds.labels(user_type=request.user.user_type).observe(hours_worked * 3600)  # Convertir en secondes
 
         return Response({
             'message': 'Successfully logged out',
@@ -436,13 +449,19 @@ def forgot_password(request):
     if not email:
         return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
 
+    logger.info(f"Demande de réinitialisation de mot de passe pour l'email: {email}")
+    print(f"Demande de réinitialisation de mot de passe pour l'email: {email}")
+
     try:
         # Vérifier si l'utilisateur existe avec cet email
         try:
             user = User.objects.get(email=email)
+            logger.info(f"Utilisateur trouvé pour l'email {email}: {user.username}")
+            print(f"Utilisateur trouvé pour l'email {email}: {user.username}")
         except User.DoesNotExist:
             # Pour des raisons de sécurité, ne pas révéler si l'email existe ou non
             logger.info(f"Password reset requested for non-existent email: {email}")
+            print(f"Password reset requested for non-existent email: {email}")
             return Response({'message': 'Password reset email sent if email exists'}, status=status.HTTP_200_OK)
 
         # Vérifier si l'utilisateur est approuvé
@@ -454,6 +473,8 @@ def forgot_password(request):
             ).first()
 
             if application:
+                logger.info(f"Utilisateur non approuvé avec candidature en attente: {email}")
+                print(f"Utilisateur non approuvé avec candidature en attente: {email}")
                 return Response({
                     'message': 'Your account is pending approval. You will be able to reset your password once your account is approved.',
                     'status': 'pending'
@@ -462,16 +483,24 @@ def forgot_password(request):
         # Générer un token unique pour la réinitialisation du mot de passe
         import uuid
         reset_token = str(uuid.uuid4())
+        logger.info(f"Token de réinitialisation généré pour {email}: {reset_token}")
+        print(f"Token de réinitialisation généré pour {email}: {reset_token}")
 
         # Stocker le token dans la base de données
         user.password_reset_token = reset_token
-        user.password_reset_token_created = datetime.now()
+        # Utiliser timezone.now() au lieu de datetime.now() pour éviter les avertissements de fuseau horaire
+        from django.utils import timezone
+        user.password_reset_token_created = timezone.now()
         user.save()
+        logger.info(f"Token de réinitialisation enregistré pour {email}")
+        print(f"Token de réinitialisation enregistré pour {email}")
 
         # Envoyer un email avec le lien de réinitialisation
         from .utils import send_email_notification
 
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}&email={email}"
+        logger.info(f"URL de réinitialisation: {reset_url}")
+        print(f"URL de réinitialisation: {reset_url}")
 
         subject = "Réinitialisation de votre mot de passe - RH System"
         message = (
@@ -488,8 +517,18 @@ def forgot_password(request):
             f"L'équipe RH System"
         )
 
-        send_email_notification(subject, message, [email])
-        logger.info(f"Password reset email sent to: {email}")
+        # Forcer l'envoi de l'email même si la limite est atteinte
+        email_sent = send_email_notification(
+            subject=subject,
+            message=message,
+            recipient_list=[email],
+            email_type='password_reset',
+            force_send=True
+        )
+
+        logger.info(f"Résultat de l'envoi d'email pour {email}: {'Succès' if email_sent else 'Échec'}")
+        print(f"Résultat de l'envoi d'email pour {email}: {'Succès' if email_sent else 'Échec'}")
+
         return Response({'message': 'Password reset email sent'}, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -936,6 +975,20 @@ class MissionViewSet(viewsets.ModelViewSet):
             attachment_file=attachment_file
         )
 
+        # Enregistrer l'activité système
+        SystemActivity.objects.create(
+            action_type="create",
+            action="Mission Created",
+            user=self.request.user,
+            details=f"Mission '{mission.title}' created",
+            resource_type="Mission",
+            resource_id=mission.id
+        )
+
+        # Enregistrer la métrique Prometheus
+        from .prometheus_metrics import mission_actions_total
+        mission_actions_total.labels(action='created', user_type=self.request.user.user_type).inc()
+
         # Vérifier si la mission a une date d'échéance passée
         from django.utils import timezone
         if mission.deadline < timezone.now().date():
@@ -987,6 +1040,21 @@ class MissionViewSet(viewsets.ModelViewSet):
 
         # Mettre à jour la mission
         response = super().update(request, *args, **kwargs)
+
+        # Enregistrer l'activité système
+        if response.status_code == 200:
+            SystemActivity.objects.create(
+                action_type="update",
+                action="Mission Updated",
+                user=request.user,
+                details=f"Mission updated",
+                resource_type="Mission",
+                resource_id=mission.id
+            )
+
+            # Enregistrer la métrique Prometheus
+            from .prometheus_metrics import mission_actions_total
+            mission_actions_total.labels(action='updated', user_type=request.user.user_type).inc()
 
         # Si la mise à jour a réussi et que c'est un admin qui a fait la modification
         if response.status_code == 200 and (request.user.user_type == 'admin' or request.user.is_superuser):

@@ -1,0 +1,58 @@
+groups:
+  - name: rh-system-alerts
+    rules:
+      # Alertes pour les connexions
+      - alert: HighLoginFailureRate
+        expr: sum(rate(rh_login_total{status="failure"}[5m])) / sum(rate(rh_login_total[5m])) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taux d'échec de connexion élevé"
+          description: "Le taux d'échec de connexion est supérieur à 30% depuis 5 minutes."
+
+      # Alertes pour les missions
+      - alert: HighLateMissionRate
+        expr: sum(rh_missions_total{status="late"}) / sum(rh_missions_total) > 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taux élevé de missions en retard"
+          description: "Plus de 20% des missions sont en retard."
+
+      - alert: LowMissionCompletionRate
+        expr: sum(rate(rh_mission_actions_total{action="completed"}[1d])) / sum(rate(rh_mission_actions_total{action="created"}[1d])) < 0.5
+        for: 1d
+        labels:
+          severity: warning
+        annotations:
+          summary: "Faible taux de complétion des missions"
+          description: "Moins de 50% des missions créées sont complétées dans la journée."
+
+      # Alertes pour les utilisateurs
+      - alert: InactiveUsers
+        expr: sum(rate(rh_login_total[7d])) by (user_type) == 0
+        for: 7d
+        labels:
+          severity: info
+        annotations:
+          summary: "Utilisateurs inactifs"
+          description: "Aucune connexion pour le type d'utilisateur {{ $labels.user_type }} depuis 7 jours."
+
+  - name: rh-system-recording-rules
+    rules:
+      # Règles d'enregistrement pour les connexions
+      - record: rh:login:success_rate
+        expr: sum(rate(rh_login_total{status="success"}[1h])) / sum(rate(rh_login_total[1h]))
+
+      # Règles d'enregistrement pour les missions
+      - record: rh:missions:completion_rate
+        expr: sum(rate(rh_mission_actions_total{action="completed"}[1d])) / sum(rate(rh_mission_actions_total{action="created"}[1d]))
+
+      - record: rh:missions:late_ratio
+        expr: sum(rh_missions_total{status="late"}) / sum(rh_missions_total)
+
+      # Règles d'enregistrement pour les sessions
+      - record: rh:sessions:avg_duration_seconds
+        expr: avg(rh_session_duration_seconds_sum / rh_session_duration_seconds_count) by (user_type)

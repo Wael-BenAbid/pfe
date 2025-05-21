@@ -97,14 +97,29 @@ Pour utiliser Gmail comme serveur SMTP, vous devez :
    ./deploy.ps1
    ```
 
+   Pour démarrer l'application avec Zipkin :
+   ```powershell
+   ./start-app-zipkin.ps1
+   ```
+
 3. Pour construire et pousser les images Docker vers Docker Hub :
    ```powershell
    ./build-push-docker.ps1
    ```
 
+   Pour construire et pousser les images Docker avec Zipkin :
+   ```powershell
+   ./build-push-docker-zipkin.ps1
+   ```
+
 4. Pour déployer l'application sur Kubernetes :
    ```powershell
    ./deploy-kubernetes.ps1
+   ```
+
+   Pour déployer l'application avec Zipkin sur Kubernetes :
+   ```powershell
+   ./deploy-kubernetes-zipkin.ps1
    ```
 
 5. Pour redémarrer tous les services après un redémarrage du PC :
@@ -143,6 +158,7 @@ L'application sera accessible à :
 - Frontend : http://localhost:5174/
 - Backend API : http://localhost:8000/
 - Interface d'administration Django : http://localhost:8000/admin/
+- Zipkin (si activé) : http://localhost:9411/
 
 ### Informations d'identification par défaut
 
@@ -168,6 +184,31 @@ cd project
 npm install
 npm run dev
 ```
+
+## Monitoring
+
+Le système intègre plusieurs outils de monitoring pour surveiller les performances et le comportement de l'application :
+
+### Prometheus et Grafana
+
+Prometheus est utilisé pour collecter des métriques sur l'application, tandis que Grafana permet de visualiser ces métriques sous forme de tableaux de bord.
+
+- Prometheus : http://prometheus.rh-system.local (en mode Kubernetes)
+- Grafana : http://grafana.rh-system.local (en mode Kubernetes)
+
+### Zipkin
+
+Zipkin est un système de traçage distribué qui aide à collecter les données de latence et à résoudre les problèmes dans les architectures de microservices.
+
+- Zipkin : http://zipkin.rh-system.local (en mode Kubernetes) ou http://localhost:9411 (en mode local)
+
+Zipkin permet de suivre le parcours des requêtes à travers l'application, d'identifier les goulots d'étranglement et d'améliorer les performances. Vous pouvez voir quelles parties de votre application prennent le plus de temps et optimiser en conséquence.
+
+Les métriques suivantes sont disponibles dans Zipkin :
+- Traces des requêtes HTTP
+- Durée des requêtes
+- Dépendances entre les services
+- Erreurs et exceptions
 
 ## Fonctionnalités
 

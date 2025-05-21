@@ -31,11 +31,10 @@ def send_email_notification(subject, message, recipient_list, email_type='other'
         print("ERREUR: Liste des destinataires vide")
         return False
 
-    # Vérifier si la clé API SendGrid est configurée
+    # Ne pas vérifier la clé API SendGrid, utiliser le backend de console
     if not settings.SENDGRID_API_KEY:
-        logger.error("Clé API SendGrid non configurée")
-        print("ERREUR: Clé API SendGrid non configurée")
-        return False
+        logger.info("Clé API SendGrid non configurée, utilisation du backend de console")
+        print("INFO: Clé API SendGrid non configurée, utilisation du backend de console")
 
     # Ajouter un en-tête et un pied de page au message
     formatted_message = f"""

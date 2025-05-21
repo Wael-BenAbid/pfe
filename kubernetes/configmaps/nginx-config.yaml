@@ -112,39 +112,10 @@ data:
             return 301 /admine/;
         }
 
-        # Route pour l'API (sans préfixe /api/)
-        location ~ ^/(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth|messages)/ {
-            # Proxy direct vers le backend sans préfixe /api/
+        # Route pour l'API
+        location ~ ^/(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth|messages|public)/ {
+            # Proxy direct vers le backend
             proxy_pass http://rh-backend:8000$request_uri;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Port $server_port;
-
-            # Ajouter des en-têtes pour éviter les problèmes CORS
-            add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE, PATCH' always;
-            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
-            add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
-
-            # Gérer les requêtes OPTIONS pour le preflight CORS
-            if ($request_method = 'OPTIONS') {
-                add_header 'Access-Control-Allow-Origin' '*';
-                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, PUT, DELETE, PATCH';
-                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
-                add_header 'Access-Control-Max-Age' 1728000;
-                add_header 'Content-Type' 'text/plain; charset=utf-8';
-                add_header 'Content-Length' 0;
-                return 204;
-            }
-        }
-
-        # Route pour l'API (avec préfixe /api/)
-        location ~ ^/api/ {
-            # Proxy vers le backend avec préfixe /api/
-            proxy_pass http://rh-backend:8000;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -187,16 +158,16 @@ data:
         }
 
         # Route pour les métriques Prometheus du frontend
-        location = /metrics.json {
-            root /usr/share/nginx/html;
-            default_type application/json;
+        location = /frontend-metrics {
+            alias /usr/share/nginx/html/metrics;
+            default_type text/plain;
             add_header Cache-Control "no-cache, no-store, must-revalidate";
             add_header Pragma "no-cache";
             add_header Expires "0";
         }
 
         # Route pour les métriques Prometheus du backend
-        location ~ ^/metrics/?$ {
+        location = /metrics {
             proxy_pass http://rh-backend:8000/metrics;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;

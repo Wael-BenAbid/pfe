@@ -21,6 +21,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/metrics"
         prometheus.io/port: "8000"
+        prometheus.io/scheme: "http"
       labels:
         app: rh-backend
     spec:
@@ -54,6 +55,9 @@ spec:
           mountPath: /app/static
         - name: message-view-fix
           mountPath: /app/message_view_fix
+        - name: prometheus-metrics-view
+          mountPath: /app/Rh_app/prometheus_metrics_view.py
+          subPath: prometheus_metrics_view.py
         env:
         - name: DEBUG
           valueFrom:
@@ -130,4 +134,7 @@ spec:
       - name: message-view-fix
         configMap:
           name: message-view-fix
+      - name: prometheus-metrics-view
+        configMap:
+          name: prometheus-metrics-view
       restartPolicy: Always

@@ -6,3 +6,5 @@ metadata:
 data:
   API_BASE_URL: "//rh-system.local"
   NODE_ENV: "production"
+  VITE_ZIPKIN_URL: "http://zipkin.rh-system.local"
+  VITE_ZIPKIN_ENABLED: "true"

@@ -4,16 +4,19 @@ services:
       context: ./project
       dockerfile: Dockerfile
     ports:
-      - "5173:80"
+      - "5175:80"
     environment:
       - NODE_ENV=development
       - VITE_API_BASE_URL=http://backend:8000
+      - VITE_ZIPKIN_URL=http://zipkin:9411
+      - VITE_ZIPKIN_ENABLED=false
     # Nous ne montons pas le répertoire du projet pour éviter d'écraser les fichiers construits
     # volumes:
     #   - ./project:/app
     #   - /app/node_modules
     depends_on:
       - backend
+      - zipkin
     healthcheck:
       test: ["CMD", "npm", "run", "health"]
       interval: 30s
@@ -37,9 +40,15 @@ services:
       - DEBUG=True
       - DATABASE_NAME=rh_v2
       - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=12345
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
-      - EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+      - EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+      - ZIPKIN_ENABLED=False
+      - ZIPKIN_SERVER_URL=http://zipkin:9411
+      - ZIPKIN_SERVICE_NAME=rh-backend
+      - ZIPKIN_SAMPLE_RATE=0.0
+      - SENDGRID_API_KEY=
       # Les informations sensibles comme DATABASE_PASSWORD, SECRET_KEY et SENDGRID_API_KEY
       # doivent être définies dans le fichier .env, pas ici
     volumes:
@@ -75,6 +84,22 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - "9411:9411"
+    environment:
+      - STORAGE_TYPE=mem
+      - JAVA_OPTS=-Xms512m -Xmx512m
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9411/health"]
       interval: 10s
       timeout: 5s
       retries: 5

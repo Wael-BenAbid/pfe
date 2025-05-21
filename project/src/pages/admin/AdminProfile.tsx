@@ -248,7 +248,7 @@ const AdminProfile: React.FC = () => {
 
         // Ajouter les champs textuels
         Object.entries(formData).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
+          if (value !== undefined && value !== null && key !== 'profile_image') {
             formDataWithImage.append(key, value.toString());
           }
         });
@@ -265,23 +265,39 @@ const AdminProfile: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to update profile");
+          try {
+            const errorData = await response.json();
+            console.error("Error details:", errorData);
+            throw new Error(`Failed to update profile: ${JSON.stringify(errorData)}`);
+          } catch (jsonError) {
+            throw new Error(`Failed to update profile: ${response.statusText}`);
+          }
         }
 
         updatedUser = await response.json();
       } else {
         // Pas de nouvelle image, on peut utiliser JSON
+        // Créer une copie des données du formulaire sans le champ profile_image
+        const formDataWithoutImage = { ...formData };
+        delete formDataWithoutImage.profile_image;
+
         const response = await fetch(`${API_BASE_URL}/users/${user.id}/`, {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(formDataWithoutImage),
         });
 
         if (!response.ok) {
-          throw new Error("Failed to update profile");
+          try {
+            const errorData = await response.json();
+            console.error("Error details:", errorData);
+            throw new Error(`Failed to update profile: ${JSON.stringify(errorData)}`);
+          } catch (jsonError) {
+            throw new Error(`Failed to update profile: ${response.statusText}`);
+          }
         }
 
         updatedUser = await response.json();
@@ -301,7 +317,7 @@ const AdminProfile: React.FC = () => {
       setAlertModal({
         isOpen: true,
         title: 'Error',
-        message: 'Failed to update profile',
+        message: error.message || 'Failed to update profile',
         type: 'error'
       });
     }

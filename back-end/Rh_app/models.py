@@ -29,6 +29,12 @@ class User(AbstractUser):
     password_reset_token = models.CharField(max_length=100, null=True, blank=True)
     password_reset_token_created = models.DateTimeField(null=True, blank=True)
 
+    def save(self, *args, **kwargs):
+        # S'assurer que password_reset_token_created a un fuseau horaire
+        if self.password_reset_token_created and timezone.is_naive(self.password_reset_token_created):
+            self.password_reset_token_created = timezone.make_aware(self.password_reset_token_created)
+        super().save(*args, **kwargs)
+
     # Redéfinition des relations pour éviter les conflits avec AbstractUser
     groups = models.ManyToManyField(
         Group,

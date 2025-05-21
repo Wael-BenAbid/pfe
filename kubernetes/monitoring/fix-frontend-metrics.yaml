@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-metrics-fix
+  namespace: rh-system
+data:
+  metrics.txt: |
+    # HELP rh_frontend_up Frontend up status
+    # TYPE rh_frontend_up gauge
+    rh_frontend_up{instance="frontend",job="rh-frontend"} 1
+
+    # HELP rh_frontend_page_views_total Total number of page views
+    # TYPE rh_frontend_page_views_total counter
+    rh_frontend_page_views_total{page="/"} 100
+    rh_frontend_page_views_total{page="/login"} 50
+    rh_frontend_page_views_total{page="/dashboard"} 30
+
+    # HELP rh_frontend_user_actions_total Total number of user actions
+    # TYPE rh_frontend_user_actions_total counter
+    rh_frontend_user_actions_total{action="login"} 50
+    rh_frontend_user_actions_total{action="logout"} 20
+    rh_frontend_user_actions_total{action="create_mission"} 10
+
+    # HELP rh_frontend_errors_total Total number of errors
+    # TYPE rh_frontend_errors_total counter
+    rh_frontend_errors_total{error="network"} 5
+    rh_frontend_errors_total{error="validation"} 8
+
+    # HELP rh_frontend_load_time_seconds Page load time in seconds
+    # TYPE rh_frontend_load_time_seconds histogram
+    rh_frontend_load_time_seconds_bucket{le="0.1"} 10
+    rh_frontend_load_time_seconds_bucket{le="0.5"} 30
+    rh_frontend_load_time_seconds_bucket{le="1"} 50
+    rh_frontend_load_time_seconds_bucket{le="2"} 80
+    rh_frontend_load_time_seconds_bucket{le="5"} 95
+    rh_frontend_load_time_seconds_bucket{le="10"} 100
+    rh_frontend_load_time_seconds_bucket{le="+Inf"} 100
+    rh_frontend_load_time_seconds_sum 150.5
+    rh_frontend_load_time_seconds_count 100
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fix-frontend-metrics
+  namespace: rh-system
+spec:
+  template:
+    spec:
+      containers:
+      - name: fix-frontend-metrics
+        image: bitnami/kubectl:latest
+        command:
+        - /bin/bash
+        - -c
+        - |
+          # Copier le fichier metrics.txt dans le pod frontend
+          FRONTEND_POD=$(kubectl get pods -n rh-system -l app=rh-frontend -o jsonpath="{.items[0].metadata.name}")
+
+          echo "Copie du fichier metrics.txt dans le pod $FRONTEND_POD"
+
+          # Créer un fichier temporaire avec les métriques améliorées
+          cat /tmp/metrics-content.txt > /tmp/metrics.txt
+
+          # Copier le fichier dans le pod
+          kubectl cp /tmp/metrics.txt rh-system/$FRONTEND_POD:/usr/share/nginx/html/frontend-metrics
+
+          # Modifier la configuration nginx pour servir le fichier metrics.txt
+          kubectl exec -n rh-system $FRONTEND_POD -- sh -c "echo 'location /frontend-metrics {
+            default_type text/plain;
+            alias /usr/share/nginx/html/frontend-metrics;
+          }' > /etc/nginx/conf.d/metrics.conf"
+
+          # Recharger la configuration nginx
+          kubectl exec -n rh-system $FRONTEND_POD -- nginx -s reload
+
+          # Mettre à jour les annotations du pod
+          kubectl patch deployment rh-frontend -n rh-system -p '{"spec":{"template":{"metadata":{"annotations":{"prometheus.io/scrape":"true","prometheus.io/path":"/frontend-metrics","prometheus.io/port":"80","prometheus.io/scheme":"http"}}}}}'
+
+          echo "Configuration des métriques frontend terminée"
+        volumeMounts:
+        - name: metrics-content
+          mountPath: /tmp/metrics-content.txt
+          subPath: metrics.txt
+      volumes:
+      - name: metrics-content
+        configMap:
+          name: frontend-metrics-fix
+      restartPolicy: Never

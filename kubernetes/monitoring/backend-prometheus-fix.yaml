@@ -48,4 +48,47 @@ data:
       echo "django-prometheus URLs already in urls.py"
     fi
     
+    # Copier les fichiers de métriques personnalisés
+    echo "Copying custom metrics files..."
+    
+    # Copier prometheus_metrics_view.py
+    if [ -f "/app/Rh_app/prometheus_metrics_view.py" ]; then
+      echo "prometheus_metrics_view.py already exists, updating..."
+    fi
+    cp -f /app/Rh_app/prometheus_metrics_view.py /app/Rh_app/prometheus_metrics_view.py.bak || true
+    cp -f /app/message_view_fix/prometheus_metrics_view.py /app/Rh_app/prometheus_metrics_view.py
+    
+    # Copier prometheus_metrics.py
+    if [ -f "/app/Rh_app/prometheus_metrics.py" ]; then
+      echo "prometheus_metrics.py already exists, updating..."
+    fi
+    cp -f /app/Rh_app/prometheus_metrics.py /app/Rh_app/prometheus_metrics.py.bak || true
+    cp -f /app/message_view_fix/prometheus_metrics.py /app/Rh_app/prometheus_metrics.py
+    
+    # Ajouter la vue de métriques personnalisée à urls.py
+    if ! grep -q "prometheus_metrics_view" "$URLS_FILE"; then
+      # Ajouter l'import
+      sed -i "/from django.urls import/a from Rh_app.prometheus_metrics_view import metrics_view" "$URLS_FILE"
+      
+      # Ajouter l'URL
+      sed -i "/urlpatterns = \[/a \ \ \ \ path('metrics/', metrics_view, name='prometheus-metrics')," "$URLS_FILE"
+      
+      echo "Custom metrics view added to urls.py"
+    else
+      echo "Custom metrics view already in urls.py"
+    fi
+    
+    # Ajouter le middleware personnalisé à settings.py
+    if ! grep -q "prometheus_metrics.PrometheusMiddleware" "$SETTINGS_FILE"; then
+      # Ajouter l'import
+      sed -i "/^import os/a import Rh_app.prometheus_metrics" "$SETTINGS_FILE"
+      
+      # Ajouter le middleware
+      sed -i "s/'django_prometheus.middleware.PrometheusAfterMiddleware'/'django_prometheus.middleware.PrometheusAfterMiddleware',\n    'Rh_app.prometheus_metrics.PrometheusMiddleware'/" "$SETTINGS_FILE"
+      
+      echo "Custom metrics middleware added to settings.py"
+    else
+      echo "Custom metrics middleware already in settings.py"
+    fi
+    
     echo "django-prometheus configuration completed"

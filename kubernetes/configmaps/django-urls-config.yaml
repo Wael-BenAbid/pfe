@@ -33,6 +33,7 @@ data:
         UserSessionViewSet, MeetingViewSet, NotificationViewSet,
         SystemActivityViewSet, login_view, api_logout
     )
+    from Rh_app.prometheus_metrics_view import metrics_view
 
     # Importer les correctifs
     import sys
@@ -89,6 +90,7 @@ data:
         # Suppression de la route 'django-admin/' pour éviter la confusion
 
         # Métriques Prometheus
+        path('metrics/', metrics_view, name='prometheus-metrics'),
         path('', include('django_prometheus.urls')),
 
         # Routes sans préfixe api/
