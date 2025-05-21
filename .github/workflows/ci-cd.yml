@@ -12,32 +12,7 @@ on:
       - '**.md'
       - 'docs/**'
   workflow_dispatch:
-    inputs:
-      sync_docker_k8s:
-        description: 'Synchroniser Docker Desktop avec Kubernetes'
-        required: false
-        default: true
-        type: boolean
-      update_frontend:
-        description: 'Mettre à jour le frontend'
-        required: false
-        default: true
-        type: boolean
-      update_backend:
-        description: 'Mettre à jour le backend'
-        required: false
-        default: true
-        type: boolean
-      use_local_images:
-        description: 'Utiliser les images Docker locales'
-        required: false
-        default: false
-        type: boolean
-      deploy_to_kubernetes:
-        description: 'Déployer sur Kubernetes'
-        required: false
-        default: true
-        type: boolean
+    # Suppression des inputs pour automatiser complètement le processus
 
 env:
   DOCKER_HUB_USERNAME: waelbenabid
@@ -232,7 +207,7 @@ jobs:
   build-push:
     needs: [test-frontend, test-backend, security-scan]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' # Toujours exécuté sur main
     steps:
       - uses: actions/checkout@v4
 
@@ -315,7 +290,7 @@ jobs:
   deploy-kubernetes:
     needs: [build-push]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' # Toujours exécuté sur main
     steps:
       - uses: actions/checkout@v4
 
@@ -460,7 +435,7 @@ jobs:
   deploy-https:
     needs: [deploy-kubernetes]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' # Toujours exécuté sur main
     steps:
       - uses: actions/checkout@v4
 

@@ -33,7 +33,7 @@ const EmployeeWorkHours: React.FC<EmployeeWorkHoursProps> = ({ userId, userName 
       setError(null);
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/work-hours/?user=${userId}`, {
+        const response = await fetch(`${API_BASE_URL}/work-hours/?user=${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
