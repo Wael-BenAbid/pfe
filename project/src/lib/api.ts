@@ -1,15 +1,15 @@
 import axios from 'axios';
-import { 
-  User, 
-  Leave, 
-  Mission, 
-  WorkHours, 
-  Internship, 
+import {
+  User,
+  Leave,
+  Mission,
+  WorkHours,
+  Internship,
   JobApplication,
   CreateLeaveRequest,
   CreateMissionRequest,
   CreateWorkHoursRequest,
-  CreateInternshipRequest, 
+  CreateInternshipRequest,
   CreateJobApplicationRequest,
   UpdateLeaveRequest,
   UpdateMissionRequest,
@@ -156,7 +156,7 @@ export const updateJobApplication = async (id: number, applicationData: UpdateJo
 };
 
 export const approveJobApplication = async (id: number): Promise<JobApplication> => {
-  const response = await axios.post<JobApplication>(`/api/job-applications/${id}/approve/`, null, {
+  const response = await axios.post<JobApplication>(`${API_URL}/job-applications/${id}/approve/`, null, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem('access_token')}`,
     },
@@ -165,7 +165,7 @@ export const approveJobApplication = async (id: number): Promise<JobApplication>
 };
 
 export const rejectJobApplication = async (id: number): Promise<JobApplication> => {
-  const response = await axios.post<JobApplication>(`/api/job-applications/${id}/reject/`, null, {
+  const response = await axios.post<JobApplication>(`${API_URL}/job-applications/${id}/reject/`, null, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem('access_token')}`,
     },

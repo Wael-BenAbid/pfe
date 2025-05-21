@@ -30,14 +30,51 @@ const UserWorkHours: React.FC = () => {
 
   const fetchUserDetails = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/`, {
+      // Supprimer le ":1" de l'URL si présent
+      const cleanUserId = userId ? userId.split(':')[0] : '';
+
+      // Vérifier si l'ID est valide
+      if (!cleanUserId) {
+        console.error("Invalid user ID");
+        setLoading(false);
+        return;
+      }
+
+      console.log(`Fetching user details for ID: ${cleanUserId}`);
+
+      // Essayer d'abord avec l'endpoint spécifique
+      let response = await fetch(`${API_BASE_URL}/users/${cleanUserId}/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      // Si l'utilisateur n'est pas trouvé, essayer avec l'endpoint /me/ si l'ID correspond à l'utilisateur connecté
+      if (!response.ok && response.status === 404) {
+        console.log("User not found with specific ID, trying alternative endpoint");
+
+        // Obtenir les informations de l'utilisateur connecté
+        const meResponse = await fetch(`${API_BASE_URL}/users/me/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (meResponse.ok) {
+          const meData = await meResponse.json();
+          // Si l'ID demandé correspond à l'utilisateur connecté, utiliser ces données
+          if (meData.id.toString() === cleanUserId) {
+            setUser(meData);
+            setLoading(false);
+            return;
+          }
+        }
+
+        throw new Error(`User with ID ${cleanUserId} not found`);
+      }
+
       if (!response.ok) {
-        throw new Error("Failed to fetch user details");
+        throw new Error(`Failed to fetch user details: ${response.status} ${response.statusText}`);
       }
 
       const userData = await response.json();
