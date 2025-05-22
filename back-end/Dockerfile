@@ -31,7 +31,7 @@ RUN apt-get update && apt-get install -y \
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir py-zipkin opentracing django-zipkin
+RUN pip install --no-cache-dir py-zipkin opentracing django-zipkin schedule
 
 # Copy project files
 COPY . .
@@ -80,6 +80,10 @@ python manage.py crontab add\n\
 # Démarrer le service cron\n\
 echo "Starting cron service..."\n\
 service cron start\n\
+\n\
+# Démarrer le planificateur de notifications en arrière-plan\n\
+echo "Starting notification scheduler..."\n\
+nohup python schedule_notifications.py > notification_scheduler.log 2>&1 &\n\
 \n\
 # Démarrer le serveur\n\
 echo "Starting server..."\n\

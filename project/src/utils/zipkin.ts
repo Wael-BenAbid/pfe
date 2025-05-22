@@ -1,6 +1,7 @@
 // Configuration Zipkin
-const zipkinEnabled = import.meta.env.VITE_ZIPKIN_ENABLED === 'true';
-const zipkinUrl = import.meta.env.VITE_ZIPKIN_URL || 'http://zipkin.rh-system.local';
+const zipkinEnabled = true; // Forcer l'activation de Zipkin
+// Utiliser l'URL directe de Zipkin pour le développement local
+const zipkinUrl = 'http://localhost:9411';
 
 // Génération d'ID aléatoires pour les traces
 const generateRandomId = () => {
@@ -16,13 +17,22 @@ const sendSpan = async (span: any) => {
   if (!zipkinEnabled) return;
 
   try {
-    await fetch(`${zipkinUrl}/v2/spans`, {
+    console.log(`Envoi de trace à Zipkin: ${zipkinUrl}/api/v2/spans`);
+    console.log('Span:', JSON.stringify(span));
+
+    const response = await fetch(`${zipkinUrl}/api/v2/spans`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify([span])
     });
+
+    console.log(`Réponse de Zipkin: ${response.status} ${response.statusText}`);
+
+    if (!response.ok) {
+      console.error(`Erreur lors de l'envoi de la trace à Zipkin: ${response.status} ${response.statusText}`);
+    }
   } catch (error) {
     console.error('Erreur lors de l\'envoi de la trace à Zipkin:', error);
   }

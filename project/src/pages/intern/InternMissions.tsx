@@ -59,22 +59,8 @@ const InternMissions: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Pas besoin de vérifier les missions en retard ici car nous avons un bouton dédié maintenant
-
-      // Vérifier les missions dont la date limite approche
-      try {
-        await fetch(`${API_URL}/missions/check_upcoming_deadlines/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log('Vérification des missions dont la date limite approche effectuée');
-      } catch (checkError) {
-        console.warn('Erreur lors de la vérification des missions dont la date limite approche:', checkError);
-        // Continuer même si cette requête échoue
-      }
+      // Ne pas vérifier automatiquement les missions dont la date limite approche
+      // pour éviter l'envoi d'emails à chaque chargement de la page
 
       // Appeler directement l'API pour récupérer les missions
       const response = await fetch(`${API_URL}/missions/`, {

@@ -77,30 +77,30 @@ class MessageViewSet(viewsets.ModelViewSet):
 
             # Envoyer un email si le message est important
             try:
-                from django.core.mail import send_mail
-                from django.conf import settings
-                
+                from .utils import send_email_notification
+
                 subject = f"Message important de {message.sender.first_name} {message.sender.last_name}"
                 email_message = f"""
-                Bonjour {message.recipient.first_name},
+Bonjour {message.recipient.first_name},
 
-                Vous avez reçu un message important de {message.sender.first_name} {message.sender.last_name}.
-                
-                Message: {message.content}
-                
-                Veuillez vous connecter à la plateforme pour y répondre.
-                
-                Cordialement,
-                L'équipe RH
+Vous avez reçu un message important de {message.sender.first_name} {message.sender.last_name}.
+
+Message: {message.content}
+
+Veuillez vous connecter à la plateforme pour y répondre.
+
+Cordialement,
+L'équipe RH
                 """
-                
-                send_mail(
-                    subject,
-                    email_message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [message.recipient.email],
-                    fail_silently=True,
+
+                send_email_notification(
+                    subject=subject,
+                    message=email_message,
+                    recipient_list=[message.recipient.email],
+                    email_type='important_message',
+                    reference_id=message.id
                 )
+                logger.info(f"Email envoyé pour le message important à {message.recipient.email}")
             except Exception as e:
                 logger.error(f"Erreur lors de l'envoi de l'email pour le message important: {e}")
 
@@ -124,7 +124,7 @@ class MessageViewSet(viewsets.ModelViewSet):
         message = self.get_object()
         if message.recipient != request.user:
             return Response({'error': 'Vous ne pouvez pas marquer ce message comme lu'}, status=status.HTTP_403_FORBIDDEN)
-        
+
         message.is_read = True
         message.save()
         return Response({'status': 'message marked as read'})
@@ -138,50 +138,50 @@ class MessageViewSet(viewsets.ModelViewSet):
         - Stagiaire peut contacter admin et son employé superviseur
         """
         user = request.user
-        
+
         try:
             # Utiliser des QuerySets au lieu de listes pour une meilleure performance
             if user.user_type == 'admin':
                 # Admin peut contacter tout le monde
                 contacts = User.objects.exclude(id=user.id)
-            
+
             elif user.user_type == 'employee':
                 # Employé peut contacter admin, autres employés et ses stagiaires
-                
+
                 # Admins et autres employés
                 contacts = User.objects.filter(
-                    Q(user_type='admin') | 
+                    Q(user_type='admin') |
                     (Q(user_type='employee') & ~Q(id=user.id))
                 )
-                
+
                 # Ajouter ses stagiaires (via la relation Internship)
                 intern_ids = Internship.objects.filter(supervisor=user).values_list('intern', flat=True)
                 if intern_ids:
                     contacts = contacts | User.objects.filter(id__in=intern_ids)
-            
+
             elif user.user_type == 'intern':
                 # Stagiaire peut contacter admin et son employé superviseur
-                
+
                 # Admins
                 contacts = User.objects.filter(user_type='admin')
-                
+
                 # Son employé superviseur
                 supervisor_ids = Internship.objects.filter(intern=user).values_list('supervisor', flat=True)
                 if supervisor_ids:
                     contacts = contacts | User.objects.filter(id__in=supervisor_ids)
-            
+
             else:
                 # Type d'utilisateur non reconnu
                 return Response(
                     {'error': f'Type d\'utilisateur non reconnu: {user.user_type}'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             # Sérialiser les contacts avec les informations nécessaires
             from .serializers import UserSerializer
             serializer = UserSerializer(contacts, many=True)
             return Response(serializer.data)
-            
+
         except Exception as e:
             logger.error(f"Erreur lors de la récupération des contacts: {e}")
             return Response(
