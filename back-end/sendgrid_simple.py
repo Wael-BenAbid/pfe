@@ -1,28 +1,44 @@
 """
-Script simple pour tester l'envoi d'emails via l'API SendGrid.
+Module pour l'envoi d'emails via l'API SendGrid.
+Cette version utilise directement l'API SendGrid pour une meilleure délivrabilité.
 """
 
 import requests
 import json
 import os
 import sys
+import logging
+from django.conf import settings
 
-# Clé API SendGrid
-API_KEY = "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"
+# Configuration du logging
+logger = logging.getLogger(__name__)
 
-def send_simple_email(to_email, subject, message, from_email="RH System <waelbenabid1@gmail.com>"):
+def send_simple_email(to_email, subject, message, from_email="RH System <waelbenabid1@gmail.com>", html_content=None):
     """
-    Envoie un email simple via l'API SendGrid.
+    Envoie un email via l'API SendGrid avec support HTML pour une meilleure délivrabilité.
 
     Args:
-        to_email (str): Adresse email du destinataire
+        to_email (str): Adresse email du destinataire ou liste d'adresses
         subject (str): Sujet de l'email
-        message (str): Corps de l'email
+        message (str): Corps de l'email en texte brut
         from_email (str): Adresse email de l'expéditeur
+        html_content (str, optional): Version HTML du message
 
     Returns:
         bool: True si l'email a été envoyé avec succès, False sinon
     """
+    # Récupérer la clé API depuis les paramètres Django ou utiliser celle définie ici
+    try:
+        api_key = settings.SENDGRID_API_KEY
+    except:
+        # Fallback si settings n'est pas disponible
+        api_key = "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"
+
+    # Vérifier si la clé API est disponible
+    if not api_key:
+        print("ERREUR: Clé API SendGrid non configurée")
+        return False
+
     # Extraire le nom et l'email de l'expéditeur
     if '<' in from_email:
         from_name = from_email.split('<')[0].strip()
@@ -31,15 +47,17 @@ def send_simple_email(to_email, subject, message, from_email="RH System <waelben
         from_name = "RH System"
         from_email_address = from_email
 
+    # Convertir to_email en liste si c'est une chaîne
+    if isinstance(to_email, str):
+        to_emails = [to_email]
+    else:
+        to_emails = to_email
+
     # Créer la structure de données pour l'API SendGrid
     data = {
         "personalizations": [
             {
-                "to": [
-                    {
-                        "email": to_email
-                    }
-                ],
+                "to": [{"email": email} for email in to_emails],
                 "subject": subject
             }
         ],
@@ -52,20 +70,35 @@ def send_simple_email(to_email, subject, message, from_email="RH System <waelben
                 "type": "text/plain",
                 "value": message
             }
-        ]
+        ],
+        # Ajouter des en-têtes pour améliorer la délivrabilité
+        "headers": {
+            "X-Priority": "1",
+            "Importance": "high",
+            "X-Mailer": "RH System Mailer"
+        },
+        # Ajouter des catégories pour le suivi
+        "categories": ["rh-system", "notification"]
     }
+
+    # Ajouter le contenu HTML si fourni
+    if html_content:
+        data["content"].append({
+            "type": "text/html",
+            "value": html_content
+        })
 
     # Envoyer l'email
     url = "https://api.sendgrid.com/v3/mail/send"
     headers = {
-        "Authorization": f"Bearer {API_KEY}",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
 
     try:
-        print(f"===== ENVOI D'EMAIL VIA SENDGRID =====")
+        print(f"===== ENVOI D'EMAIL VIA SENDGRID API =====")
         print(f"De: {from_name} <{from_email_address}>")
-        print(f"À: {to_email}")
+        print(f"À: {', '.join(to_emails)}")
         print(f"Sujet: {subject}")
 
         response = requests.post(url, headers=headers, data=json.dumps(data))

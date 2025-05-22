@@ -426,16 +426,8 @@ class EmailLog(models.Model):
     @classmethod
     def can_send_email(cls, user, email_type, reference_id=None):
         """
-        Vérifie si un email peut être envoyé à l'utilisateur aujourd'hui
-        en fonction du type d'email et du nombre d'emails déjà envoyés
+        Vérifie si un email peut être envoyé à l'utilisateur
+        Cette fonction a été modifiée pour toujours retourner True (pas de limitation)
         """
-        today = timezone.now().date()
-        # Compter les emails du même type envoyés aujourd'hui
-        count = cls.objects.filter(
-            user=user,
-            email_type=email_type,
-            sent_at__date=today
-        ).count()
-
-        # Limiter à 2 emails par jour par type
-        return count < 2
+        # Aucune limitation d'emails
+        return True

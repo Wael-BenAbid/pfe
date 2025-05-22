@@ -9,19 +9,13 @@ load_dotenv()
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 
 # Récupérer la clé API SendGrid
-SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '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')
 
-# Configuration SendGrid (si activé)
-if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend':
-    EMAIL_HOST = 'smtp.sendgrid.net'
-    EMAIL_PORT = 587
-    EMAIL_USE_TLS = True
-    EMAIL_HOST_USER = 'apikey'  # Ceci doit être 'apikey' pour SendGrid
-    EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+# Nous utilisons directement l'API SendGrid via le script sendgrid_simple.py
+# au lieu de passer par SMTP pour une meilleure délivrabilité
 
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'RH System <waelbenabid1@gmail.com>')
 
 # Afficher un message de diagnostic
 print(f"Email backend configured: {EMAIL_BACKEND}")
-if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend':
-    print(f"SendGrid API key available: {'Yes' if SENDGRID_API_KEY else 'No'}")
+print(f"SendGrid API key available: {'Yes' if SENDGRID_API_KEY else 'No'}")

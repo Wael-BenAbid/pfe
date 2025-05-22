@@ -8,8 +8,8 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_API_BASE_URL=http://backend:8000
-      - VITE_ZIPKIN_URL=http://zipkin:9411
-      - VITE_ZIPKIN_ENABLED=false
+      - VITE_ZIPKIN_URL=http://localhost:9411
+      - VITE_ZIPKIN_ENABLED=true
     # Nous ne montons pas le répertoire du projet pour éviter d'écraser les fichiers construits
     # volumes:
     #   - ./project:/app
@@ -44,11 +44,12 @@ services:
       - DATABASE_HOST=db
       - DATABASE_PORT=5432
       - EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-      - ZIPKIN_ENABLED=False
+      - ZIPKIN_ENABLED=True
       - ZIPKIN_SERVER_URL=http://zipkin:9411
       - ZIPKIN_SERVICE_NAME=rh-backend
-      - ZIPKIN_SAMPLE_RATE=0.0
-      - SENDGRID_API_KEY=
+      - ZIPKIN_SAMPLE_RATE=100.0
+      - SENDGRID_API_KEY=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
+      - DEFAULT_FROM_EMAIL=RH System <waelbenabid1@gmail.com>
       # Les informations sensibles comme DATABASE_PASSWORD, SECRET_KEY et SENDGRID_API_KEY
       # doivent être définies dans le fichier .env, pas ici
     volumes:
@@ -95,6 +96,10 @@ services:
     environment:
       - STORAGE_TYPE=mem
       - JAVA_OPTS=-Xms512m -Xmx512m
+      # Activer CORS pour permettre les requêtes depuis le frontend
+      - ZIPKIN_UI_CORS_ALLOWED_ORIGINS=*
+      - ZIPKIN_UI_CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
+      - ZIPKIN_UI_CORS_ALLOWED_HEADERS=Origin,X-Requested-With,Content-Type,Accept,Authorization
     networks:
       - app-network
     restart: unless-stopped

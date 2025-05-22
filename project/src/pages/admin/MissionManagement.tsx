@@ -56,17 +56,8 @@ const MissionManagement: React.FC = () => {
     if (!token) return;
 
     try {
-      // Appeler l'endpoint pour vérifier et mettre à jour les missions en retard dans le backend
-      await fetch(`${API_BASE_URL}/missions/check_late_missions/`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }).catch(error => {
-        console.warn("Failed to check late missions:", error);
-        // Continuer même si cette requête échoue
-      });
+      // Ne pas vérifier automatiquement les missions en retard à chaque chargement
+      // pour éviter l'envoi d'emails à chaque visite de la page
 
       const response = await fetch(`${API_BASE_URL}/missions/`, {
         headers: {

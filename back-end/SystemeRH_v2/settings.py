@@ -205,7 +205,7 @@ SIMPLE_JWT = {
 }
 
 # Email Configuration - SendGrid avec fallback sur le backend de console
-EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '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')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'RH System <waelbenabid1@gmail.com>')
 
@@ -228,13 +228,13 @@ ADMINS = [('Admin', 'waelbenabid1@gmail.com')]
 MANAGERS = ADMINS
 
 # Configuration Zipkin
-# Désactiver Zipkin par défaut pour éviter les erreurs
-ZIPKIN_ENABLED = os.getenv('ZIPKIN_ENABLED', 'False').lower() in ('true', '1', 't')
-# Utiliser l'URL du service Zipkin dans Docker Compose
-ZIPKIN_SERVER_URL = os.getenv('ZIPKIN_SERVER_URL', 'http://zipkin:9411')
+# Activer Zipkin par défaut
+ZIPKIN_ENABLED = os.getenv('ZIPKIN_ENABLED', 'True').lower() in ('true', '1', 't')
+# Utiliser l'URL du service Zipkin local
+ZIPKIN_SERVER_URL = os.getenv('ZIPKIN_SERVER_URL', 'http://localhost:9411')
 ZIPKIN_SERVICE_NAME = os.getenv('ZIPKIN_SERVICE_NAME', 'rh-backend')
-# Réduire le taux d'échantillonnage pour limiter le nombre de traces
-ZIPKIN_SAMPLE_RATE = float(os.getenv('ZIPKIN_SAMPLE_RATE', '10.0'))
+# Augmenter le taux d'échantillonnage pour capturer toutes les traces
+ZIPKIN_SAMPLE_RATE = float(os.getenv('ZIPKIN_SAMPLE_RATE', '100.0'))
 
 # Configuration des en-têtes d'email
 EMAIL_SUBJECT_PREFIX = '[RH System] '

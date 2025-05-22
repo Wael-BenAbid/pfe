@@ -18,6 +18,175 @@ class MissionViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
+    def create(self, request, *args, **kwargs):
+        """
+        Surcharge de la méthode create pour envoyer un email lors de la création d'une mission
+        """
+        # Créer la mission
+        response = super().create(request, *args, **kwargs)
+
+        # Récupérer la mission créée
+        mission_id = response.data.get('id')
+        if not mission_id:
+            return response
+
+        mission = Mission.objects.get(id=mission_id)
+
+        # Envoyer un email à l'utilisateur assigné
+        if mission.assigned_to:
+            try:
+                from .utils import send_email_notification
+                subject = f"Nouvelle mission assignée : {mission.title}"
+                message = (
+                    f"Bonjour {mission.assigned_to.first_name} {mission.assigned_to.last_name},\n\n"
+                    f"Une nouvelle mission vous a été assignée :\n\n"
+                    f"Titre : {mission.title}\n"
+                    f"Description : {mission.description}\n"
+                    f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y') if mission.deadline else 'Non définie'}\n\n"
+                    f"Veuillez compléter cette mission avant la date limite.\n\n"
+                    f"Cordialement,\n"
+                    f"L'équipe RH"
+                )
+
+                # Envoyer l'email
+                send_email_notification(
+                    subject=subject,
+                    message=message,
+                    recipient_list=[mission.assigned_to.email],
+                    email_type='mission_created',
+                    reference_id=mission.id
+                )
+                print(f"Email de création de mission envoyé à {mission.assigned_to.email}")
+            except Exception as e:
+                print(f"Erreur lors de l'envoi de l'email à {mission.assigned_to.email}: {str(e)}")
+
+        # Envoyer un email au superviseur si différent de l'utilisateur qui crée
+        if mission.supervisor and mission.supervisor != request.user:
+            try:
+                from .utils import send_email_notification
+                subject = f"Nouvelle mission à superviser : {mission.title}"
+                message = (
+                    f"Bonjour {mission.supervisor.first_name} {mission.supervisor.last_name},\n\n"
+                    f"Une nouvelle mission a été créée et vous êtes désigné comme superviseur :\n\n"
+                    f"Titre : {mission.title}\n"
+                    f"Description : {mission.description}\n"
+                    f"Assignée à : {mission.assigned_to.first_name} {mission.assigned_to.last_name}\n"
+                    f"Date d'échéance : {mission.deadline.strftime('%d/%m/%Y') if mission.deadline else 'Non définie'}\n\n"
+                    f"Veuillez suivre l'avancement de cette mission.\n\n"
+                    f"Cordialement,\n"
+                    f"L'équipe RH"
+                )
+
+                # Envoyer l'email
+                send_email_notification(
+                    subject=subject,
+                    message=message,
+                    recipient_list=[mission.supervisor.email],
+                    email_type='mission_created',
+                    reference_id=mission.id
+                )
+                print(f"Email de création de mission envoyé au superviseur {mission.supervisor.email}")
+            except Exception as e:
+                print(f"Erreur lors de l'envoi de l'email au superviseur {mission.supervisor.email}: {str(e)}")
+
+        # Enregistrer l'activité système
+        from .models import SystemActivity
+        SystemActivity.objects.create(
+            action_type="create",
+            action="Mission Created",
+            user=request.user,
+            details=f"Mission '{mission.title}' créée",
+            resource_type="Mission",
+            resource_id=mission.id
+        )
+
+        return response
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Surcharge de la méthode destroy pour envoyer un email lors de la suppression d'une mission
+        """
+        mission = self.get_object()
+
+        # Récupérer les informations de la mission avant de la supprimer
+        mission_title = mission.title
+        mission_description = mission.description
+        mission_deadline = mission.deadline
+        assigned_to = mission.assigned_to
+        supervisor = mission.supervisor
+
+        # Supprimer la mission
+        response = super().destroy(request, *args, **kwargs)
+
+        # Envoyer un email à l'utilisateur assigné
+        if assigned_to:
+            try:
+                from .utils import send_email_notification
+                subject = f"Mission supprimée : {mission_title}"
+                message = (
+                    f"Bonjour {assigned_to.first_name} {assigned_to.last_name},\n\n"
+                    f"La mission suivante a été supprimée :\n\n"
+                    f"Titre : {mission_title}\n"
+                    f"Description : {mission_description}\n"
+                    f"Date d'échéance : {mission_deadline.strftime('%d/%m/%Y') if mission_deadline else 'Non définie'}\n\n"
+                    f"Si vous avez des questions, veuillez contacter votre superviseur.\n\n"
+                    f"Cordialement,\n"
+                    f"L'équipe RH"
+                )
+
+                # Envoyer l'email
+                send_email_notification(
+                    subject=subject,
+                    message=message,
+                    recipient_list=[assigned_to.email],
+                    email_type='mission_deleted',
+                    reference_id=None
+                )
+                print(f"Email de suppression de mission envoyé à {assigned_to.email}")
+            except Exception as e:
+                print(f"Erreur lors de l'envoi de l'email à {assigned_to.email}: {str(e)}")
+
+        # Envoyer un email au superviseur si différent de l'utilisateur qui supprime
+        if supervisor and supervisor != request.user:
+            try:
+                from .utils import send_email_notification
+                subject = f"Mission que vous supervisez supprimée : {mission_title}"
+                message = (
+                    f"Bonjour {supervisor.first_name} {supervisor.last_name},\n\n"
+                    f"La mission suivante que vous supervisiez a été supprimée :\n\n"
+                    f"Titre : {mission_title}\n"
+                    f"Description : {mission_description}\n"
+                    f"Assignée à : {assigned_to.first_name} {assigned_to.last_name}\n"
+                    f"Date d'échéance : {mission_deadline.strftime('%d/%m/%Y') if mission_deadline else 'Non définie'}\n\n"
+                    f"Cordialement,\n"
+                    f"L'équipe RH"
+                )
+
+                # Envoyer l'email
+                send_email_notification(
+                    subject=subject,
+                    message=message,
+                    recipient_list=[supervisor.email],
+                    email_type='mission_deleted',
+                    reference_id=None
+                )
+                print(f"Email de suppression de mission envoyé au superviseur {supervisor.email}")
+            except Exception as e:
+                print(f"Erreur lors de l'envoi de l'email au superviseur {supervisor.email}: {str(e)}")
+
+        # Enregistrer l'activité système
+        from .models import SystemActivity
+        SystemActivity.objects.create(
+            action_type="delete",
+            action="Mission Deleted",
+            user=request.user,
+            details=f"Mission '{mission_title}' supprimée",
+            resource_type="Mission",
+            resource_id=None
+        )
+
+        return response
+
     def get_queryset(self):
         """
         Limiter les résultats en fonction du type d'utilisateur
@@ -239,7 +408,7 @@ class MissionViewSet(viewsets.ModelViewSet):
                     f"L'équipe RH"
                 )
 
-                # Utiliser le système de limitation d'emails
+                # Envoyer l'email sans limitation
                 send_email_notification(
                     subject=subject,
                     message=message,
@@ -337,7 +506,7 @@ class MissionViewSet(viewsets.ModelViewSet):
                     f"L'équipe RH"
                 )
 
-                # Utiliser le système de limitation d'emails
+                # Envoyer l'email sans limitation
                 send_email_notification(
                     subject=subject,
                     message=message,

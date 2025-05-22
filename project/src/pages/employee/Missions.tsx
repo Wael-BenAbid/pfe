@@ -42,23 +42,11 @@ const Missions: React.FC = () => {
 
   const fetchMissions = async () => {
     try {
-      // Vérifier les missions dont la date limite approche
-      try {
-        await fetch(`${API_BASE_URL}/missions/check_upcoming_deadlines/`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log('Vérification des missions dont la date limite approche effectuée');
-      } catch (checkError) {
-        console.warn('Erreur lors de la vérification des missions dont la date limite approche:', checkError);
-        // Continuer même si cette requête échoue
-      }
+      // Ne pas vérifier automatiquement les missions dont la date limite approche
+      // pour éviter l'envoi d'emails à chaque chargement de la page
 
-      // Récupérer toutes les missions
-      const response = await fetch(`${API_BASE_URL}/missions/`, {
+      // Récupérer les missions assignées à l'employé
+      const response = await fetch(`${API_BASE_URL}/missions/assigned/`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -66,27 +54,9 @@ const Missions: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Toutes les missions récupérées:', data);
-        console.log('Nombre total de missions:', data.length);
-
-        // Afficher les superviseurs uniques pour le débogage
-        const supervisors = [...new Set(data.map((mission: Mission) => mission.supervisor_name))];
-        console.log('Superviseurs uniques:', supervisors);
-
-        // Filtrer pour ne garder que les missions où le superviseur est "wael" (l'admin)
-        const adminMissions = data.filter(
-          (mission: Mission) => {
-            // Vérifier si le superviseur existe et contient "wael" (insensible à la casse)
-            const supervisorName = mission.supervisor_name || '';
-            const isAdmin = supervisorName.toLowerCase().includes('wael');
-            console.log(`Mission ${mission.id} - Superviseur "${supervisorName}" - Est admin: ${isAdmin}`);
-            return isAdmin;
-          }
-        );
-
-        console.log('Nombre de missions filtrées (admin uniquement):', adminMissions.length);
-        console.log('Missions filtrées (admin uniquement):', adminMissions);
-        setMissions(adminMissions);
+        console.log('Missions assignées récupérées:', data);
+        console.log('Nombre total de missions assignées:', data.length);
+        setMissions(data);
       }
     } catch (error) {
       console.error("Error fetching missions:", error);

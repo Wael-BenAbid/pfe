@@ -4,7 +4,7 @@ import axios from 'axios';
 import { wrapAxios } from 'zipkin-instrumentation-axios';
 
 // Récupérer l'URL du serveur Zipkin depuis les variables d'environnement
-const ZIPKIN_URL = import.meta.env.VITE_ZIPKIN_URL || 'http://zipkin.rh-system.local:9411';
+const ZIPKIN_URL = import.meta.env.VITE_ZIPKIN_URL || 'http://localhost:9411';
 const SERVICE_NAME = 'rh-frontend';
 
 // Créer un contexte explicite pour stocker les informations de trace

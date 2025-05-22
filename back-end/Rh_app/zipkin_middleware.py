@@ -17,6 +17,9 @@ def get_transport():
     # Construire l'URL complète pour l'API Zipkin
     api_url = f"{zipkin_url}/api/v2/spans"
 
+    # Log l'URL pour le débogage
+    logger.info(f"Zipkin API URL: {api_url}")
+
     # Créer une classe de transport personnalisée
     class CustomTransport:
         def __init__(self, url):
@@ -138,9 +141,12 @@ class ZipkinMiddleware:
 
                 # Ajouter des tags supplémentaires après la réponse
                 span.update_binary_annotations({
-                    'http.status_code': response.status_code,
-                    'http.duration_ms': int(duration * 1000),
+                    'http.status_code': str(response.status_code),
+                    'http.duration_ms': str(int(duration * 1000)),
                 })
+
+                # Log pour le débogage
+                logger.info(f"Zipkin trace sent: {trace_id}, span: {span_id}, duration: {int(duration * 1000)}ms")
 
                 # Ajouter les en-têtes de trace à la réponse pour le client
                 response['X-B3-TraceId'] = trace_id
