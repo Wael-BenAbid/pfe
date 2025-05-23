@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres-exporter
-  namespace: rh-system
+  namespace: monitoring
   labels:
     app: postgres-exporter
 spec:
@@ -20,28 +20,24 @@ spec:
     spec:
       containers:
       - name: postgres-exporter
-        image: bitnami/postgres-exporter:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 9187
-          name: http
-        resources:
-          requests:
-            cpu: "50m"
-            memory: "64Mi"
-          limits:
-            cpu: "100m"
-            memory: "128Mi"
+        image: wrouesnel/postgres_exporter:latest
         env:
         - name: DATA_SOURCE_NAME
-          value: "postgresql://postgres:postgres@postgres-db:5432/postgres?sslmode=disable"
-        - name: PG_EXPORTER_EXTEND_QUERY_PATH
-          value: "/etc/postgres-exporter/queries.yaml"
+          value: "postgresql://postgres:postgres@postgres-db.rh-system.svc.cluster.local:5432/postgres?sslmode=disable"
+        ports:
+        - containerPort: 9187
+          name: metrics
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
         volumeMounts:
         - name: postgres-exporter-config
-          mountPath: /etc/postgres-exporter
+          mountPath: /etc/postgres_exporter
       volumes:
       - name: postgres-exporter-config
         configMap:
           name: postgres-exporter-config
-      restartPolicy: Always

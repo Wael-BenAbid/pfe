@@ -120,6 +120,10 @@ data:
           regex: __meta_kubernetes_pod_label_(.+)
         - source_labels: [__meta_kubernetes_namespace]
           action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
 
       # Scrape Zipkin metrics
       - job_name: 'zipkin'
@@ -127,6 +131,9 @@ data:
         metrics_path: '/prometheus'
         static_configs:
           - targets: ['zipkin.monitoring.svc.cluster.local:9411']
+        relabel_configs:
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
           target_label: kubernetes_namespace
         - source_labels: [__meta_kubernetes_pod_name]
           action: replace

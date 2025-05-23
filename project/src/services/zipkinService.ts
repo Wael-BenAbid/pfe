@@ -11,10 +11,14 @@ const SERVICE_NAME = 'rh-frontend';
 const ctxImpl = new ExplicitContext();
 
 // Créer un enregistreur qui envoie les données à Zipkin
+const zipkinEndpoint = `${ZIPKIN_URL}/v2/spans`;
+
+console.log(`Zipkin endpoint: ${zipkinEndpoint}`);
+
 const recorder = new BatchRecorder({
   logger: new HttpLogger({
-    endpoint: `${ZIPKIN_URL}/v2/spans`,
-    jsonEncoder: JSON,
+    endpoint: zipkinEndpoint,
+    jsonEncoder: { encode: JSON.stringify },
   }),
 });
 

@@ -26,19 +26,19 @@ minikube addons enable metrics-server
 
 # Créer le namespace rh-system s'il n'existe pas
 echo -e "\e[33mCréation du namespace rh-system...\e[0m"
-kubectl create namespace rh-system --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace rh-system --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
 # Créer le namespace monitoring s'il n'existe pas
 echo -e "\e[33mCréation du namespace monitoring...\e[0m"
-kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
 # Créer le namespace logging s'il n'existe pas
 echo -e "\e[33mCréation du namespace logging...\e[0m"
-kubectl create namespace logging --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace logging --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
 # Installer cert-manager
 echo -e "\e[33mInstallation de cert-manager...\e[0m"
-kubectl apply -f cert-manager.yaml
+kubectl apply -f cert-manager.yaml --validate=false
 
 # Attendre que cert-manager soit prêt
 echo -e "\e[33mAttente que cert-manager soit prêt...\e[0m"
@@ -48,20 +48,20 @@ kubectl wait --for=condition=Available deployment/cert-manager-webhook -n cert-m
 
 # Déployer les ConfigMaps
 echo -e "\e[33mDéploiement des ConfigMaps...\e[0m"
-kubectl apply -f kubernetes/configmaps/
+kubectl apply -f kubernetes/configmaps/ --validate=false
 
 # Déployer les secrets
 echo -e "\e[33mDéploiement des secrets...\e[0m"
-kubectl apply -f kubernetes/secrets/
+kubectl apply -f kubernetes/secrets/ --validate=false
 
 # Déployer le stockage
 echo -e "\e[33mDéploiement du stockage...\e[0m"
-kubectl apply -f kubernetes/storage/
+kubectl apply -f kubernetes/storage/ --validate=false
 
 # Déployer PostgreSQL
 echo -e "\e[33mDéploiement de PostgreSQL...\e[0m"
-kubectl apply -f kubernetes/deployments/postgres-deployment.yaml
-kubectl apply -f kubernetes/services/postgres-service.yaml
+kubectl apply -f kubernetes/deployments/postgres-deployment.yaml --validate=false
+kubectl apply -f kubernetes/services/postgres-service.yaml --validate=false
 
 # Attendre que PostgreSQL soit prêt
 echo -e "\e[33mAttente que PostgreSQL soit prêt...\e[0m"
@@ -69,7 +69,8 @@ kubectl wait --for=condition=Available deployment/postgres-db -n rh-system --tim
 
 # Déployer Zipkin
 echo -e "\e[33mDéploiement de Zipkin...\e[0m"
-kubectl apply -f kubernetes/monitoring/zipkin/zipkin-deployment.yaml
+kubectl apply -f kubernetes/monitoring/zipkin/zipkin-deployment.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/zipkin/zipkin-service.yaml --validate=false
 
 # Attendre que Zipkin soit prêt
 echo -e "\e[33mAttente que Zipkin soit prêt...\e[0m"
@@ -77,11 +78,11 @@ kubectl wait --for=condition=Available deployment/zipkin -n monitoring --timeout
 
 # Déployer Prometheus
 echo -e "\e[33mDéploiement de Prometheus...\e[0m"
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-rbac.yaml
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-configmap.yaml
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-deployment.yaml
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-service.yaml
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-ingress.yaml
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-rbac.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-configmap.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-deployment.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-service.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-ingress.yaml --validate=false
 
 # Attendre que Prometheus soit prêt
 echo -e "\e[33mAttente que Prometheus soit prêt...\e[0m"
@@ -89,11 +90,11 @@ kubectl wait --for=condition=Available deployment/prometheus -n monitoring --tim
 
 # Déployer Grafana
 echo -e "\e[33mDéploiement de Grafana...\e[0m"
-kubectl apply -f kubernetes/monitoring/grafana/grafana-datasources-configmap.yaml
-kubectl apply -f kubernetes/monitoring/grafana/grafana-dashboards-configmap.yaml
-kubectl apply -f kubernetes/monitoring/grafana/grafana-deployment.yaml
-kubectl apply -f kubernetes/monitoring/grafana/grafana-service.yaml
-kubectl apply -f kubernetes/monitoring/grafana/grafana-ingress.yaml
+kubectl apply -f kubernetes/monitoring/grafana/grafana-datasources-configmap.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/grafana/grafana-dashboards-configmap.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/grafana/grafana-deployment.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/grafana/grafana-service.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/grafana/grafana-ingress.yaml --validate=false
 
 # Attendre que Grafana soit prêt
 echo -e "\e[33mAttente que Grafana soit prêt...\e[0m"
@@ -101,8 +102,8 @@ kubectl wait --for=condition=Available deployment/grafana -n monitoring --timeou
 
 # Déployer le backend
 echo -e "\e[33mDéploiement du backend...\e[0m"
-kubectl apply -f kubernetes/deployments/backend-deployment.yaml
-kubectl apply -f kubernetes/services/backend-service.yaml
+kubectl apply -f kubernetes/deployments/backend-deployment.yaml --validate=false
+kubectl apply -f kubernetes/services/backend-service.yaml --validate=false
 
 # Attendre que le backend soit prêt
 echo -e "\e[33mAttente que le backend soit prêt...\e[0m"
@@ -110,8 +111,8 @@ kubectl wait --for=condition=Available deployment/rh-backend -n rh-system --time
 
 # Déployer le frontend
 echo -e "\e[33mDéploiement du frontend...\e[0m"
-kubectl apply -f kubernetes/deployments/frontend-deployment.yaml
-kubectl apply -f kubernetes/services/frontend-service.yaml
+kubectl apply -f kubernetes/deployments/frontend-deployment.yaml --validate=false
+kubectl apply -f kubernetes/services/frontend-service.yaml --validate=false
 
 # Attendre que le frontend soit prêt
 echo -e "\e[33mAttente que le frontend soit prêt...\e[0m"
@@ -119,12 +120,12 @@ kubectl wait --for=condition=Available deployment/rh-frontend -n rh-system --tim
 
 # Déployer l'ingress
 echo -e "\e[33mDéploiement de l'ingress...\e[0m"
-kubectl apply -f kubernetes/ingress/ingress.yaml
+kubectl apply -f kubernetes/ingress/ingress.yaml --validate=false
 
 # Déployer les certificats HTTPS
 echo -e "\e[33mDéploiement des certificats HTTPS...\e[0m"
-kubectl apply -f kubernetes/cert-manager/selfsigned-issuer.yaml
-kubectl apply -f kubernetes/cert-manager/certificate.yaml
+kubectl apply -f kubernetes/cert-manager/selfsigned-issuer.yaml --validate=false
+kubectl apply -f kubernetes/cert-manager/certificate.yaml --validate=false
 
 echo -e "\e[32mDéploiement terminé avec succès!\e[0m"
 echo -e "\e[36mL'application est accessible aux adresses suivantes:\e[0m"

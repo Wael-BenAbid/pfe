@@ -26,6 +26,13 @@ spec:
           value: "mem"  # Utiliser la mémoire pour le stockage (pour la simplicité)
         - name: JAVA_OPTS
           value: "-Xms512m -Xmx512m"
+        - name: ZIPKIN_UI_CORS_ALLOWED_ORIGINS
+          value: "*"
+        - name: ZIPKIN_UI_CORS_ALLOWED_METHODS
+          value: "GET,POST,PUT,DELETE,OPTIONS"
+        - name: ZIPKIN_UI_CORS_ALLOWED_HEADERS
+          value: "Origin,X-Requested-With,Content-Type,Accept,Authorization"
+
         resources:
           requests:
             cpu: "100m"

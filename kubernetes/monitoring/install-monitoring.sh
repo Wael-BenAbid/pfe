@@ -18,9 +18,10 @@ kubectl apply -f prometheus/prometheus-ingress.yaml
 
 # Installer les exporteurs
 echo "Installation des exporteurs..."
-kubectl apply -f exporters/postgres-exporter-secret-template.yaml
-kubectl apply -f exporters/postgres-exporter-deployment.yaml
-kubectl apply -f exporters/postgres-exporter-service.yaml
+# Utiliser les fichiers du dossier postgres-exporter
+kubectl apply -f postgres-exporter/postgres-exporter-configmap.yaml
+kubectl apply -f postgres-exporter/postgres-exporter-deployment.yaml
+kubectl apply -f postgres-exporter/postgres-exporter-service.yaml
 
 # Installer Grafana
 echo "Installation de Grafana..."

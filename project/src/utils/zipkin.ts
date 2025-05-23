@@ -1,7 +1,7 @@
 // Configuration Zipkin
-const zipkinEnabled = true; // Forcer l'activation de Zipkin
-// Utiliser l'URL directe de Zipkin pour le développement local
-const zipkinUrl = 'http://localhost:9411';
+const zipkinEnabled = import.meta.env.VITE_ZIPKIN_ENABLED === 'true'; // Utiliser la variable d'environnement
+// Utiliser l'URL de Zipkin depuis les variables d'environnement
+const zipkinUrl = import.meta.env.VITE_ZIPKIN_URL || 'http://localhost:9411';
 
 // Génération d'ID aléatoires pour les traces
 const generateRandomId = () => {
@@ -17,10 +17,13 @@ const sendSpan = async (span: any) => {
   if (!zipkinEnabled) return;
 
   try {
-    console.log(`Envoi de trace à Zipkin: ${zipkinUrl}/api/v2/spans`);
+    // Construire l'URL complète
+    const fullUrl = `${zipkinUrl}/v2/spans`;
+
+    console.log(`Envoi de trace à Zipkin: ${fullUrl}`);
     console.log('Span:', JSON.stringify(span));
 
-    const response = await fetch(`${zipkinUrl}/api/v2/spans`, {
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

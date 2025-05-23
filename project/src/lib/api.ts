@@ -17,7 +17,9 @@ import {
 } from '../types';
 import tracedApi from '../utils/tracedApi';
 
-const API_URL = '';
+// Utiliser l'API_BASE_URL de tracedApi pour assurer la cohérence
+const API_URL = import.meta.env.VITE_API_BASE_URL || '';
+console.log('API URL in api.ts:', API_URL);
 
 // User API
 export const getUsers = async (): Promise<User[]> => {
