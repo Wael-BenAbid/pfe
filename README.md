@@ -142,7 +142,23 @@ Pour utiliser Gmail comme serveur SMTP, vous devez :
    ./restore.ps1 ./backups/rh_v2_20250505_120000.sql
    ```
 
-### Utilisation manuelle de Docker Compose
+### Déploiement avec Docker (recommandé)
+
+#### Déploiement automatique (recommandé)
+
+Utilisez les scripts de déploiement automatique pour télécharger les dernières images depuis Docker Hub et démarrer l'application :
+
+**Windows** :
+```powershell
+.\deploy-docker.ps1
+```
+
+**Linux/Mac** :
+```bash
+./deploy-docker.sh
+```
+
+#### Déploiement manuel avec Docker Compose
 
 1. Démarrez l'application :
    ```powershell
@@ -155,7 +171,7 @@ Pour utiliser Gmail comme serveur SMTP, vous devez :
    ```
 
 L'application sera accessible à :
-- Frontend : http://localhost:5174/
+- Frontend : http://localhost:5175/
 - Backend API : http://localhost:8000/
 - Interface d'administration Django : http://localhost:8000/admin/
 - Zipkin (si activé) : http://localhost:9411/
@@ -382,13 +398,13 @@ Des dashboards préconfigurés sont disponibles pour visualiser les logs du syst
 
 ## CI/CD
 
-Le projet utilise GitHub Actions pour l'intégration continue et le déploiement continu. Le pipeline CI/CD :
+Le projet utilise GitHub Actions pour l'intégration continue et le déploiement continu. Le pipeline CI/CD est entièrement automatisé et s'exécute à chaque push sur la branche principale :
 
 1. Exécute les tests du frontend et du backend
 2. Effectue des scans de sécurité sur le code et les images Docker
-3. Construit et pousse les images Docker vers Docker Hub
+3. Construit et pousse automatiquement les images Docker vers Docker Hub
 4. Déploie l'application sur Kubernetes (si configuré)
-5. Synchronise les images Docker entre Docker Hub et Docker Desktop local
+5. Met à jour les tags des images pour faciliter le déploiement
 
 Pour que le pipeline CI/CD fonctionne correctement, vous devez configurer les secrets suivants dans votre dépôt GitHub :
 
@@ -396,13 +412,13 @@ Pour que le pipeline CI/CD fonctionne correctement, vous devez configurer les se
 - `SECRET_KEY` : Clé secrète Django
 - `EMAIL_HOST_USER` : Adresse email pour l'envoi d'emails
 - `EMAIL_HOST_PASSWORD` : Mot de passe d'application pour l'envoi d'emails
+- `SENDGRID_API_KEY` : Clé API SendGrid pour l'envoi d'emails
 
-Le workflow CI/CD peut être déclenché manuellement avec des options personnalisées :
-- Synchroniser Docker Desktop avec Kubernetes
-- Mettre à jour le frontend
-- Mettre à jour le backend
-- Utiliser les images Docker locales
-- Déployer sur Kubernetes
+Pour déployer les dernières images sur votre environnement local, utilisez les scripts de déploiement fournis :
+- `deploy-docker.ps1` (Windows)
+- `deploy-docker.sh` (Linux/Mac)
+
+Ces scripts téléchargent automatiquement les dernières images depuis Docker Hub et démarrent l'application avec Docker Compose.
 
 ## Sécurité
 
