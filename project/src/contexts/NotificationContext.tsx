@@ -38,6 +38,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       if (response.ok) {
         const data = await response.json();
+
         // Convert API notifications to our Notification format
         const formattedNotifications: Notification[] = data.map((n: {
           id: number;
@@ -50,7 +51,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
           id: n.id,
           title: n.title,
           message: n.message,
-          type: n.type,
+          type: n.type || 'info',
           read: n.read,
           date: n.created_at,
         }));

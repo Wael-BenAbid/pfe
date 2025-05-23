@@ -13,6 +13,21 @@ import {
   Bell as BellIcon,
   MessageSquare as MessageSquareIcon,
 } from "lucide-react";
+
+// Composant wrapper pour NotificationDropdown
+const NotificationDropdownWrapper = () => {
+  const { notifications, markAsRead, markAllAsRead, removeAllNotifications } = useNotifications();
+
+  return (
+    <NotificationDropdown
+      notifications={notifications}
+      onMarkAsRead={markAsRead}
+      onMarkAllAsRead={markAllAsRead}
+      onRemoveAllNotifications={removeAllNotifications}
+      userType="intern"
+    />
+  );
+};
 import Logo from "../../components/ui/Logo";
 import InternMissions from "./InternMissions";
 import InternMeetings from "./InternMeetings";
@@ -116,13 +131,7 @@ const InternDashboard: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <NotificationDropdown
-                      notifications={useNotifications().notifications}
-                      onMarkAsRead={useNotifications().markAsRead}
-                      onMarkAllAsRead={useNotifications().markAllAsRead}
-                      onRemoveAllNotifications={useNotifications().removeAllNotifications}
-                      userType="intern"
-                    />
+                    <NotificationDropdownWrapper />
                   </div>
                   <UserProfileDropdown
                     user={user}

@@ -43,10 +43,14 @@ class CheckLateMissionsMiddleware:
 
                 # Créer une notification pour le superviseur si c'est un employé
                 if mission.supervisor and mission.supervisor.user_type in ['employee', 'admin']:
+                    # S'assurer que le nom complet du superviseur est inclus dans le message
+                    supervisor_full_name = f"{mission.supervisor.first_name} {mission.supervisor.last_name}"
+                    assigned_full_name = f"{mission.assigned_to.first_name} {mission.assigned_to.last_name}"
+
                     Notification.objects.create(
                         user=mission.supervisor,
                         title="Mission supervisée en retard",
-                        message=f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} est maintenant en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}.",
+                        message=f"La mission '{mission.title}' assignée à {assigned_full_name} est maintenant en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}. Vous êtes le superviseur ({supervisor_full_name}) de cette mission.",
                         type="error"
                     )
 

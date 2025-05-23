@@ -16,6 +16,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import NotFound from './pages/NotFound';
 import { useEffect } from 'react';
+import './styles/animations.css';
 
 function AppWithAlerts() {
   const { showAlert } = useAlert();

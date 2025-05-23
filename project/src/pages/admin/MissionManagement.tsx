@@ -1102,6 +1102,12 @@ const MissionManagement: React.FC = () => {
                   : 'Non assigné'}
               </p>
             </div>
+            <div>
+              <h4 className="text-sm font-medium text-gray-500">Superviseur</h4>
+              <p className="mt-1">
+                {viewingMission.supervisor_full_name || viewingMission.supervisor_name || 'Non assigné'}
+              </p>
+            </div>
             <div className="pt-4 flex justify-end">
               <Button variant="primary" onClick={() => setShowViewModal(false)}>
                 Fermer

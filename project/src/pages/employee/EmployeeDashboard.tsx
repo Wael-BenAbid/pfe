@@ -19,6 +19,21 @@ import {
   Clock as PendingIcon,
   MessageSquare as MessageSquareIcon,
 } from "lucide-react";
+
+// Composant wrapper pour NotificationDropdown
+const NotificationDropdownWrapper = () => {
+  const { notifications, markAsRead, markAllAsRead, removeAllNotifications } = useNotifications();
+
+  return (
+    <NotificationDropdown
+      notifications={notifications}
+      onMarkAsRead={markAsRead}
+      onMarkAllAsRead={markAllAsRead}
+      onRemoveAllNotifications={removeAllNotifications}
+      userType="employee"
+    />
+  );
+};
 import Logo from "../../components/ui/Logo";
 import LeaveRequests from "./LeaveRequests";
 import Missions from "./Missions";
@@ -89,13 +104,7 @@ const EmployeeDashboard: React.FC = () => {
                 <div className="flex items-center">
                   <div className="flex items-center space-x-4">
                     <div className="relative">
-                      <NotificationDropdown
-                        notifications={useNotifications().notifications}
-                        onMarkAsRead={useNotifications().markAsRead}
-                        onMarkAllAsRead={useNotifications().markAllAsRead}
-                        onRemoveAllNotifications={useNotifications().removeAllNotifications}
-                        userType="employee"
-                      />
+                      <NotificationDropdownWrapper />
                     </div>
                     <UserProfileDropdown
                       user={user}

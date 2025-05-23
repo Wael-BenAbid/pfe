@@ -211,9 +211,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Login to Docker Hub
-        run: |
-          echo "${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}" | docker login -u "${{ env.DOCKER_HUB_USERNAME }}" --password-stdin
+        uses: docker/login-action@v3
+        with:
+          username: ${{ env.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
       - name: Prepare frontend for build
         run: |
@@ -385,7 +390,7 @@ jobs:
         run: |
           if [ -f "kubernetes/deployments/backend-deployment.yaml" ] && [ -f "kubernetes/services/backend-service.yaml" ]; then
             # Update image tag in the deployment file
-            sed -i "s|image: waelbenabid/rh-backend:latest|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/backend-deployment.yaml
+            sed -i "s|image: .*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/backend-deployment.yaml
             kubectl apply -f kubernetes/deployments/backend-deployment.yaml || echo "Backend deployment failed but continuing"
             kubectl apply -f kubernetes/services/backend-service.yaml || echo "Backend service failed but continuing"
           else
@@ -684,32 +689,30 @@ jobs:
         id: timestamp
         run: echo "::set-output name=tag::$(date +'%Y%m%d-%H%M%S')"
 
-      # Construire et pousser le Frontend seulement si demandé
+      # Construire et pousser le Frontend automatiquement à chaque push
       - name: Build and push Frontend
-        if: github.event.inputs.update_frontend == true && github.event.inputs.use_local_images != true
         uses: docker/build-push-action@v5
         with:
           context: ./project
           push: true
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.tag }}
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
 
-      # Construire et pousser le Backend seulement si demandé
+      # Construire et pousser le Backend automatiquement à chaque push
       - name: Build and push Backend
-        if: github.event.inputs.update_backend == true && github.event.inputs.use_local_images != true
         uses: docker/build-push-action@v5
         with:
           context: ./back-end
           push: true
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
-            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ steps.timestamp.outputs.tag }}
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
           build-args: |
             SECRET_KEY=${{ secrets.SECRET_KEY || 'django-insecure-default-key-for-testing' }}
             EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}
             EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}
-            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}
+            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || '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' }}
             ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME || 'admin' }}
             ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL || 'admin@example.com' }}
             ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD || 'admin_password' }}

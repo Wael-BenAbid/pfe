@@ -115,23 +115,31 @@ const EmployeeProfile: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to update user");
+          const errorData = await response.json().catch(() => null);
+          console.error("Error details:", errorData);
+          throw new Error(errorData ? JSON.stringify(errorData) : "Failed to update user");
         }
 
         updatedUser = await response.json();
       } else {
         // Pas de nouvelle image, on peut utiliser JSON
+        // Créer une copie des données du formulaire sans le champ profile_image
+        const formDataWithoutImage = { ...formData };
+        delete formDataWithoutImage.profile_image;
+
         const response = await fetch(`${API_BASE_URL}/users/${user.id}/`, {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(formDataWithoutImage),
         });
 
         if (!response.ok) {
-          throw new Error("Failed to update user");
+          const errorData = await response.json().catch(() => null);
+          console.error("Error details:", errorData);
+          throw new Error(errorData ? JSON.stringify(errorData) : "Failed to update user");
         }
 
         updatedUser = await response.json();
