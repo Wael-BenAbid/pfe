@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: rh-backend
-        image: waelbenabid/rh-backend-desktop:latest
+        image: waelbenabid/rh-system-backend:latest
         imagePullPolicy: Always
         command: ["/bin/bash", "/scripts/init.sh"]
         ports:

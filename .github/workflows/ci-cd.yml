@@ -401,7 +401,7 @@ jobs:
         run: |
           if [ -f "kubernetes/deployments/frontend-deployment.yaml" ] && [ -f "kubernetes/services/frontend-service.yaml" ]; then
             # Update image tag in the deployment file
-            sed -i "s|image: waelbenabid/rh-frontend:latest|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/frontend-deployment.yaml
+            sed -i "s|image: .*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/frontend-deployment.yaml
             kubectl apply -f kubernetes/deployments/frontend-deployment.yaml || echo "Frontend deployment failed but continuing"
             kubectl apply -f kubernetes/services/frontend-service.yaml || echo "Frontend service failed but continuing"
           else

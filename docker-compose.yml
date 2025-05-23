@@ -1,8 +1,6 @@
 services:
   frontend:
-    build:
-      context: ./project
-      dockerfile: Dockerfile
+    image: waelbenabid/rh-frontend:latest
     ports:
       - "5175:80"
     environment:
@@ -10,23 +8,20 @@ services:
       - VITE_API_BASE_URL=http://backend:8000
       - VITE_ZIPKIN_URL=http://localhost:9411
       - VITE_ZIPKIN_ENABLED=true
-    # Nous ne montons pas le répertoire du projet pour éviter d'écraser les fichiers construits
-    # volumes:
-    #   - ./project:/app
-    #   - /app/node_modules
     depends_on:
       - backend
       - zipkin
     healthcheck:
-      test: ["CMD", "npm", "run", "health"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:80/health.txt || exit 1"]
       interval: 30s
+      timeout: 10s
       retries: 5
     networks:
       - app-network
     restart: unless-stopped
 
   backend:
-    image: waelbenabid/rh-backend-desktop:latest
+    image: waelbenabid/rh-system-backend:latest
     ports:
       - "8000:8000"
     env_file:
