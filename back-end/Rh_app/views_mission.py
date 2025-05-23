@@ -375,11 +375,15 @@ class MissionViewSet(viewsets.ModelViewSet):
 
             # Vérifier si une notification similaire existe déjà pour le superviseur
             if mission.supervisor:
-                supervisor_notification_message = f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} est en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}."
+                # S'assurer que le nom complet du superviseur est inclus dans le message
+                supervisor_full_name = f"{mission.supervisor.first_name} {mission.supervisor.last_name}"
+                assigned_full_name = f"{mission.assigned_to.first_name} {mission.assigned_to.last_name}"
+
+                supervisor_notification_message = f"La mission '{mission.title}' assignée à {assigned_full_name} est en retard. La date d'échéance était le {mission.deadline.strftime('%d/%m/%Y')}. Vous êtes le superviseur ({supervisor_full_name}) de cette mission."
+
                 existing_supervisor_notification = Notification.objects.filter(
                     user=mission.supervisor,
                     title="Mission supervisée en retard",
-                    message=supervisor_notification_message,
                     type="error"
                 ).exists()
 
@@ -473,11 +477,15 @@ class MissionViewSet(viewsets.ModelViewSet):
 
             # Vérifier si une notification similaire existe déjà pour le superviseur
             if mission.supervisor and mission.supervisor.user_type in ['employee', 'admin']:
-                supervisor_notification_message = f"La mission '{mission.title}' assignée à {mission.assigned_to.first_name} {mission.assigned_to.last_name} doit être terminée demain ({mission.deadline.strftime('%d/%m/%Y')})."
+                # S'assurer que le nom complet du superviseur est inclus dans le message
+                supervisor_full_name = f"{mission.supervisor.first_name} {mission.supervisor.last_name}"
+                assigned_full_name = f"{mission.assigned_to.first_name} {mission.assigned_to.last_name}"
+
+                supervisor_notification_message = f"La mission '{mission.title}' assignée à {assigned_full_name} doit être terminée demain ({mission.deadline.strftime('%d/%m/%Y')}). Vous êtes le superviseur ({supervisor_full_name}) de cette mission."
+
                 existing_supervisor_notification = Notification.objects.filter(
                     user=mission.supervisor,
                     title="Date limite de mission supervisée approche",
-                    message=supervisor_notification_message,
                     type="warning"
                 ).exists()
 

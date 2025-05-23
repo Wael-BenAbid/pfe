@@ -34,7 +34,7 @@ class Command(BaseCommand):
 
         # Vérifier les missions en retard
         self.check_late_missions(time_of_day)
-        
+
         # Vérifier les échéances approchantes
         self.check_upcoming_deadlines(time_of_day)
 
@@ -108,7 +108,7 @@ class Command(BaseCommand):
                     user=mission.assigned_to,
                     title="Date limite de mission approche",
                     created_at__date=today
-                ).exists()
+                ).exists()  # Le modèle Notification a bien un champ created_at
 
                 if not existing_notification:
                     Notification.objects.create(
@@ -144,7 +144,7 @@ class Command(BaseCommand):
             user=user,
             email_type='late_mission',
             reference_id=mission.id,
-            created_at__date=today
+            sent_at__date=today
         ).exists()
 
         # Pour les employés, envoyer des emails à tous les moments de la journée
@@ -195,7 +195,7 @@ class Command(BaseCommand):
             user=user,
             email_type='upcoming_deadline',
             reference_id=mission.id,
-            created_at__date=today
+            sent_at__date=today
         ).exists()
 
         # Pour les employés, envoyer des emails à tous les moments de la journée

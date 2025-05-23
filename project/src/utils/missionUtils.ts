@@ -8,6 +8,9 @@ export interface Mission {
   deadline: string;
   assigned_to: number;
   user?: number;
+  supervisor?: number;
+  supervisor_name?: string;
+  supervisor_full_name?: string;
   user_details?: {
     first_name: string;
     last_name: string;
