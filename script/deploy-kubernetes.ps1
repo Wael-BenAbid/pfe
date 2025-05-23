@@ -34,19 +34,19 @@ minikube addons enable metrics-server
 
 # Créer le namespace rh-system s'il n'existe pas
 Write-Host "Création du namespace rh-system..." -ForegroundColor Yellow
-kubectl create namespace rh-system --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace rh-system --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
 # Créer le namespace monitoring s'il n'existe pas
 Write-Host "Création du namespace monitoring..." -ForegroundColor Yellow
-kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
 # Créer le namespace logging s'il n'existe pas
 Write-Host "Création du namespace logging..." -ForegroundColor Yellow
-kubectl create namespace logging --dry-run=client -o yaml | kubectl apply -f -
+kubectl create namespace logging --dry-run=client -o yaml | kubectl apply -f - --validate=false
 
 # Installer cert-manager
 Write-Host "Installation de cert-manager..." -ForegroundColor Yellow
-kubectl apply -f cert-manager.yaml
+kubectl apply -f cert-manager.yaml --validate=false
 
 # Attendre que cert-manager soit prêt
 Write-Host "Attente que cert-manager soit prêt..." -ForegroundColor Yellow
@@ -56,20 +56,20 @@ kubectl wait --for=condition=Available deployment/cert-manager-webhook -n cert-m
 
 # Déployer les ConfigMaps
 Write-Host "Déploiement des ConfigMaps..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/configmaps/
+kubectl apply -f kubernetes/configmaps/ --validate=false
 
 # Déployer les secrets
 Write-Host "Déploiement des secrets..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/secrets/
+kubectl apply -f kubernetes/secrets/ --validate=false
 
 # Déployer le stockage
 Write-Host "Déploiement du stockage..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/storage/
+kubectl apply -f kubernetes/storage/ --validate=false
 
 # Déployer PostgreSQL
 Write-Host "Déploiement de PostgreSQL..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/deployments/postgres-deployment.yaml
-kubectl apply -f kubernetes/services/postgres-service.yaml
+kubectl apply -f kubernetes/deployments/postgres-deployment.yaml --validate=false
+kubectl apply -f kubernetes/services/postgres-service.yaml --validate=false
 
 # Attendre que PostgreSQL soit prêt
 Write-Host "Attente que PostgreSQL soit prêt..." -ForegroundColor Yellow
@@ -77,7 +77,8 @@ kubectl wait --for=condition=Available deployment/postgres-db -n rh-system --tim
 
 # Déployer Zipkin
 Write-Host "Déploiement de Zipkin..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/monitoring/zipkin/zipkin-deployment.yaml
+kubectl apply -f kubernetes/monitoring/zipkin/zipkin-deployment.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/zipkin/zipkin-service.yaml --validate=false
 
 # Attendre que Zipkin soit prêt
 Write-Host "Attente que Zipkin soit prêt..." -ForegroundColor Yellow
@@ -85,11 +86,11 @@ kubectl wait --for=condition=Available deployment/zipkin -n monitoring --timeout
 
 # Déployer Prometheus
 Write-Host "Déploiement de Prometheus..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-rbac.yaml
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-configmap.yaml
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-deployment.yaml
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-service.yaml
-kubectl apply -f kubernetes/monitoring/prometheus/prometheus-ingress.yaml
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-rbac.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-configmap.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-deployment.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-service.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/prometheus/prometheus-ingress.yaml --validate=false
 
 # Attendre que Prometheus soit prêt
 Write-Host "Attente que Prometheus soit prêt..." -ForegroundColor Yellow
@@ -97,11 +98,11 @@ kubectl wait --for=condition=Available deployment/prometheus -n monitoring --tim
 
 # Déployer Grafana
 Write-Host "Déploiement de Grafana..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/monitoring/grafana/grafana-datasources-configmap.yaml
-kubectl apply -f kubernetes/monitoring/grafana/grafana-dashboards-configmap.yaml
-kubectl apply -f kubernetes/monitoring/grafana/grafana-deployment.yaml
-kubectl apply -f kubernetes/monitoring/grafana/grafana-service.yaml
-kubectl apply -f kubernetes/monitoring/grafana/grafana-ingress.yaml
+kubectl apply -f kubernetes/monitoring/grafana/grafana-datasources-configmap.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/grafana/grafana-dashboards-configmap.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/grafana/grafana-deployment.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/grafana/grafana-service.yaml --validate=false
+kubectl apply -f kubernetes/monitoring/grafana/grafana-ingress.yaml --validate=false
 
 # Attendre que Grafana soit prêt
 Write-Host "Attente que Grafana soit prêt..." -ForegroundColor Yellow
@@ -109,8 +110,8 @@ kubectl wait --for=condition=Available deployment/grafana -n monitoring --timeou
 
 # Déployer le backend
 Write-Host "Déploiement du backend..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/deployments/backend-deployment.yaml
-kubectl apply -f kubernetes/services/backend-service.yaml
+kubectl apply -f kubernetes/deployments/backend-deployment.yaml --validate=false
+kubectl apply -f kubernetes/services/backend-service.yaml --validate=false
 
 # Attendre que le backend soit prêt
 Write-Host "Attente que le backend soit prêt..." -ForegroundColor Yellow
@@ -118,8 +119,8 @@ kubectl wait --for=condition=Available deployment/rh-backend -n rh-system --time
 
 # Déployer le frontend
 Write-Host "Déploiement du frontend..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/deployments/frontend-deployment.yaml
-kubectl apply -f kubernetes/services/frontend-service.yaml
+kubectl apply -f kubernetes/deployments/frontend-deployment.yaml --validate=false
+kubectl apply -f kubernetes/services/frontend-service.yaml --validate=false
 
 # Attendre que le frontend soit prêt
 Write-Host "Attente que le frontend soit prêt..." -ForegroundColor Yellow
@@ -127,12 +128,12 @@ kubectl wait --for=condition=Available deployment/rh-frontend -n rh-system --tim
 
 # Déployer l'ingress
 Write-Host "Déploiement de l'ingress..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/ingress/ingress.yaml
+kubectl apply -f kubernetes/ingress/ingress.yaml --validate=false
 
 # Déployer les certificats HTTPS
 Write-Host "Déploiement des certificats HTTPS..." -ForegroundColor Yellow
-kubectl apply -f kubernetes/cert-manager/selfsigned-issuer.yaml
-kubectl apply -f kubernetes/cert-manager/certificate.yaml
+kubectl apply -f kubernetes/cert-manager/selfsigned-issuer.yaml --validate=false
+kubectl apply -f kubernetes/cert-manager/certificate.yaml --validate=false
 
 Write-Host "Déploiement terminé avec succès!" -ForegroundColor Green
 Write-Host "L'application est accessible aux adresses suivantes:" -ForegroundColor Cyan

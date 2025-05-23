@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres-exporter
-  namespace: rh-system
+  namespace: monitoring
   labels:
     app: postgres-exporter
 spec:
@@ -10,7 +10,5 @@ spec:
     app: postgres-exporter
   ports:
   - port: 9187
-    targetPort: http
-    protocol: TCP
-    name: http
-  type: ClusterIP
+    targetPort: 9187
+    name: metrics

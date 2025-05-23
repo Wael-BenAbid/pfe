@@ -144,9 +144,29 @@ Pour utiliser Gmail comme serveur SMTP, vous devez :
 
 ### Déploiement avec Docker (recommandé)
 
-#### Déploiement automatique (recommandé)
+#### Redéploiement complet (recommandé)
 
-Utilisez les scripts de déploiement automatique pour télécharger les dernières images depuis Docker Hub et démarrer l'application :
+Utilisez les scripts de redéploiement complet pour nettoyer les déploiements précédents, mettre à jour les images Docker, les pousser vers Docker Hub et redéployer l'application :
+
+**Windows** :
+```powershell
+.\redeploy-all.ps1
+```
+
+**Linux/Mac** :
+```bash
+./redeploy-all.sh
+```
+
+Ce script exécutera les étapes suivantes :
+1. Nettoyage des déploiements précédents (Docker et Kubernetes)
+2. Construction et push des images Docker vers Docker Hub
+3. Déploiement sur Docker Desktop
+4. Déploiement optionnel sur Kubernetes
+
+#### Déploiement automatique simple
+
+Si vous souhaitez uniquement déployer les dernières images depuis Docker Hub sans les reconstruire :
 
 **Windows** :
 ```powershell
@@ -245,17 +265,26 @@ Le projet peut être déployé sur un cluster Kubernetes. Les configurations né
 
 ### Options de déploiement
 
-1. **Déploiement local avec Minikube** :
+1. **Déploiement local avec Minikube (recommandé)** :
    ```powershell
-   # Démarrer Minikube
-   minikube start --driver=docker
+   # Utiliser le script de déploiement complet qui inclut Kubernetes
+   ./redeploy-all.ps1
+   # Répondre "O" à la question sur le déploiement Kubernetes
+   ```
 
-   # Activer l'addon ingress
-   minikube addons enable ingress
-
-   # Déployer l'application
+   Ou déployer uniquement sur Kubernetes sans reconstruire les images :
+   ```powershell
+   # Déployer l'application sur Kubernetes
    ./deploy-kubernetes.ps1
    ```
+
+   Ce script effectue automatiquement les opérations suivantes :
+   - Démarrage de Minikube si nécessaire
+   - Activation des addons ingress et metrics-server
+   - Déploiement de cert-manager pour HTTPS
+   - Déploiement de Zipkin, Prometheus et Grafana
+   - Déploiement de l'application (backend et frontend)
+   - Configuration des certificats HTTPS
 
 2. **Déploiement sur Azure Kubernetes Service (AKS)** :
    ```powershell
@@ -343,6 +372,8 @@ cd kubernetes/monitoring
 chmod +x install-monitoring.sh
 ./install-monitoring.sh
 ```
+
+> **Note:** Le script d'installation utilise maintenant les fichiers du dossier `postgres-exporter` pour déployer l'exportateur PostgreSQL.
 
 Une fois déployé, vous pouvez accéder aux interfaces :
 - Prometheus : http://prometheus.rh-system.local

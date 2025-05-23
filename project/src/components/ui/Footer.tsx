@@ -58,7 +58,7 @@ const Footer: React.FC<FooterProps> = ({
               {/* Tunisie Telecom Logo */}
               <div className="bg-white rounded-lg p-2 w-20 h-20 flex items-center justify-center">
                 <img
-                  src="/assets/tt-logo.svg"
+                  src="/assets/topnet.png"
                   alt="Tunisie Telecom"
                   className="max-w-full max-h-full object-contain"
                 />
@@ -67,7 +67,7 @@ const Footer: React.FC<FooterProps> = ({
               {/* RH MANGMENT Logo */}
               <div className="bg-white rounded-lg p-2 w-20 h-20 flex items-center justify-center">
                 <img
-                  src="/assets/rh-mangment-logo.svg"
+                  src="/assets/logo.png"
                   alt="RH MANGMENT"
                   className="max-w-full max-h-full object-contain"
                 />

@@ -2,6 +2,7 @@ import time
 import logging
 import random
 import uuid
+import os
 from django.conf import settings
 from py_zipkin import zipkin
 from py_zipkin.zipkin import ZipkinAttrs, zipkin_span
@@ -12,10 +13,19 @@ def get_transport():
     """
     Fonction pour créer un transport pour envoyer les spans à Zipkin
     """
+    # Utiliser l'URL de configuration pour tous les environnements
     zipkin_url = getattr(settings, 'ZIPKIN_SERVER_URL', 'http://zipkin:9411')
 
-    # Construire l'URL complète pour l'API Zipkin
-    api_url = f"{zipkin_url}/api/v2/spans"
+    # Forcer l'utilisation de l'URL correcte en environnement Kubernetes
+    if os.environ.get('KUBERNETES_SERVICE_HOST'):
+        # Utiliser le service DNS interne de Kubernetes
+        api_url = "http://zipkin.monitoring.svc.cluster.local:9411/v2/spans"
+    else:
+        # Pour le développement local
+        api_url = f"{zipkin_url}/v2/spans"
+
+    # Forcer l'utilisation de l'URL correcte pour les tests
+    api_url = "http://zipkin.monitoring.svc.cluster.local:9411/v2/spans"
 
     # Log l'URL pour le débogage
     logger.info(f"Zipkin API URL: {api_url}")
@@ -32,7 +42,7 @@ def get_transport():
                 requests.post(
                     self.url,
                     data=spans,
-                    headers={'Content-Type': 'application/x-thrift'},
+                    headers={'Content-Type': 'application/json'},
                     timeout=1  # Timeout court pour éviter de bloquer
                 )
             except Exception as e:

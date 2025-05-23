@@ -175,6 +175,31 @@ data:
             proxy_set_header X-Forwarded-Proto $scheme;
         }
 
+        # Route pour Zipkin
+        location /zipkin/ {
+            proxy_pass http://zipkin.monitoring:9411/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+
+            # Ajouter des en-têtes CORS pour permettre les requêtes depuis le frontend
+            add_header 'Access-Control-Allow-Origin' '*' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+
+            # Gérer les requêtes OPTIONS pour le preflight CORS
+            if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' '*';
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+                add_header 'Access-Control-Max-Age' 1728000;
+                add_header 'Content-Type' 'text/plain; charset=utf-8';
+                add_header 'Content-Length' 0;
+                return 204;
+            }
+        }
+
         # Route par défaut pour le frontend
         location / {
             root /usr/share/nginx/html;
@@ -182,7 +207,7 @@ data:
             try_files $uri $uri/ /index.html;
 
             # Ajouter l'en-tête Content-Security-Policy pour autoriser les scripts inline et les connexions API
-            add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:8000 https://localhost:8000 http://rh-system.local https://rh-system.local; font-src 'self' data:; connect-src 'self' http://localhost:8000 https://localhost:8000 http://rh-system.local https://rh-system.local;";
+            add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:8000 https://localhost:8000 http://rh-system.local https://rh-system.local; font-src 'self' data:; connect-src 'self' http://localhost:8000 https://localhost:8000 http://rh-system.local https://rh-system.local http://zipkin.rh-system.local http://zipkin.monitoring:9411;";
 
             # Configuration des types MIME pour les fichiers JavaScript
             location ~* \.(js|mjs)$ {

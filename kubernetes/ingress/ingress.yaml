@@ -22,7 +22,7 @@ spec:
       paths:
       # Frontend Admin Interface
       - path: /admine(/|$)(.*)
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: rh-frontend
@@ -31,7 +31,7 @@ spec:
 
       # Backend Admin Interface
       - path: /admin(/|$)(.*)
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: rh-backend
@@ -40,7 +40,7 @@ spec:
 
       # Backend API endpoints
       - path: /(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth|messages|public)(/|$)(.*)
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: rh-backend
@@ -49,7 +49,7 @@ spec:
 
       # Media files
       - path: /media(/|$)(.*)
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: rh-backend
@@ -58,7 +58,7 @@ spec:
 
       # Static files
       - path: /static(/|$)(.*)
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: rh-backend
@@ -67,7 +67,7 @@ spec:
 
       # Frontend default route
       - path: /
-        pathType: Prefix
+        pathType: ImplementationSpecific
         backend:
           service:
             name: rh-frontend
