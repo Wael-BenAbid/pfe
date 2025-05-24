@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-metrics
+  namespace: rh-system
+data:
+  prometheus_metrics.py: |
+    from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+    from django.http import HttpResponse
+    from django.views.decorators.csrf import csrf_exempt
+    import time
+
+    # Métriques Prometheus
+    REQUEST_COUNT = Counter('django_requests_total', 'Total Django requests', ['method', 'endpoint'])
+    REQUEST_LATENCY = Histogram('django_request_duration_seconds', 'Django request latency')
+    ACTIVE_USERS = Gauge('django_active_users', 'Number of active users')
+
+    def track_request(method, endpoint):
+        """Track a request"""
+        REQUEST_COUNT.labels(method=method, endpoint=endpoint).inc()
+
+    def track_latency(duration):
+        """Track request latency"""
+        REQUEST_LATENCY.observe(duration)
+
+    def set_active_users(count):
+        """Set the number of active users"""
+        ACTIVE_USERS.set(count)
+
+    class PrometheusMiddleware:
+        """Middleware pour collecter les métriques Prometheus"""
+
+        def __init__(self, get_response):
+            self.get_response = get_response
+
+        def __call__(self, request):
+            # Exclure les chemins de métriques et les fichiers statiques/média
+            excluded_paths = ['/metrics/', '/static/', '/media/', '/admin/']
+
+            # Vérifier si le chemin est une API
+            is_api_path = any(request.path.startswith(f'/{endpoint}/') for endpoint in [
+                'users', 'leaves', 'missions', 'work-hours', 'internships',
+                'job-applications', 'user-sessions', 'meetings', 'notifications',
+                'system-activities', 'token', 'auth', 'messages'
+            ])
+
+            # Ne pas traiter les chemins exclus
+            if any(request.path.startswith(path) for path in excluded_paths):
+                return self.get_response(request)
+
+            # Traiter les chemins API
+            if is_api_path:
+                start_time = time.time()
+                response = self.get_response(request)
+                duration = time.time() - start_time
+
+                # Enregistrer les métriques
+                track_request(request.method, request.path)
+                track_latency(duration)
+
+                return response
+            else:
+                return self.get_response(request)
+
+    @csrf_exempt
+    def metrics_view(request):
+        """
+        View that exposes Prometheus metrics without authentication.
+        """
+        return HttpResponse(generate_latest(), content_type=CONTENT_TYPE_LATEST)
