@@ -1,7 +1,33 @@
-// Configuration Zipkin
-const zipkinEnabled = import.meta.env.VITE_ZIPKIN_ENABLED === 'true'; // Utiliser la variable d'environnement
-// Utiliser l'URL de Zipkin depuis les variables d'environnement
-const zipkinUrl = import.meta.env.VITE_ZIPKIN_URL || 'http://localhost:9411';
+// Configuration Zipkin avec fallback pour runtime
+const getZipkinConfig = () => {
+  // Par défaut, activer Zipkin
+  let enabled = true;
+  let url = 'https://zipkin.rh-system.local/zipkin';
+
+  // Essayer d'abord les variables d'environnement Vite (build time)
+  if (import.meta.env.VITE_ZIPKIN_ENABLED !== undefined) {
+    enabled = import.meta.env.VITE_ZIPKIN_ENABLED === 'true';
+  }
+  if (import.meta.env.VITE_ZIPKIN_URL) {
+    url = import.meta.env.VITE_ZIPKIN_URL;
+  }
+
+  // Fallback pour runtime : lire depuis window.ENV si disponible
+  if (typeof window !== 'undefined' && (window as any).ENV) {
+    const env = (window as any).ENV;
+    if (env.VITE_ZIPKIN_ENABLED !== undefined) {
+      enabled = env.VITE_ZIPKIN_ENABLED === 'true';
+    }
+    if (env.VITE_ZIPKIN_URL) {
+      url = env.VITE_ZIPKIN_URL;
+    }
+  }
+
+  console.log('🔍 Configuration Zipkin:', { enabled, url });
+  return { enabled, url };
+};
+
+const { enabled: zipkinEnabled, url: zipkinUrl } = getZipkinConfig();
 
 // Génération d'ID aléatoires pour les traces
 const generateRandomId = () => {
@@ -17,7 +43,7 @@ const sendSpan = async (span: any) => {
   if (!zipkinEnabled) return;
 
   try {
-    // Construire l'URL complète
+    // Construire l'URL complète (sans /api car supprimé du système)
     const fullUrl = `${zipkinUrl}/v2/spans`;
 
     console.log(`Envoi de trace à Zipkin: ${fullUrl}`);

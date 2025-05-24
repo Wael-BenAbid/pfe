@@ -10,7 +10,7 @@ const SERVICE_NAME = 'rh-frontend';
 // Créer un contexte explicite pour stocker les informations de trace
 const ctxImpl = new ExplicitContext();
 
-// Créer un enregistreur qui envoie les données à Zipkin
+// Créer un enregistreur qui envoie les données à Zipkin (sans /api car supprimé)
 const zipkinEndpoint = `${ZIPKIN_URL}/v2/spans`;
 
 console.log(`Zipkin endpoint: ${zipkinEndpoint}`);

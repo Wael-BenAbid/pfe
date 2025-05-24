@@ -100,17 +100,8 @@ data:
         path('auth/login/', login_view, name='api_login'),
         path('auth/logout/', api_logout, name='api_logout'),
 
-        # Routes avec préfixe api/ (pour compatibilité)
-        path('api/', api_root, name='api_root_compat'),  # API root avec préfixe
-        path('api/', include(router.urls)),  # Routes API avec préfixe
-        path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair_compat'),
-        path('api/auth/verify-token/', TokenVerifyView.as_view(), name='token_verify_compat'),
-        path('api/auth/login/', login_view, name='api_login_compat'),
-        path('api/auth/logout/', api_logout, name='api_logout_compat'),
-
         # Inclure toutes les URLs de l'application Rh_app
         path('', include('Rh_app.urls')),
-        path('api/', include('Rh_app.urls')),  # Inclure les URLs avec préfixe api/
     ]
 
     # Ajouter les URLs pour servir les fichiers média et statiques

@@ -7,55 +7,33 @@ from py_zipkin.zipkin import ZipkinAttrs, zipkin_span
 
 logger = logging.getLogger(__name__)
 
-def get_transport():
+def http_transport(encoded_span):
     """
-    Fonction pour créer un transport pour envoyer les spans à Zipkin
+    Transport HTTP simple pour envoyer les spans à Zipkin
     """
-    # Utiliser l'URL de configuration pour tous les environnements
-    zipkin_url = getattr(settings, 'ZIPKIN_SERVER_URL', 'http://zipkin:9411')
-
-    # Construire l'URL de l'API Zipkin
-    api_url = f"{zipkin_url}/v2/spans"
-
-    # Log l'URL pour le débogage
-    logger.info(f"Zipkin API URL: {api_url}")
-
-    # Créer une classe de transport personnalisée
-    class CustomTransport:
-        def __init__(self, url):
-            self.url = url
-
-        def __call__(self, spans):
-            # Cette fonction sera appelée avec les spans encodés
-            try:
-                import requests
-                requests.post(
-                    self.url,
-                    data=spans,
-                    headers={'Content-Type': 'application/json'},
-                    timeout=1  # Timeout court pour éviter de bloquer
-                )
-            except Exception as e:
-                logger.error(f"Error emitting zipkin trace. {e}")
-
-    # Gérer les erreurs de connexion
     try:
-        # Retourner une instance de notre transport personnalisé
-        return CustomTransport(api_url)
-    except Exception as e:
-        logger.error(f"Erreur lors de la création du transport Zipkin: {e}")
-        # Retourner une fonction qui ne fait rien en cas d'erreur
-        return lambda spans: None
+        import requests
 
-def safe_transport_handler(spans):
-    """
-    Fonction qui enveloppe le transport pour gérer les erreurs de connexion
-    """
-    # Obtenir le transport et l'appeler avec les spans
-    # Les erreurs sont déjà gérées dans le transport lui-même
-    transport = get_transport()
-    if callable(transport):
-        transport(spans)
+        # Utiliser l'URL de configuration (sans /api car supprimé)
+        zipkin_url = getattr(settings, 'ZIPKIN_SERVER_URL', 'http://zipkin:9411')
+        api_url = f"{zipkin_url}/v2/spans"
+
+        logger.info(f"Sending span to Zipkin: {api_url}")
+
+        response = requests.post(
+            api_url,
+            data=encoded_span,
+            headers={'Content-Type': 'application/json'},
+            timeout=5
+        )
+
+        logger.info(f"Zipkin response: {response.status_code}")
+
+        if response.status_code not in [200, 202]:
+            logger.error(f"Zipkin rejected span: {response.status_code} - {response.text}")
+
+    except Exception as e:
+        logger.error(f"Error sending span to Zipkin: {e}")
 
 class ZipkinMiddleware:
     """
@@ -121,7 +99,7 @@ class ZipkinMiddleware:
                 service_name=self.service_name,
                 span_name=span_name,
                 zipkin_attrs=zipkin_attrs,
-                transport_handler=safe_transport_handler,
+                transport_handler=http_transport,
                 port=8000,
                 sample_rate=self.sample_rate,
             ) as span:

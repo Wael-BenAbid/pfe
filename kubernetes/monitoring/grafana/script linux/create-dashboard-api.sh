@@ -226,7 +226,7 @@ kubectl cp /tmp/dashboard.json monitoring/$GRAFANA_POD:/tmp/dashboard.json
 
 # Créer le tableau de bord via l'API Grafana
 echo "Création du tableau de bord via l'API Grafana..."
-kubectl exec -n monitoring $GRAFANA_POD -- curl -s -X POST -H "Content-Type: application/json" -d @/tmp/dashboard.json http://admin:admin123@localhost:3000/api/dashboards/db
+kubectl exec -n monitoring $GRAFANA_POD -- curl -s -X POST -H "Content-Type: application/json" -d @/tmp/dashboard.json http://admin:admin123@localhost:3000/dashboards/db
 
 echo "Le tableau de bord a été créé dans Grafana."
 echo "Vous pouvez y accéder via l'interface Grafana à l'adresse http://grafana.rh-system.local ou http://grafana-ingress.local"

@@ -1,0 +1,44 @@
+---
+# Service pour exposer Zipkin dans le namespace rh-system
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin
+  namespace: rh-system
+spec:
+  type: ExternalName
+  externalName: zipkin.monitoring.svc.cluster.local
+  ports:
+  - port: 9411
+    targetPort: 9411
+    protocol: TCP
+
+---
+# Service pour exposer Prometheus dans le namespace rh-system
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: rh-system
+spec:
+  type: ExternalName
+  externalName: prometheus.monitoring.svc.cluster.local
+  ports:
+  - port: 9090
+    targetPort: 9090
+    protocol: TCP
+
+---
+# Service pour exposer Grafana dans le namespace rh-system
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: rh-system
+spec:
+  type: ExternalName
+  externalName: grafana.monitoring.svc.cluster.local
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP

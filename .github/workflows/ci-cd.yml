@@ -59,7 +59,7 @@ jobs:
 
       - name: Build Frontend
         run: |
-          echo "VITE_API_BASE_URL=/api" > .env.production
+          echo "VITE_API_BASE_URL=http://localhost:8000" > .env.production
 
           # Vérifier si le script de build existe
           if ! grep -q '"build"' package.json; then
@@ -147,7 +147,7 @@ jobs:
 
           # Création du fichier .env.production
           echo "Creating .env.production file..."
-          echo "VITE_API_BASE_URL=/api" > .env.production
+          echo "VITE_API_BASE_URL=http://localhost:8000" > .env.production
 
           # Vérification des fichiers d'images
           echo "Checking image files..."
@@ -230,7 +230,7 @@ jobs:
 
           # Création du fichier .env.production
           echo "Creating .env.production file..."
-          echo "VITE_API_BASE_URL=/api" > .env.production
+          echo "VITE_API_BASE_URL=http://localhost:8000" > .env.production
 
           # Vérification des fichiers d'images
           echo "Checking image files..."
