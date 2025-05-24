@@ -90,8 +90,7 @@ echo "Starting server..."\n\
 python manage.py runserver 0.0.0.0:8000\n\
 ' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
-# Installer netcat pour vérifier la disponibilité de PostgreSQL
-RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
+# Note: netcat installation removed due to repository issues
 
 # Expose port
 EXPOSE 8000

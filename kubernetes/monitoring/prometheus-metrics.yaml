@@ -12,7 +12,7 @@ data:
 
     # Compteurs pour les utilisateurs
     users_total = Gauge(
-        'rh_users_total', 
+        'rh_users_total',
         'Total number of users by type',
         ['user_type']
     )
@@ -90,45 +90,45 @@ data:
     # Fonction pour mettre à jour les métriques
     def update_metrics():
         from .models import User, Mission, Leave, WorkHours, Internship, JobApplication, Meeting, Notification, Message
-        
+
         try:
             # Mettre à jour les compteurs d'utilisateurs
             users_total.labels(user_type='admin').set(User.objects.filter(is_staff=True).count())
             users_total.labels(user_type='employee').set(User.objects.filter(is_staff=False, user_type='employee').count())
             users_total.labels(user_type='intern').set(User.objects.filter(is_staff=False, user_type='intern').count())
-            
+
             # Mettre à jour les compteurs de missions
             missions_total.labels(status='pending').set(Mission.objects.filter(status='pending').count())
             missions_total.labels(status='in_progress').set(Mission.objects.filter(status='in_progress').count())
             missions_total.labels(status='completed').set(Mission.objects.filter(status='completed').count())
             missions_total.labels(status='late').set(Mission.objects.filter(status='late').count())
-            
+
             # Mettre à jour les compteurs de congés
             leaves_total.labels(status='pending').set(Leave.objects.filter(status='pending').count())
             leaves_total.labels(status='approved').set(Leave.objects.filter(status='approved').count())
             leaves_total.labels(status='rejected').set(Leave.objects.filter(status='rejected').count())
-            
+
             # Mettre à jour les compteurs d'heures de travail
             work_hours_total.labels(user_type='employee').set(WorkHours.objects.filter(user__user_type='employee').count())
-            
+
             # Mettre à jour les compteurs de stages
             internships_total.labels(status='active').set(Internship.objects.filter(status='active').count())
             internships_total.labels(status='completed').set(Internship.objects.filter(status='completed').count())
-            
+
             # Mettre à jour les compteurs de candidatures
             applications_total.labels(status='pending').set(JobApplication.objects.filter(status='pending').count())
             applications_total.labels(status='approved').set(JobApplication.objects.filter(status='approved').count())
             applications_total.labels(status='rejected').set(JobApplication.objects.filter(status='rejected').count())
-            
+
             # Mettre à jour les compteurs de réunions
             meetings_total.labels(status='scheduled').set(Meeting.objects.filter(status='scheduled').count())
             meetings_total.labels(status='cancelled').set(Meeting.objects.filter(status='cancelled').count())
             meetings_total.labels(status='completed').set(Meeting.objects.filter(status='completed').count())
-            
+
             # Mettre à jour les compteurs de notifications
             notifications_total.labels(status='unread').set(Notification.objects.filter(is_read=False).count())
             notifications_total.labels(status='read').set(Notification.objects.filter(is_read=True).count())
-            
+
             # Mettre à jour les compteurs de messages
             messages_total.labels(is_important='true').set(Message.objects.filter(is_important=True).count())
             messages_total.labels(is_important='false').set(Message.objects.filter(is_important=False).count())
@@ -151,34 +151,31 @@ data:
         def __call__(self, request):
             # Exclure les chemins de métriques et les fichiers statiques/média
             excluded_paths = ['/metrics/', '/static/', '/media/', '/admin/']
-            
-            # Vérifier si le chemin est une API (avec ou sans préfixe /api/)
-            is_api_path = (
-                request.path.startswith('/api/') or 
-                any(request.path.startswith(f'/{endpoint}/') for endpoint in [
-                    'users', 'leaves', 'missions', 'work-hours', 'internships', 
-                    'job-applications', 'user-sessions', 'meetings', 'notifications',
-                    'system-activities', 'token', 'auth', 'messages'
-                ])
-            )
-            
+
+            # Vérifier si le chemin est une API
+            is_api_path = any(request.path.startswith(f'/{endpoint}/') for endpoint in [
+                'users', 'leaves', 'missions', 'work-hours', 'internships',
+                'job-applications', 'user-sessions', 'meetings', 'notifications',
+                'system-activities', 'token', 'auth', 'messages'
+            ])
+
             # Ne pas traiter les chemins exclus
             if any(request.path.startswith(path) for path in excluded_paths):
                 return self.get_response(request)
-                
+
             # Traiter les chemins API
             if is_api_path:
                 start_time = time.time()
                 response = self.get_response(request)
                 duration = time.time() - start_time
-                
+
                 # Enregistrer la durée de la requête API
                 endpoint = request.path.split('?')[0]  # Ignorer les paramètres de requête
                 api_request_duration.labels(
                     endpoint=endpoint,
                     method=request.method
                 ).observe(duration)
-                
+
                 # Mettre à jour les métriques après chaque requête API
                 try:
                     update_metrics()
@@ -187,7 +184,7 @@ data:
                     import logging
                     logger = logging.getLogger(__name__)
                     logger.error(f"Erreur lors de la mise à jour des métriques: {e}")
-                
+
                 return response
             else:
                 return self.get_response(request)

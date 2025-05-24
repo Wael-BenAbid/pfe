@@ -228,15 +228,12 @@ class PrometheusMiddleware:
         # Exclure les chemins de métriques et les fichiers statiques/média
         excluded_paths = ['/metrics/', '/static/', '/media/', '/admin/']
 
-        # Vérifier si le chemin est une API (avec ou sans préfixe /api/)
-        is_api_path = (
-            request.path.startswith('/api/') or
-            any(request.path.startswith(f'/{endpoint}/') for endpoint in [
-                'users', 'leaves', 'missions', 'work-hours', 'internships',
-                'job-applications', 'user-sessions', 'meetings', 'notifications',
-                'system-activities', 'token', 'auth', 'messages'
-            ])
-        )
+        # Vérifier si le chemin est une API
+        is_api_path = any(request.path.startswith(f'/{endpoint}/') for endpoint in [
+            'users', 'leaves', 'missions', 'work-hours', 'internships',
+            'job-applications', 'user-sessions', 'meetings', 'notifications',
+            'system-activities', 'token', 'auth', 'messages'
+        ])
 
         # Ne pas traiter les chemins exclus
         if any(request.path.startswith(path) for path in excluded_paths):
