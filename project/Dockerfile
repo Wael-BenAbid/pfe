@@ -71,8 +71,12 @@ RUN touch /usr/share/nginx/html/favicon.ico
 # Copy custom nginx configuration
 COPY default.conf /etc/nginx/conf.d/default.conf
 
+# Copy environment injection script
+COPY inject-env.sh /usr/local/bin/inject-env.sh
+RUN chmod +x /usr/local/bin/inject-env.sh
+
 # Expose port
 EXPOSE 80
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start with environment injection
+CMD ["/usr/local/bin/inject-env.sh"]

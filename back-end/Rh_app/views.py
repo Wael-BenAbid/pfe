@@ -661,7 +661,7 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
-        return Response({'detail': 'Use /api/signup/ endpoint for registration'},
+        return Response({'detail': 'Use /auth/signup/ endpoint for registration'},
                       status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def get_queryset(self):

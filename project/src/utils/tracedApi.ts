@@ -107,9 +107,27 @@ export const del = async <T>(endpoint: string, options: RequestInit = {}): Promi
   });
 };
 
+// Fonction pour remplacer fetch global avec tracedFetch
+export const setupGlobalTracing = () => {
+  // Sauvegarder la fonction fetch originale
+  const originalFetch = window.fetch;
+
+  // Remplacer fetch par tracedFetch
+  window.fetch = tracedFetch;
+
+  console.log('✅ Global fetch replaced with tracedFetch for Zipkin tracing');
+
+  // Retourner une fonction pour restaurer fetch original si nécessaire
+  return () => {
+    window.fetch = originalFetch;
+    console.log('🔄 Original fetch restored');
+  };
+};
+
 export default {
   get,
   post,
   put,
-  delete: del
+  delete: del,
+  setupGlobalTracing
 };

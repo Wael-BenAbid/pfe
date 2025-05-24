@@ -96,6 +96,27 @@ spec:
             secretKeyRef:
               name: rh-backend-secrets
               key: SENDGRID_API_KEY
+        # Variables d'environnement Zipkin
+        - name: ZIPKIN_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: ZIPKIN_ENABLED
+        - name: ZIPKIN_SERVER_URL
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: ZIPKIN_SERVER_URL
+        - name: ZIPKIN_SERVICE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: ZIPKIN_SERVICE_NAME
+        - name: ZIPKIN_SAMPLE_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: ZIPKIN_SAMPLE_RATE
         volumeMounts:
         - name: init-script
           mountPath: /scripts

@@ -15,6 +15,9 @@ spec:
   tls:
   - hosts:
     - rh-system.local
+    - zipkin.rh-system.local
+    - prometheus.rh-system.local
+    - grafana.rh-system.local
     secretName: rh-system-tls
   rules:
   - host: rh-system.local
@@ -73,3 +76,39 @@ spec:
             name: rh-frontend
             port:
               number: 80
+
+  # Zipkin monitoring interface
+  - host: zipkin.rh-system.local
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: zipkin
+            port:
+              number: 9411
+
+  # Prometheus monitoring interface
+  - host: prometheus.rh-system.local
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+
+  # Grafana monitoring interface
+  - host: grafana.rh-system.local
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
