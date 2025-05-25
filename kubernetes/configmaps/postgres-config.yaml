@@ -4,5 +4,5 @@ metadata:
   name: postgres-config
   namespace: rh-system
 data:
-  POSTGRES_DB: "rh_v2"
-  POSTGRES_USER: "postgres"
+  POSTGRES_DB: rh_v2
+  POSTGRES_USER: postgres

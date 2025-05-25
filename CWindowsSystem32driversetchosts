@@ -1,0 +1,4 @@
+127.0.0.1 rh-system.local
+127.0.0.1 zipkin.rh-system.local
+127.0.0.1 prometheus.rh-system.local
+127.0.0.1 grafana.rh-system.local
