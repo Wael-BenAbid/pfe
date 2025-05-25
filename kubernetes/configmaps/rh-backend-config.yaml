@@ -11,5 +11,6 @@ data:
   DATABASE_HOST: "postgres-db"
   DATABASE_PORT: "5432"
   FRONTEND_URL: "https://rh-system.local"
+  ZIPKIN_URL: "https://zipkin.rh-system.local"
   CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:80,http://localhost,http://127.0.0.1:80,http://127.0.0.1,http://frontend,http://frontend:80,https://rh-system.local,http://rh-system.local"
   CSRF_TRUSTED_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173,http://localhost:80,http://localhost,http://127.0.0.1:80,http://127.0.0.1,http://frontend,http://frontend:80,https://rh-system.local,http://rh-system.local"

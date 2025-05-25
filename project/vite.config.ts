@@ -4,6 +4,9 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    global: 'globalThis',
+  },
   server: {
     port: 5173,
     host: true,
@@ -11,8 +14,14 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src')
+      '@': resolve(__dirname, './src'),
+      events: 'events',
+      util: 'util',
+      buffer: 'buffer',
     }
+  },
+  optimizeDeps: {
+    include: ['events', 'util', 'buffer'],
   },
   build: {
     outDir: 'dist',

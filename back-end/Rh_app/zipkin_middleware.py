@@ -14,9 +14,9 @@ def http_transport(encoded_span):
     try:
         import requests
 
-        # Utiliser l'URL de configuration (sans /api car supprimé)
-        zipkin_url = getattr(settings, 'ZIPKIN_SERVER_URL', 'http://zipkin:9411')
-        api_url = f"{zipkin_url}/v2/spans"
+        # Utiliser l'URL de configuration unifiée
+        zipkin_url = getattr(settings, 'ZIPKIN_URL', 'http://zipkin:9411')
+        api_url = f"{zipkin_url}/api/v2/spans"
 
         logger.info(f"Sending span to Zipkin: {api_url}")
 

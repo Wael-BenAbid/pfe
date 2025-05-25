@@ -3,6 +3,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { AlertProvider, setGlobalShowAlert, useAlert } from './contexts/AlertContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import ZipkinTracker from './components/common/ZipkinTracker';
 import Home from './pages/Home';
 import ApplicationForm from './pages/ApplicationForm';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -29,7 +30,8 @@ function AppWithAlerts() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Routes>
+        <ZipkinTracker>
+          <Routes>
           {/* Routes publiques */}
           <Route path="/" element={<Home />} />
           <Route path="/apply" element={<ApplicationForm />} />
@@ -47,7 +49,8 @@ function AppWithAlerts() {
           <Route path="/intern/*" element={<ProtectedRoute userType="intern"><InternDashboard /></ProtectedRoute>} />
 
           <Route path="*" element={<NotFound />} />
-        </Routes>
+          </Routes>
+        </ZipkinTracker>
       </Router>
     </div>
   );

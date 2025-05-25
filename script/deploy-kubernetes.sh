@@ -130,7 +130,7 @@ kubectl apply -f kubernetes/cert-manager/certificate.yaml --validate=false
 echo -e "\e[32mDéploiement terminé avec succès!\e[0m"
 echo -e "\e[36mL'application est accessible aux adresses suivantes:\e[0m"
 echo -e "\e[36m- Frontend: https://rh-system.local\e[0m"
-echo -e "\e[36m- Backend API: https://rh-system.local/api\e[0m"
+echo -e "\e[36m- Backend API: https://rh-system.local\e[0m"
 echo -e "\e[36m- Interface d'administration Django: https://rh-system.local/admin/\e[0m"
 echo -e "\e[36m- Zipkin: http://zipkin.rh-system.local:9411\e[0m"
 echo -e "\e[36m- Prometheus: http://prometheus.rh-system.local\e[0m"

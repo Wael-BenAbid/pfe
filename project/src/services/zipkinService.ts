@@ -1,57 +1,323 @@
-import { Tracer, ExplicitContext, BatchRecorder } from 'zipkin';
-import { HttpLogger } from 'zipkin-transport-http';
+/**
+ * Service Zipkin simplifié pour le tracing distribué dans le frontend
+ * Version compatible navigateur sans dépendances Node.js
+ */
 import axios from 'axios';
-import { wrapAxios } from 'zipkin-instrumentation-axios';
 
-// Récupérer l'URL du serveur Zipkin depuis les variables d'environnement
-const ZIPKIN_URL = import.meta.env.VITE_ZIPKIN_URL || 'http://localhost:9411';
+// Interface pour les spans Zipkin
+interface ZipkinSpan {
+  traceId: string;
+  id: string;
+  name: string;
+  timestamp: number;
+  duration?: number;
+  localEndpoint: {
+    serviceName: string;
+  };
+  remoteEndpoint?: {
+    serviceName: string;
+  };
+  tags?: Record<string, string>;
+  annotations?: Array<{
+    timestamp: number;
+    value: string;
+  }>;
+}
+
+// Configuration des URLs Zipkin selon l'environnement
+const getZipkinUrl = (): string => {
+  const hostname = window.location.hostname;
+
+  // Détection automatique de l'environnement
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // Environnement local
+    return 'http://localhost:9411';
+  } else if (hostname.includes('rh-system.local')) {
+    // Environnement Kubernetes
+    return 'https://zipkin.rh-system.local';
+  } else {
+    // Environnement Docker ou autre
+    return 'http://zipkin:9411';
+  }
+};
+
 const SERVICE_NAME = 'rh-frontend';
+const ZIPKIN_URL = getZipkinUrl();
 
-// Créer un contexte explicite pour stocker les informations de trace
-const ctxImpl = new ExplicitContext();
+// Générateur d'IDs uniques
+const generateId = (): string => {
+  return Math.random().toString(16).substr(2, 16);
+};
 
-// Créer un enregistreur qui envoie les données à Zipkin (sans /api car supprimé)
-const zipkinEndpoint = `${ZIPKIN_URL}/v2/spans`;
+// Classe pour gérer les spans
+class SimpleSpan {
+  public traceId: string;
+  public id: string;
+  public name: string;
+  public timestamp: number;
+  public tags: Record<string, string> = {};
+  public finished: boolean = false;
 
-console.log(`Zipkin endpoint: ${zipkinEndpoint}`);
+  constructor(name: string, traceId?: string) {
+    this.traceId = traceId || generateId();
+    this.id = generateId();
+    this.name = name;
+    this.timestamp = Date.now() * 1000; // Microseconds
+  }
 
-const recorder = new BatchRecorder({
-  logger: new HttpLogger({
-    endpoint: zipkinEndpoint,
-    jsonEncoder: { encode: JSON.stringify },
-  }),
+  setTag(key: string, value: string): void {
+    this.tags[key] = value;
+  }
+
+  finish(): void {
+    if (this.finished) return;
+    this.finished = true;
+
+    const span: ZipkinSpan = {
+      traceId: this.traceId,
+      id: this.id,
+      name: this.name,
+      timestamp: this.timestamp,
+      duration: (Date.now() * 1000) - this.timestamp,
+      localEndpoint: {
+        serviceName: SERVICE_NAME,
+      },
+      tags: this.tags,
+    };
+
+    // Envoyer le span à Zipkin
+    sendSpanToZipkin(span);
+  }
+}
+
+// Fonction pour envoyer les spans à Zipkin
+const sendSpanToZipkin = async (span: ZipkinSpan): Promise<void> => {
+  try {
+    await fetch(`${ZIPKIN_URL}/api/v2/spans`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify([span]),
+    });
+    console.log('✅ Span envoyé à Zipkin:', span.name);
+  } catch (error) {
+    console.warn('⚠️ Erreur lors de l\'envoi du span à Zipkin:', error);
+  }
+};
+
+// Instrumentation d'Axios
+const originalAxios = axios.create();
+const instrumentedAxios = axios.create();
+
+// Intercepteur pour les requêtes
+instrumentedAxios.interceptors.request.use((config) => {
+  const span = new SimpleSpan(`HTTP ${config.method?.toUpperCase()} ${config.url}`);
+  span.setTag('http.method', config.method?.toUpperCase() || 'GET');
+  span.setTag('http.url', config.url || '');
+  span.setTag('component', 'axios');
+
+  // Stocker le span dans la config pour le récupérer dans la réponse
+  (config as any)._zipkinSpan = span;
+
+  return config;
 });
 
-// Créer un traceur Zipkin
-export const tracer = new Tracer({
-  ctxImpl,
-  recorder,
-  localServiceName: SERVICE_NAME,
-  sampler: () => true, // Échantillonner toutes les requêtes
+// Intercepteur pour les réponses
+instrumentedAxios.interceptors.response.use(
+  (response) => {
+    const span = (response.config as any)._zipkinSpan;
+    if (span) {
+      span.setTag('http.status_code', response.status.toString());
+      span.finish();
+    }
+    return response;
+  },
+  (error) => {
+    const span = (error.config as any)?._zipkinSpan;
+    if (span) {
+      span.setTag('error', 'true');
+      span.setTag('http.status_code', error.response?.status?.toString() || '0');
+      span.finish();
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const zipkinAxios = instrumentedAxios;
+
+// Fonctions utilitaires pour récupérer les informations utilisateur
+const getUserInfo = () => {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      return {
+        id: user.id || 'unknown',
+        email: user.email || 'unknown',
+        role: user.user_type || user.role || 'unknown',
+        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'unknown',
+      };
+    }
+  } catch (error) {
+    console.warn('Erreur lors de la récupération des informations utilisateur:', error);
+  }
+
+  return {
+    id: 'anonymous',
+    email: 'anonymous',
+    role: 'anonymous',
+    name: 'anonymous',
+  };
+};
+
+const getSessionId = (): string => {
+  try {
+    let sessionId = localStorage.getItem('zipkin_session_id');
+    if (!sessionId) {
+      sessionId = generateId();
+      localStorage.setItem('zipkin_session_id', sessionId);
+    }
+    return sessionId;
+  } catch (error) {
+    return generateId();
+  }
+};
+
+// Fonctions utilitaires
+export const createSpan = (name: string, tags?: Record<string, any>): SimpleSpan => {
+  const span = new SimpleSpan(name);
+
+  if (tags) {
+    Object.entries(tags).forEach(([key, value]) => {
+      span.setTag(key, String(value));
+    });
+  }
+
+  return span;
+};
+
+export const finishSpan = (span: SimpleSpan, success: boolean = true): void => {
+  if (!span || span.finished) return;
+
+  if (!success) {
+    span.setTag('error', 'true');
+  }
+
+  span.finish();
+};
+
+export const recordOperation = (name: string, callback: () => void): void => {
+  const span = createSpan(name);
+  try {
+    callback();
+    finishSpan(span, true);
+  } catch (error) {
+    finishSpan(span, false);
+    throw error;
+  }
+};
+
+export const recordAsyncOperation = async (name: string, callback: () => Promise<any>): Promise<any> => {
+  const span = createSpan(name);
+  try {
+    const result = await callback();
+    finishSpan(span, true);
+    return result;
+  } catch (error) {
+    finishSpan(span, false);
+    throw error;
+  }
+};
+
+// Tracer une navigation de page
+export const tracePageNavigation = (pageName: string, route: string): void => {
+  const span = createSpan('page_navigation', {
+    'page.name': pageName,
+    'page.route': route,
+    'page.url': window.location.href,
+  });
+  finishSpan(span, true);
+};
+
+// Tracer une action utilisateur avec contexte complet
+export const traceUserAction = (action: string, details?: Record<string, any>): void => {
+  // Récupérer les informations utilisateur depuis le localStorage
+  const userInfo = getUserInfo();
+
+  const span = createSpan('user_action', {
+    'action.name': action,
+    'action.timestamp': new Date().toISOString(),
+    'user.id': userInfo.id,
+    'user.email': userInfo.email,
+    'user.role': userInfo.role,
+    'user.name': userInfo.name,
+    'session.id': getSessionId(),
+    ...details,
+  });
+  finishSpan(span, true);
+};
+
+// Tracer une action métier spécifique
+export const traceBusinessAction = (
+  actionType: 'mission' | 'leave' | 'meeting' | 'message' | 'user_management',
+  operation: 'create' | 'update' | 'delete' | 'view' | 'approve' | 'reject',
+  entityId?: string,
+  details?: Record<string, any>
+): void => {
+  const userInfo = getUserInfo();
+
+  const span = createSpan(`business_action_${actionType}_${operation}`, {
+    'business.action_type': actionType,
+    'business.operation': operation,
+    'business.entity_id': entityId || 'unknown',
+    'user.id': userInfo.id,
+    'user.email': userInfo.email,
+    'user.role': userInfo.role,
+    'user.name': userInfo.name,
+    'session.id': getSessionId(),
+    'timestamp': new Date().toISOString(),
+    ...details,
+  });
+  finishSpan(span, true);
+};
+
+// Tracer une authentification
+export const traceAuthentication = (
+  action: 'login' | 'logout' | 'register' | 'password_reset',
+  success: boolean,
+  userEmail?: string,
+  errorMessage?: string
+): void => {
+  const span = createSpan(`auth_${action}`, {
+    'auth.action': action,
+    'auth.success': success.toString(),
+    'auth.user_email': userEmail || 'unknown',
+    'auth.error': errorMessage || '',
+    'session.id': getSessionId(),
+    'timestamp': new Date().toISOString(),
+  });
+  finishSpan(span, success);
+};
+
+// Configuration et debug
+export const getZipkinConfig = () => ({
+  serviceName: SERVICE_NAME,
+  zipkinUrl: ZIPKIN_URL,
+  endpoint: `${ZIPKIN_URL}/api/v2/spans`,
 });
 
-// Créer une instance axios instrumentée avec Zipkin
-export const zipkinAxios = wrapAxios(axios, { tracer, serviceName: SERVICE_NAME });
-
-// Fonction pour créer un span
-export const createSpan = (name: string) => {
-  return tracer.createChildId();
-};
-
-// Fonction pour enregistrer une opération
-export const recordOperation = (name: string, callback: () => void) => {
-  tracer.local(name, callback);
-};
-
-// Fonction pour enregistrer une opération asynchrone
-export const recordAsyncOperation = async (name: string, callback: () => Promise<any>) => {
-  return tracer.local(name, callback);
-};
+console.log('✅ Zipkin configuré:', getZipkinConfig());
 
 export default {
-  tracer,
   zipkinAxios,
   createSpan,
+  finishSpan,
   recordOperation,
   recordAsyncOperation,
+  tracePageNavigation,
+  traceUserAction,
+  traceBusinessAction,
+  traceAuthentication,
+  getZipkinConfig,
 };

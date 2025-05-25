@@ -1,0 +1,185 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simple-django-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  simple-django-dashboard.json: |
+    {
+      "dashboard": {
+        "id": null,
+        "title": "Simple Django Metrics",
+        "tags": ["django", "simple"],
+        "style": "dark",
+        "timezone": "browser",
+        "panels": [
+          {
+            "id": 1,
+            "title": "HTTP Requests Total",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "django_http_requests_before_middlewares_total",
+                "legendFormat": "Total Requests"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 0
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "id": 2,
+            "title": "Request Rate",
+            "type": "timeseries",
+            "targets": [
+              {
+                "expr": "rate(django_http_requests_before_middlewares_total[5m]) * 60",
+                "legendFormat": "Requests/min"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 0
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "drawStyle": "line",
+                  "lineInterpolation": "linear",
+                  "barAlignment": 0,
+                  "lineWidth": 1,
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "spanNulls": false,
+                  "insertNulls": false,
+                  "showPoints": "auto",
+                  "pointSize": 5,
+                  "stacking": {
+                    "mode": "none",
+                    "group": "A"
+                  },
+                  "axisPlacement": "auto",
+                  "axisLabel": "",
+                  "axisColorMode": "text",
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "axisCenteredZero": false,
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": 3,
+            "title": "HTTP Status Codes",
+            "type": "piechart",
+            "targets": [
+              {
+                "expr": "django_http_responses_total_by_status_total",
+                "legendFormat": "{{status}}"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 8
+            },
+            "options": {
+              "reduceOptions": {
+                "values": false,
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": ""
+              },
+              "pieType": "pie",
+              "tooltip": {
+                "mode": "single",
+                "sort": "none"
+              },
+              "legend": {
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true
+              }
+            }
+          },
+          {
+            "id": 4,
+            "title": "Active Users",
+            "type": "stat",
+            "targets": [
+              {
+                "expr": "django_active_users",
+                "legendFormat": "Active Users"
+              }
+            ],
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 8
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "time": {
+          "from": "now-1h",
+          "to": "now"
+        },
+        "refresh": "5s",
+        "schemaVersion": 38,
+        "version": 0,
+        "gnetId": null
+      }
+    }
