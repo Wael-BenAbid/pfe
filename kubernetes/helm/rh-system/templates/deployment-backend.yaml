@@ -88,13 +88,13 @@ spec:
               key: SENDGRID_API_KEY
         readinessProbe:
           httpGet:
-            path: /api/health/
+            path: /health/
             port: {{ .Values.backend.service.port }}
           initialDelaySeconds: 15
           periodSeconds: 10
         livenessProbe:
           httpGet:
-            path: /api/health/
+            path: /health/
             port: {{ .Values.backend.service.port }}
           initialDelaySeconds: 30
           periodSeconds: 20

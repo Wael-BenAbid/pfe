@@ -204,22 +204,23 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# Email Configuration - SendGrid avec fallback sur le backend de console
+# Email Configuration - SendGrid SMTP
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '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')
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'RH System <waelbenabid1@gmail.com>')
 
-# Paramètres pour le backend de console (utilisé comme fallback)
-EMAIL_CONSOLE_STDOUT = True  # Forcer l'affichage sur stdout
-EMAIL_CONSOLE_STDERR = False  # Ne pas afficher sur stderr
-
 # Configuration SMTP pour SendGrid
-if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend':
+if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and SENDGRID_API_KEY:
     EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.sendgrid.net')
     EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
     EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
     EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'apikey')
     EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+else:
+    # Fallback vers console backend si SendGrid n'est pas configuré
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_CONSOLE_STDOUT = True
+    EMAIL_CONSOLE_STDERR = False
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 # Paramètres supplémentaires pour améliorer la délivrabilité des emails
@@ -239,6 +240,30 @@ ZIPKIN_SAMPLE_RATE = float(os.getenv('ZIPKIN_SAMPLE_RATE', '100.0'))
 # Configuration des en-têtes d'email
 EMAIL_SUBJECT_PREFIX = '[RH System] '
 EMAIL_USE_LOCALTIME = True
+
+# Configuration de limitation des emails
+EMAIL_DAILY_LIMIT = int(os.getenv('EMAIL_DAILY_LIMIT', '100'))
+EMAIL_HOURLY_LIMIT = int(os.getenv('EMAIL_HOURLY_LIMIT', '20'))
+EMAIL_PER_USER_DAILY_LIMIT = int(os.getenv('EMAIL_PER_USER_DAILY_LIMIT', '10'))
+
+# URL du frontend pour les liens dans les emails
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://rh-system.local')
+
+# Configuration Zipkin unifiée
+def get_zipkin_url():
+    """Déterminer l'URL Zipkin selon l'environnement"""
+    if DEBUG and 'localhost' in ALLOWED_HOSTS:
+        # Environnement local
+        return 'http://localhost:9411'
+    elif any('rh-system.local' in host for host in ALLOWED_HOSTS):
+        # Environnement Kubernetes
+        return 'https://zipkin.rh-system.local'
+    else:
+        # Environnement Docker
+        return 'http://zipkin:9411'
+
+ZIPKIN_URL = os.getenv('ZIPKIN_URL', get_zipkin_url())
+ZIPKIN_SERVICE_NAME = 'rh-backend'
 
 # Configuration de journalisation
 LOGGING = {

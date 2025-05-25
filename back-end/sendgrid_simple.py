@@ -27,12 +27,13 @@ def send_simple_email(to_email, subject, message, from_email="RH System <waelben
     Returns:
         bool: True si l'email a été envoyé avec succès, False sinon
     """
-    # Récupérer la clé API depuis les paramètres Django ou utiliser celle définie ici
+    # Récupérer la clé API depuis les paramètres Django
     try:
         api_key = settings.SENDGRID_API_KEY
     except:
-        # Fallback si settings n'est pas disponible
-        api_key = "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"
+        # Fallback vers variable d'environnement
+        import os
+        api_key = os.getenv('SENDGRID_API_KEY')
 
     # Vérifier si la clé API est disponible
     if not api_key:

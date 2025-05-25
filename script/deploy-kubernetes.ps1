@@ -138,7 +138,7 @@ kubectl apply -f kubernetes/cert-manager/certificate.yaml --validate=false
 Write-Host "Déploiement terminé avec succès!" -ForegroundColor Green
 Write-Host "L'application est accessible aux adresses suivantes:" -ForegroundColor Cyan
 Write-Host "- Frontend: https://rh-system.local" -ForegroundColor Cyan
-Write-Host "- Backend API: https://rh-system.local/api" -ForegroundColor Cyan
+Write-Host "- Backend API: https://rh-system.local" -ForegroundColor Cyan
 Write-Host "- Interface d'administration Django: https://rh-system.local/admin/" -ForegroundColor Cyan
 Write-Host "- Zipkin: http://zipkin.rh-system.local:9411" -ForegroundColor Cyan
 Write-Host "- Prometheus: http://prometheus.rh-system.local" -ForegroundColor Cyan

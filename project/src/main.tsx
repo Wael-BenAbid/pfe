@@ -2,14 +2,10 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { initZipkin } from './utils/zipkin';
-import { setupGlobalTracing } from './utils/tracedApi';
+import zipkinService from './services/zipkinService';
 
-// Initialiser Zipkin
-initZipkin();
-
-// Activer le tracing global pour toutes les requêtes fetch
-setupGlobalTracing();
+// Initialiser Zipkin avec le nouveau service
+console.log('🚀 Initialisation de Zipkin:', zipkinService.getZipkinConfig());
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
