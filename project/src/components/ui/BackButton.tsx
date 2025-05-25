@@ -23,10 +23,16 @@ const BackButton: React.FC<BackButtonProps> = ({
   const navigate = useNavigate();
 
   const handleClick = () => {
-    if (to) {
-      navigate(to);
-    } else {
-      navigate(-1); // Retourne à la page précédente
+    try {
+      if (to) {
+        navigate(to);
+      } else {
+        navigate(-1); // Retourne à la page précédente
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback navigation
+      window.location.href = to || '/';
     }
   };
 

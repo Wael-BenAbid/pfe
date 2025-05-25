@@ -1,0 +1,70 @@
+Commit: a17f7c9 - corriger le projet et ajout de zipkin
+back-end/Rh_app/tests.py
+frontend-metrics-fix.yaml
+kubernetes/monitoring/README.md
+kubernetes/secrets/README.md
+settings_email_config.py
+
+Commit: 9a3cb98 - corriger le projet et ajout de zipkin
+back-end/sendgrid_config.py
+back-end/test_email_limits.py
+
+Commit: 793f431 - version final
+
+Commit: 16eac14 - version final kuber
+db_backup.sql
+reset_db.sql
+
+Commit: 73634a5 - Test modifications kubernetes et zipkin
+kubernetes/configmaps/postgres-exporter-config.yaml
+kubernetes/deployments/postgres-exporter-deployment.yaml
+kubernetes/deployments/rh-frontend-deployment-https.yaml
+kubernetes/deployments/simple-backend-deployment.yaml
+kubernetes/deployments/simple-frontend-deployment.yaml
+kubernetes/monitoring/exporters/postgres-exporter-configmap.yaml
+kubernetes/monitoring/exporters/postgres-exporter-secret-template.yaml
+kubernetes/monitoring/prometheus/prometheus-configmap.yaml
+kubernetes/monitoring/zipkin/zipkin-deployment-simple.yaml
+
+Commit: 42a1927 - Test modifications kubernetes et zipkin
+
+Commit: 60196e6 - Test modifications kubernetes et zipkin
+
+Commit: 02ad549 - correction des erreur
+back-end/apply_message_fix.sh
+back-end/install_sendgrid.sh
+back-end/settings_email_config.py
+kubernetes/MONITORING_FIXES_SUMMARY.md
+kubernetes/configmaps/apply-message-fix.yaml
+kubernetes/configmaps/message-view-fix.yaml
+kubernetes/configmaps/prometheus-metrics-fix.yaml
+kubernetes/configmaps/urls-fix.yaml
+kubernetes/monitoring/backend-prometheus-fix.yaml
+kubernetes/monitoring/check-django-prometheus.yaml
+kubernetes/monitoring/fix-frontend-metrics.yaml
+kubernetes/monitoring/grafana/script linux/check-prometheus-datasource.sh
+kubernetes/monitoring/grafana/script linux/create-dashboard-api.sh
+kubernetes/monitoring/grafana/script linux/create-simple-dashboard.sh
+kubernetes/monitoring/script linux/add-metrics-to-apps.sh
+kubernetes/monitoring/script linux/configure-prometheus-metrics.sh
+kubernetes/monitoring/script linux/fix-backend-metrics.sh
+kubernetes/monitoring/script linux/fix-monitoring-v2.sh
+kubernetes/monitoring/script linux/fix-monitoring.sh
+kubernetes/scripts/fix-all-monitoring.sh
+kubernetes/scripts/fix-monitoring-issues.sh
+kubernetes/scripts/fix-prometheus-errors.sh
+kubernetes/scripts/fix-zipkin-tracing.sh
+kubernetes/scripts/test-endpoints.ps1
+kubernetes/scripts/test-zipkin-traces.ps1
+project/scripts/ensure-files.sh
+project/scripts/fix-app.sh
+project/scripts/fix-paths-cjs.cjs
+project/scripts/fix-paths.js
+project/scripts/fix-paths.sh
+project/scripts/fix-reset-password.sh
+project/scripts/replace-alerts.js
+script/check_late_missions.bat
+script/cleanup.ps1
+script/cleanup.sh
+script/select-deployment.sh
+

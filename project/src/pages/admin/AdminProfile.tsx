@@ -350,7 +350,7 @@ const AdminProfile: React.FC = () => {
             variant="primary"
             size="md"
             className="mt-4"
-            onClick={() => navigate("/admin")}
+            onClick={() => navigate("/admine")}
           >
             Back to Dashboard
           </Button>
@@ -371,7 +371,7 @@ const AdminProfile: React.FC = () => {
       />
 
       <div className="flex items-center mb-6">
-        <BackButton to="/admin" label="Back to Dashboard" />
+        <BackButton to="/admine" label="Back to Dashboard" />
         <h1 className="text-2xl font-semibold text-gray-900 ml-4">
           Admin Control Panel
         </h1>
