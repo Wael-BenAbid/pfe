@@ -36,9 +36,6 @@ RUN pip install --no-cache-dir py-zipkin opentracing django-zipkin schedule
 # Copy project files
 COPY . .
 
-# Appliquer le correctif pour la fonctionnalité de chat
-RUN chmod +x /app/apply_message_fix.sh && /app/apply_message_fix.sh
-
 # Nettoyer les fichiers statiques
 RUN rm -rf staticfiles_v2 static
 

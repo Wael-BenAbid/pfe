@@ -103,24 +103,8 @@ data:
         print('django-prometheus already configured in settings.py')
     "
 
-    # Appliquer le patch pour ajouter le modèle Message
-    echo 'Applying Message model patch...'
-    if [ -f "/scripts/add_message_model.sh" ]; then
-        bash /scripts/add_message_model.sh
-        echo 'Message model patch applied'
-    else
-        echo 'Message model patch file not found'
-    fi
-
-    # Appliquer le correctif pour la fonctionnalité de chat
-    echo 'Applying message fix...'
-    # Créer le fichier views_message.py dans le répertoire Rh_app
-    if [ -d "/app/message_view_fix" ]; then
-        cp /app/message_view_fix/views_message.py /app/Rh_app/views_message.py
-        echo 'Message fix applied'
-    else
-        echo 'Message view fix directory not found'
-    fi
+    # Note: Message model and chat functionality are now integrated in the main codebase
+    echo 'Message functionality is integrated in the main application'
 
     # Mettre à jour le fichier urls.py pour utiliser la nouvelle vue
     if [ -f "/app/Rh_app/urls.py" ]; then

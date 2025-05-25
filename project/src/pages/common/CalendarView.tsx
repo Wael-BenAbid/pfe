@@ -11,7 +11,7 @@ const CalendarView: React.FC = () => {
   // Déterminer la page de retour en fonction du type d'utilisateur
   const getBackPath = () => {
     const path = location.pathname;
-    if (path.includes('/admin')) return '/admine';
+    if (path.includes('/admine')) return '/admine';
     if (path.includes('/employee')) return '/employee';
     if (path.includes('/intern')) return '/intern';
     return '/';

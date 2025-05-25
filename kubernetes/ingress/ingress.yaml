@@ -18,6 +18,7 @@ spec:
     - zipkin.rh-system.local
     - prometheus.rh-system.local
     - grafana.rh-system.local
+    - kibana.rh-system.local
     secretName: rh-system-tls
   rules:
   - host: rh-system.local
@@ -112,3 +113,15 @@ spec:
             name: grafana
             port:
               number: 3000
+
+  # Kibana logging interface
+  - host: kibana.rh-system.local
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: kibana
+            port:
+              number: 5601

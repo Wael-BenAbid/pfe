@@ -149,20 +149,30 @@ export const zipkinAxios = instrumentedAxios;
 // Fonctions utilitaires pour récupérer les informations utilisateur
 const getUserInfo = () => {
   try {
-    const userStr = localStorage.getItem('user');
+    // Essayer d'abord 'user_data' (utilisé par AuthContext)
+    let userStr = localStorage.getItem('user_data');
+
+    // Fallback vers 'user' si 'user_data' n'existe pas
+    if (!userStr) {
+      userStr = localStorage.getItem('user');
+    }
+
     if (userStr) {
       const user = JSON.parse(userStr);
+      console.log('📊 Données utilisateur récupérées pour Zipkin:', user);
+
       return {
-        id: user.id || 'unknown',
+        id: user.id?.toString() || 'unknown',
         email: user.email || 'unknown',
         role: user.user_type || user.role || 'unknown',
-        name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'unknown',
+        name: user.username || `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'unknown',
       };
     }
   } catch (error) {
-    console.warn('Erreur lors de la récupération des informations utilisateur:', error);
+    console.warn('⚠️ Erreur lors de la récupération des informations utilisateur pour Zipkin:', error);
   }
 
+  console.log('⚠️ Aucune donnée utilisateur trouvée, utilisation de valeurs anonymes');
   return {
     id: 'anonymous',
     email: 'anonymous',

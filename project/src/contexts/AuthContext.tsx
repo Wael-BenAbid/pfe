@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { API_BASE_URL, API_URL } from '../config/constants';
+import { traceAuthentication } from '../services/zipkinService';
 
 interface User {
   id: number;
@@ -212,6 +213,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(userData);
           // Stocker les données utilisateur dans le localStorage pour la persistance
           localStorage.setItem('user_data', JSON.stringify(userData));
+
+          // Tracer la connexion réussie
+          traceAuthentication('login', true, userData.email);
+          console.log('✅ Connexion tracée dans Zipkin pour:', userData.email);
         }
       } else {
         // Gérer les différents cas d'erreur
@@ -285,6 +290,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (error) {
       console.error('Login error:', error);
 
+      // Tracer l'échec de connexion
+      traceAuthentication('login', false, username, error instanceof Error ? error.message : 'Invalid credentials');
+
       // Propager l'erreur avec le message approprié
       if (error instanceof Error) {
         throw error;
@@ -331,6 +339,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Tracer la déconnexion
+      const currentUser = user;
+      traceAuthentication('logout', true, currentUser?.email);
+
       // Toujours nettoyer le stockage local et l'état, même en cas d'erreur
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');

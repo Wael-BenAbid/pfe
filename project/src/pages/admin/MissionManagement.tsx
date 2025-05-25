@@ -10,6 +10,7 @@ import Modal from "../../components/ui/Modal";
 import { PlusIcon, CheckIcon, XIcon, ClipboardListIcon, AlertTriangleIcon, ArrowLeft } from "lucide-react";
 import { updateMissionStatuses, isMissionLate, Mission as MissionType } from "../../utils/missionUtils";
 import BackButton from "../../components/ui/BackButton";
+import { traceBusinessAction } from "../../services/zipkinService";
 
 interface User {
   id: number;
@@ -217,6 +218,15 @@ const MissionManagement: React.FC = () => {
         throw new Error("Failed to create mission");
       }
 
+      const createdMission = await response.json();
+
+      // Tracer la création de mission
+      traceBusinessAction('mission', 'create', createdMission.id?.toString(), {
+        'mission.title': newMission.title,
+        'mission.assigned_to': newMission.assigned_to.toString(),
+        'mission.deadline': newMission.deadline,
+      });
+
       // Reset form and fetch updated missions
       setNewMission({
         title: "",
@@ -227,8 +237,16 @@ const MissionManagement: React.FC = () => {
       });
       setShowNewMissionForm(false);
       fetchMissions();
+      showAlert("Mission créée avec succès", "Succès", "success");
     } catch (error) {
       console.error("Error creating mission:", error);
+
+      // Tracer l'échec de création
+      traceBusinessAction('mission', 'create', undefined, {
+        'mission.title': newMission.title,
+        'error': error instanceof Error ? error.message : 'Unknown error',
+      });
+
       showAlert("Échec de la création de la mission. Veuillez réessayer.", "Erreur", "error");
     }
   };
@@ -240,6 +258,13 @@ const MissionManagement: React.FC = () => {
     // Trouver la mission dans la liste
     const mission = missions.find((m) => m.id === id);
     if (!mission) return;
+
+    // Tracer la visualisation de mission
+    traceBusinessAction('mission', 'view', id.toString(), {
+      'mission.title': mission.title,
+      'mission.status': mission.status,
+      'mission.assigned_to': mission.assigned_to?.toString() || 'unassigned',
+    });
 
     // Afficher les détails de la mission dans une modale
     setViewingMission(mission);
@@ -293,6 +318,13 @@ const MissionManagement: React.FC = () => {
         throw new Error("Failed to update mission");
       }
 
+      // Tracer la mise à jour de mission
+      traceBusinessAction('mission', 'update', editingMission.id.toString(), {
+        'mission.title': editingMission.title,
+        'mission.assigned_to': editingMission.assigned_to?.toString() || 'unassigned',
+        'mission.deadline': editingMission.deadline,
+      });
+
       // Fermer le formulaire et rafraîchir la liste
       setShowEditForm(false);
       setEditingMission(null);
@@ -300,6 +332,13 @@ const MissionManagement: React.FC = () => {
       showAlert("Mission mise à jour avec succès", "Succès", "success");
     } catch (error) {
       console.error("Error updating mission:", error);
+
+      // Tracer l'échec de mise à jour
+      traceBusinessAction('mission', 'update', editingMission?.id.toString(), {
+        'mission.title': editingMission?.title || 'unknown',
+        'error': error instanceof Error ? error.message : 'Unknown error',
+      });
+
       showAlert("Échec de la mise à jour de la mission. Veuillez réessayer.", "Erreur", "error");
     }
   };
@@ -330,6 +369,11 @@ const MissionManagement: React.FC = () => {
         throw new Error("Failed to delete mission");
       }
 
+      // Tracer la suppression de mission
+      traceBusinessAction('mission', 'delete', deletingMissionId.toString(), {
+        'mission.id': deletingMissionId.toString(),
+      });
+
       // Fermer la modale et rafraîchir la liste
       setShowDeleteConfirmModal(false);
       setDeletingMissionId(null);
@@ -337,6 +381,13 @@ const MissionManagement: React.FC = () => {
       showAlert("Mission supprimée avec succès", "Succès", "success");
     } catch (error) {
       console.error("Error deleting mission:", error);
+
+      // Tracer l'échec de suppression
+      traceBusinessAction('mission', 'delete', deletingMissionId?.toString(), {
+        'mission.id': deletingMissionId?.toString() || 'unknown',
+        'error': error instanceof Error ? error.message : 'Unknown error',
+      });
+
       showAlert("Échec de la suppression de la mission. Veuillez réessayer.", "Erreur", "error");
     }
   };

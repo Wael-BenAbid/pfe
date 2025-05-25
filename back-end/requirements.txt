@@ -12,6 +12,6 @@ django-prometheus==2.3.1
 sendgrid==6.11.0
 celery==5.3.4
 redis==5.0.8
-py-zipkin==0.21.0
+py-zipkin==1.2.8
 opentracing==2.4.0
 jaeger-client==4.8.0

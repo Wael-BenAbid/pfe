@@ -5,6 +5,7 @@ import Button from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
 import { UserIcon, Eye, EyeOff } from "lucide-react";
 import logoImage from "../../assets/images/logo.png";
+import { traceAuthentication } from "../../services/zipkinService";
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +38,9 @@ const Login: React.FC = () => {
     try {
       await login(username, password);
 
+      // Tracer la connexion réussie
+      traceAuthentication('login', true, username);
+
       // Assume the response contains the user type, or you can fetch it after login
       const userType = localStorage.getItem("user_type");
       if (userType === "admin") {
@@ -54,6 +58,9 @@ const Login: React.FC = () => {
         console.log("Error message:", error.message);
 
         console.log("Processing error message:", error.message);
+
+        // Tracer la connexion échouée
+        traceAuthentication('login', false, username, error.message);
 
         if (error.message.includes("credentials")) {
           setErrorMessage("Invalid username or password");
