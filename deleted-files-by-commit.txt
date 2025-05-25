@@ -17,10 +17,12 @@ reset_db.sql
 
 Commit: 73634a5 - Test modifications kubernetes et zipkin
 kubernetes/configmaps/postgres-exporter-config.yaml
+
 kubernetes/deployments/postgres-exporter-deployment.yaml
 kubernetes/deployments/rh-frontend-deployment-https.yaml
 kubernetes/deployments/simple-backend-deployment.yaml
 kubernetes/deployments/simple-frontend-deployment.yaml
+
 kubernetes/monitoring/exporters/postgres-exporter-configmap.yaml
 kubernetes/monitoring/exporters/postgres-exporter-secret-template.yaml
 kubernetes/monitoring/prometheus/prometheus-configmap.yaml
@@ -34,28 +36,49 @@ Commit: 02ad549 - correction des erreur
 back-end/apply_message_fix.sh
 back-end/install_sendgrid.sh
 back-end/settings_email_config.py
+
 kubernetes/MONITORING_FIXES_SUMMARY.md
+
+
 kubernetes/configmaps/apply-message-fix.yaml
 kubernetes/configmaps/message-view-fix.yaml
 kubernetes/configmaps/prometheus-metrics-fix.yaml
 kubernetes/configmaps/urls-fix.yaml
+
+# DOUBLONS SUPPRIMÉS - NETTOYAGE KUBERNETES
+kubernetes/configmaps/backend-configmap.yaml (doublon de rh-backend-config.yaml)
+kubernetes/configmaps/frontend-configmap.yaml (doublon de rh-frontend-config.yaml)
+kubernetes/configmaps/postgres-configmap.yaml (doublon de postgres-config.yaml)
+kubernetes/configmaps/frontend-metrics-config.yaml (doublon de frontend-metrics.yaml)
+kubernetes/configmaps/postgres-exporter-config.yaml (doublon dans monitoring/)
+kubernetes/configmaps/django-admin-config.yaml (temporaire)
+kubernetes/configmaps/django-urls-config.yaml (temporaire)
+kubernetes/configmaps/prometheus-metrics.yaml (temporaire)
+kubernetes/configmaps/prometheus-metrics-view.yaml (temporaire)
+
+
 kubernetes/monitoring/backend-prometheus-fix.yaml
 kubernetes/monitoring/check-django-prometheus.yaml
 kubernetes/monitoring/fix-frontend-metrics.yaml
 kubernetes/monitoring/grafana/script linux/check-prometheus-datasource.sh
 kubernetes/monitoring/grafana/script linux/create-dashboard-api.sh
 kubernetes/monitoring/grafana/script linux/create-simple-dashboard.sh
+
+
 kubernetes/monitoring/script linux/add-metrics-to-apps.sh
 kubernetes/monitoring/script linux/configure-prometheus-metrics.sh
 kubernetes/monitoring/script linux/fix-backend-metrics.sh
 kubernetes/monitoring/script linux/fix-monitoring-v2.sh
 kubernetes/monitoring/script linux/fix-monitoring.sh
+
 kubernetes/scripts/fix-all-monitoring.sh
 kubernetes/scripts/fix-monitoring-issues.sh
 kubernetes/scripts/fix-prometheus-errors.sh
 kubernetes/scripts/fix-zipkin-tracing.sh
 kubernetes/scripts/test-endpoints.ps1
 kubernetes/scripts/test-zipkin-traces.ps1
+
+
 project/scripts/ensure-files.sh
 project/scripts/fix-app.sh
 project/scripts/fix-paths-cjs.cjs
@@ -63,7 +86,9 @@ project/scripts/fix-paths.js
 project/scripts/fix-paths.sh
 project/scripts/fix-reset-password.sh
 project/scripts/replace-alerts.js
+
 script/check_late_missions.bat
+
 script/cleanup.ps1
 script/cleanup.sh
 script/select-deployment.sh

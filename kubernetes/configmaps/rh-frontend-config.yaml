@@ -4,7 +4,7 @@ metadata:
   name: rh-frontend-config
   namespace: rh-system
 data:
-  API_BASE_URL: "https://rh-system.local"
+  API_BASE_URL: "//rh-system.local"
   NODE_ENV: "production"
   VITE_ZIPKIN_URL: "https://zipkin.rh-system.local"
   VITE_ZIPKIN_ENABLED: "true"
