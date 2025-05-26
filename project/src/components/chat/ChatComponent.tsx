@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../../config/constants';
 import { useAuth } from '../../contexts/AuthContext';
 import Button from '../ui/Button';
 import TextArea from '../ui/TextArea';
+import AlertModal from '../ui/AlertModal';
 import {
   Send as SendIcon,
   User as UserIcon,
@@ -56,6 +57,12 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ className }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'error' as 'success' | 'error' | 'info' | 'warning'
+  });
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -186,14 +193,29 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ className }) => {
         try {
           const errorData = await response.json();
           console.error('Error details:', errorData);
-          alert(`Échec de l'envoi du message: ${JSON.stringify(errorData)}`);
+          setAlertModal({
+            isOpen: true,
+            title: 'Erreur d\'envoi',
+            message: `Échec de l'envoi du message: ${JSON.stringify(errorData)}`,
+            type: 'error'
+          });
         } catch {
-          alert('Échec de l\'envoi du message. Veuillez réessayer.');
+          setAlertModal({
+            isOpen: true,
+            title: 'Erreur d\'envoi',
+            message: 'Échec de l\'envoi du message. Veuillez réessayer.',
+            type: 'error'
+          });
         }
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Erreur lors de l\'envoi du message. Veuillez réessayer.');
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur de connexion',
+        message: 'Erreur lors de l\'envoi du message. Veuillez réessayer.',
+        type: 'error'
+      });
     } finally {
       setSendingMessage(false);
     }
@@ -498,6 +520,15 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ className }) => {
           )}
         </div>
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

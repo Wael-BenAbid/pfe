@@ -42,7 +42,8 @@ router.register(r'notifications', NotificationViewSetCustom)
 router.register(r'system-activities', SystemActivityViewSet)
 
 
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
+from django.views.generic import RedirectView
 
 def api_root(request):
     return JsonResponse({
@@ -59,6 +60,9 @@ def django_admin_view(request, path=''):
 urlpatterns = [
     # Interface d'administration Django directement à la racine
     path('admin/', admin.site.urls, name='django_admin'),
+
+    # Favicon
+    path('favicon.ico', RedirectView.as_view(url='/static/favicon.ico', permanent=True)),
 
     # API root endpoint
     path('', api_root, name='api_root'),

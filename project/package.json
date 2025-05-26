@@ -11,7 +11,13 @@
     "preview": "vite preview",
     "postinstall": "npm run setup-types || echo 'Setup types failed but continuing'",
     "setup-types": "npm i -D @types/node && npm i drizzle-orm drizzle-zod zod || echo 'Some dependencies may be missing but continuing'",
-    "health": "echo 'Frontend health check passed'"
+    "health": "echo 'Frontend health check passed'",
+    "docker:local": "docker-compose --env-file .env.local up --build",
+    "docker:prod": "docker-compose --env-file .env.production up -d",
+    "docker:stop": "docker-compose down",
+    "docker:clean": "docker-compose down -v --remove-orphans && docker system prune -f",
+    "docker:logs": "docker-compose logs -f",
+    "docker:rebuild": "docker-compose down && docker-compose --env-file .env.local up --build --force-recreate"
   },
   "dependencies": {
     "@radix-ui/react-toast": "^1.2.11",

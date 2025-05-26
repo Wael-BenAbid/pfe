@@ -3,6 +3,8 @@ import { API_BASE_URL } from "../../config/constants";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../../components/ui/Button";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import AlertModal from "../../components/ui/AlertModal";
+import ConfirmModal from "../../components/ui/ConfirmModal";
 import { UsersIcon, UserIcon, SearchIcon, ClockIcon, TrashIcon } from "lucide-react";
 
 interface User {
@@ -24,6 +26,18 @@ const UserManagement: React.FC = () => {
   const [filterType, setFilterType] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'info' | 'warning'
+  });
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
 
   useEffect(() => {
     // Check if there's a filter parameter in the URL
@@ -126,34 +140,53 @@ const UserManagement: React.FC = () => {
 
   const handleDeleteUser = async (userId: number) => {
     if (!token) return;
-    if (!window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.")) {
-      return;
-    }
 
-    setDeletingUserId(userId);
+    setConfirmModal({
+      isOpen: true,
+      title: 'Confirmation de suppression',
+      message: "Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.",
+      onConfirm: async () => {
+        setDeletingUserId(userId);
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        try {
+          const response = await fetch(`${API_BASE_URL}/users/${userId}/`, {
+            method: 'DELETE',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-      if (response.ok) {
-        // Supprimer l'utilisateur de la liste locale
-        setUsers(users.filter(user => user.id !== userId));
-        alert("Utilisateur supprimé avec succès");
-      } else {
-        const errorData = await response.json();
-        alert(`Erreur lors de la suppression : ${errorData.detail || 'Erreur inconnue'}`);
+          if (response.ok) {
+            // Supprimer l'utilisateur de la liste locale
+            setUsers(users.filter(user => user.id !== userId));
+            setAlertModal({
+              isOpen: true,
+              title: 'Succès',
+              message: "Utilisateur supprimé avec succès",
+              type: 'success'
+            });
+          } else {
+            const errorData = await response.json();
+            setAlertModal({
+              isOpen: true,
+              title: 'Erreur',
+              message: `Erreur lors de la suppression : ${errorData.detail || 'Erreur inconnue'}`,
+              type: 'error'
+            });
+          }
+        } catch (error) {
+          console.error("Error deleting user:", error);
+          setAlertModal({
+            isOpen: true,
+            title: 'Erreur',
+            message: "Une erreur s'est produite lors de la suppression de l'utilisateur",
+            type: 'error'
+          });
+        } finally {
+          setDeletingUserId(null);
+        }
       }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      alert("Une erreur s'est produite lors de la suppression de l'utilisateur");
-    } finally {
-      setDeletingUserId(null);
-    }
+    });
   };
 
   if (loading) {
@@ -375,6 +408,27 @@ const UserManagement: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          setConfirmModal(prev => ({ ...prev, isOpen: false }));
+          confirmModal.onConfirm();
+        }}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
     </div>
   );
 };

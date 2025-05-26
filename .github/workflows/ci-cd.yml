@@ -207,7 +207,7 @@ jobs:
   build-push:
     needs: [test-frontend, test-backend, security-scan]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' # Toujours exécuté sur main
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch' # Exécuté sur main ou manuellement
     steps:
       - uses: actions/checkout@v4
 
@@ -267,18 +267,26 @@ jobs:
         with:
           context: ./project
           push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:v$(date +'%Y%m%d-%H%M%S')
 
       - name: Build and push Backend
         uses: docker/build-push-action@v5
         with:
           context: ./back-end
           push: true
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:v$(date +'%Y%m%d-%H%M%S')
           build-args: |
             SECRET_KEY=${{ secrets.SECRET_KEY || 'django-insecure-default-key-for-testing' }}
             EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}
