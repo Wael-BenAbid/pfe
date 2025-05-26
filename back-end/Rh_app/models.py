@@ -233,6 +233,7 @@ class JobApplication(models.Model):
     position = models.CharField(max_length=100)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
+    username = models.CharField(max_length=150, null=True, blank=True, help_text="Nom d'utilisateur souhaité")
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     education = models.TextField()

@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import Button from "../../components/ui/Button";
 import TextInput from "../../components/ui/TextInput";
 import LoadingSpinner from "../../components/ui/LoadingSpinner";
+import AlertModal from "../../components/ui/AlertModal";
 import { PlusIcon, CheckIcon, XIcon, GraduationCapIcon } from "lucide-react";
 
 interface User {
@@ -42,6 +43,12 @@ const InternshipManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showNewInternshipForm, setShowNewInternshipForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("active"); // Default to active internships
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'info' | 'warning'
+  });
   const [newInternship, setNewInternship] = useState({
     title: "",
     description: "",
@@ -232,7 +239,12 @@ const InternshipManagement: React.FC = () => {
     if (!newInternship.title || !newInternship.start_date || !newInternship.end_date ||
         !newInternship.intern || !newInternship.supervisor) {
       console.error("Missing required fields:", newInternship);
-      alert("Please fill in all required fields");
+      setAlertModal({
+        isOpen: true,
+        title: 'Champs requis',
+        message: "Veuillez remplir tous les champs obligatoires",
+        type: 'warning'
+      });
       return;
     }
 
@@ -277,10 +289,20 @@ const InternshipManagement: React.FC = () => {
       fetchInternships();
 
       // Afficher un message de succès
-      alert("Internship created successfully!");
+      setAlertModal({
+        isOpen: true,
+        title: 'Succès',
+        message: "Stage créé avec succès !",
+        type: 'success'
+      });
     } catch (error) {
       console.error("Error creating internship:", error);
-      alert("Failed to create internship. Please try again.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur',
+        message: "Échec de la création du stage. Veuillez réessayer.",
+        type: 'error'
+      });
     }
   };
 
@@ -308,7 +330,12 @@ const InternshipManagement: React.FC = () => {
       fetchInternships();
     } catch (error) {
       console.error("Error changing internship status:", error);
-      alert("Failed to change internship status. Please try again.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur',
+        message: "Échec du changement de statut du stage. Veuillez réessayer.",
+        type: 'error'
+      });
     }
   };
 
@@ -650,6 +677,15 @@ const InternshipManagement: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

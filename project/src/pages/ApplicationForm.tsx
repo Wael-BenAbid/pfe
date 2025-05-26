@@ -7,6 +7,7 @@ import {
   RadioGroup,
 } from "../components/ui/FormElements";
 import Button from "../components/ui/Button";
+import AlertModal from "../components/ui/AlertModal";
 import {
   API_BASE_URL,
   APPLICATION_TYPES,
@@ -24,6 +25,7 @@ interface FormData {
   position: string;
   first_name: string;
   last_name: string;
+  username: string;
   email: string;
   phone: string;
   education: string;
@@ -40,6 +42,7 @@ interface FormErrors {
   position?: string;
   first_name?: string;
   last_name?: string;
+  username?: string;
   email?: string;
   phone?: string;
   education?: string;
@@ -58,6 +61,7 @@ const ApplicationForm: React.FC = () => {
     position: "",
     first_name: "",
     last_name: "",
+    username: "",
     email: "",
     phone: "",
     education: "",
@@ -73,6 +77,12 @@ const ApplicationForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'error' as 'success' | 'error' | 'info' | 'warning'
+  });
 
   const validateStep = (step: number): boolean => {
     const newErrors: FormErrors = {};
@@ -208,7 +218,12 @@ const ApplicationForm: React.FC = () => {
       navigate("/application-success");
     } catch (error) {
       console.error("Submission error:", error);
-      alert("There was an error submitting your application. Please try again.");
+      setAlertModal({
+        isOpen: true,
+        title: 'Erreur de soumission',
+        message: "Il y a eu une erreur lors de la soumission de votre candidature. Veuillez réessayer.",
+        type: 'error'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -326,6 +341,15 @@ const ApplicationForm: React.FC = () => {
                 error={errors.last_name}
               />
             </div>
+
+            <TextInput
+              label="Username"
+              placeholder="Choose a username for your account"
+              value={formData.username}
+              onChange={(e) => handleChange("username", e.target.value)}
+              error={errors.username}
+              helper="This will be your login username if approved"
+            />
 
             <TextInput
               label="Email"
@@ -527,6 +551,15 @@ const ApplicationForm: React.FC = () => {
           </form>
         </div>
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal(prev => ({ ...prev, isOpen: false }))}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

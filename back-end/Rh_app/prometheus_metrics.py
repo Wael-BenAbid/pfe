@@ -109,9 +109,16 @@ session_duration_seconds = Summary(
 
 # Fonction pour mettre à jour les métriques
 def update_metrics():
-    from .models import User, Mission, Leave, WorkHours, Internship, JobApplication, Meeting, Notification, Message, SystemActivity
-    from django.utils import timezone
-    from datetime import timedelta
+    try:
+        from .models import User, Mission, Leave, WorkHours, Internship, JobApplication, Meeting, Notification, Message, SystemActivity
+        from django.utils import timezone
+        from datetime import timedelta
+    except ImportError as e:
+        # Si les modèles ne peuvent pas être importés (tables non créées), ignorer
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Impossible d'importer les modèles pour les métriques: {e}")
+        return
 
     # Mettre à jour les compteurs d'utilisateurs
     users_total.labels(user_type='admin').set(User.objects.filter(is_staff=True).count())
@@ -217,12 +224,16 @@ def update_metrics():
 class PrometheusMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
+        self.metrics_enabled = True
         # Mettre à jour les métriques au démarrage
         try:
             update_metrics()
-        except:
+        except Exception as e:
             # Ignorer les erreurs lors du démarrage (tables non créées, etc.)
-            pass
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Métriques Prometheus désactivées au démarrage: {e}")
+            self.metrics_enabled = False
 
     def __call__(self, request):
         # Exclure les chemins de métriques et les fichiers statiques/média
@@ -253,13 +264,16 @@ class PrometheusMiddleware:
             ).observe(duration)
 
             # Mettre à jour les métriques après chaque requête API
-            try:
-                update_metrics()
-            except Exception as e:
-                # Journaliser l'erreur mais ne pas interrompre la réponse
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(f"Erreur lors de la mise à jour des métriques: {e}")
+            if self.metrics_enabled:
+                try:
+                    update_metrics()
+                except Exception as e:
+                    # Journaliser l'erreur mais ne pas interrompre la réponse
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Erreur lors de la mise à jour des métriques: {e}")
+                    # Désactiver les métriques en cas d'erreur répétée
+                    self.metrics_enabled = False
 
             return response
         else:

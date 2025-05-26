@@ -66,7 +66,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Rh_app.middleware.CheckLateMissionsMiddleware',  # Middleware pour vérifier les missions en retard
     'Rh_app.zipkin_middleware.ZipkinMiddleware',  # Middleware pour le traçage Zipkin
-    'Rh_app.prometheus_metrics.PrometheusMiddleware',  # Middleware pour les métriques personnalisées
+    'Rh_app.simple_prometheus_middleware.SimplePrometheusMiddleware',  # Middleware pour les métriques personnalisées
     'django_prometheus.middleware.PrometheusAfterMiddleware',  # Doit être en dernier
 ]
 

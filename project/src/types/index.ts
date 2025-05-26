@@ -125,6 +125,7 @@ export interface JobApplication {
   position: string;
   first_name: string;
   last_name: string;
+  username?: string;
   email: string;
   phone: string;
   education: string;
@@ -140,6 +141,7 @@ export interface CreateJobApplicationRequest {
   position: string;
   first_name: string;
   last_name: string;
+  username?: string;
   email: string;
   phone: string;
   education: string;

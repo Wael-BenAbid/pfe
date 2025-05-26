@@ -81,6 +81,13 @@ spec:
   - host: zipkin.rh-system.local
     http:
       paths:
+      - path: /api/v2/spans
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: zipkin
+            port:
+              number: 9411
       - path: /
         pathType: ImplementationSpecific
         backend:
