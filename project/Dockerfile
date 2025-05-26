@@ -49,5 +49,9 @@ RUN chmod +x /usr/local/bin/inject-env.sh
 # Expose port
 EXPOSE 80
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost/health.txt || exit 1
+
 # Start with environment injection
-CMD ["/usr/local/bin/inject-env.sh"]
+CMD ["/bin/sh", "/usr/local/bin/inject-env.sh"]
