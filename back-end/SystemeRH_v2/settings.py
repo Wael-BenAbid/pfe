@@ -252,15 +252,21 @@ FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://rh-system.local')
 # Configuration Zipkin unifiée
 def get_zipkin_url():
     """Déterminer l'URL Zipkin selon l'environnement"""
-    if DEBUG and 'localhost' in ALLOWED_HOSTS:
-        # Environnement local
-        return 'http://localhost:9411'
-    elif any('rh-system.local' in host for host in ALLOWED_HOSTS):
-        # Environnement Kubernetes
-        return 'https://zipkin.rh-system.local'
-    else:
-        # Environnement Docker
+    # Vérifier si nous sommes dans un conteneur Docker
+    import socket
+    try:
+        # Essayer de résoudre le nom du service Docker
+        socket.gethostbyname('zipkin')
+        # Si ça marche, nous sommes dans Docker
         return 'http://zipkin:9411'
+    except socket.gaierror:
+        # Pas dans Docker, vérifier l'environnement
+        if any('rh-system.local' in host for host in ALLOWED_HOSTS):
+            # Environnement Kubernetes
+            return 'https://zipkin.rh-system.local'
+        else:
+            # Environnement local
+            return 'http://localhost:9411'
 
 ZIPKIN_URL = os.getenv('ZIPKIN_URL', get_zipkin_url())
 ZIPKIN_SERVICE_NAME = 'rh-backend'
