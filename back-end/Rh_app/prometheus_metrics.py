@@ -1,107 +1,144 @@
-from prometheus_client import Counter, Histogram, Gauge, Summary
+from prometheus_client import Counter, Histogram, Gauge, Summary, REGISTRY
 import time
 
 # Définir des métriques personnalisées pour l'application RH
+# Utiliser un pattern singleton pour éviter les métriques dupliquées
+
+def get_or_create_metric(metric_class, name, description, labels=None, registry=REGISTRY):
+    """
+    Récupère une métrique existante ou en crée une nouvelle si elle n'existe pas
+    """
+    try:
+        # Essayer de créer la métrique
+        if labels:
+            return metric_class(name, description, labels, registry=registry)
+        else:
+            return metric_class(name, description, registry=registry)
+    except ValueError as e:
+        if "Duplicated timeseries" in str(e):
+            # La métrique existe déjà, la récupérer depuis le registre
+            for collector in registry._collector_to_names:
+                if hasattr(collector, '_name') and collector._name == name:
+                    return collector
+            # Si on ne trouve pas la métrique, lever l'erreur originale
+            raise e
+        else:
+            raise e
 
 # Compteurs pour les utilisateurs
-users_total = Gauge(
+users_total = get_or_create_metric(
+    Gauge,
     'rh_users_total',
     'Total number of users by type',
     ['user_type']
 )
 
 # Compteurs pour les missions
-missions_total = Gauge(
+missions_total = get_or_create_metric(
+    Gauge,
     'rh_missions_total',
     'Total number of missions by status',
     ['status']
 )
 
 # Compteurs pour les congés
-leaves_total = Gauge(
+leaves_total = get_or_create_metric(
+    Gauge,
     'rh_leaves_total',
     'Total number of leave requests by status',
     ['status']
 )
 
 # Compteurs pour les heures de travail
-work_hours_total = Gauge(
+work_hours_total = get_or_create_metric(
+    Gauge,
     'rh_work_hours_total',
     'Total work hours recorded',
     ['user_type']
 )
 
 # Compteurs pour les stages
-internships_total = Gauge(
+internships_total = get_or_create_metric(
+    Gauge,
     'rh_internships_total',
     'Total number of internships by status',
     ['status']
 )
 
 # Compteurs pour les candidatures
-applications_total = Gauge(
+applications_total = get_or_create_metric(
+    Gauge,
     'rh_applications_total',
     'Total number of job applications by status',
     ['status']
 )
 
 # Compteurs pour les réunions
-meetings_total = Gauge(
+meetings_total = get_or_create_metric(
+    Gauge,
     'rh_meetings_total',
     'Total number of meetings by status',
     ['status']
 )
 
 # Compteurs pour les notifications
-notifications_total = Gauge(
+notifications_total = get_or_create_metric(
+    Gauge,
     'rh_notifications_total',
     'Total number of notifications by status',
     ['status']
 )
 
 # Compteurs pour les messages
-messages_total = Gauge(
+messages_total = get_or_create_metric(
+    Gauge,
     'rh_messages_total',
     'Total number of messages',
     ['is_important']
 )
 
 # Histogrammes pour les temps de réponse
-api_request_duration = Histogram(
+api_request_duration = get_or_create_metric(
+    Histogram,
     'rh_api_request_duration_seconds',
     'API request duration in seconds',
     ['endpoint', 'method']
 )
 
 # Compteurs pour les actions utilisateur
-user_actions_total = Counter(
+user_actions_total = get_or_create_metric(
+    Counter,
     'rh_user_actions_total',
     'Total number of user actions',
     ['action_type', 'user_type']
 )
 
 # Compteurs spécifiques pour les connexions/déconnexions
-login_total = Counter(
+login_total = get_or_create_metric(
+    Counter,
     'rh_login_total',
     'Total number of login attempts',
     ['status', 'user_type']
 )
 
-logout_total = Counter(
+logout_total = get_or_create_metric(
+    Counter,
     'rh_logout_total',
     'Total number of logouts',
     ['user_type']
 )
 
 # Compteurs pour les actions liées aux missions
-mission_actions_total = Counter(
+mission_actions_total = get_or_create_metric(
+    Counter,
     'rh_mission_actions_total',
     'Total number of mission-related actions',
     ['action', 'user_type']
 )
 
 # Temps de session utilisateur
-session_duration_seconds = Summary(
+session_duration_seconds = get_or_create_metric(
+    Summary,
     'rh_session_duration_seconds',
     'User session duration in seconds',
     ['user_type']
