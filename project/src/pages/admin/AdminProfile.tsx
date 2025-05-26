@@ -538,6 +538,13 @@ const AdminProfile: React.FC = () => {
                 {editing ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <TextInput
+                      label="Username"
+                      name="username"
+                      value={formData.username || ""}
+                      onChange={handleInputChange}
+                      helper="Username for login (admin can modify)"
+                    />
+                    <TextInput
                       label="First Name"
                       name="first_name"
                       value={formData.first_name || ""}
@@ -570,6 +577,20 @@ const AdminProfile: React.FC = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <h3 className="text-sm font-medium text-gray-500">
+                          Username
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded">
+                          {user.username}
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">
+                          Email
+                        </h3>
+                        <p className="mt-1 text-sm text-gray-900">{user.email}</p>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium text-gray-500">
                           First Name
                         </h3>
                         <p className="mt-1 text-sm text-gray-900">
@@ -583,12 +604,6 @@ const AdminProfile: React.FC = () => {
                         <p className="mt-1 text-sm text-gray-900">
                           {user.last_name}
                         </p>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-medium text-gray-500">
-                          Email
-                        </h3>
-                        <p className="mt-1 text-sm text-gray-900">{user.email}</p>
                       </div>
                       <div>
                         <h3 className="text-sm font-medium text-gray-500">

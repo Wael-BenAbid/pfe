@@ -447,7 +447,7 @@ const UserProfile: React.FC = () => {
                     name="username"
                     value={formData.username || ""}
                     onChange={handleInputChange}
-                    disabled
+                    helper="Username for login (admin can modify)"
                   />
                   <div className="col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -518,7 +518,7 @@ const UserProfile: React.FC = () => {
                       <h3 className="text-sm font-medium text-gray-500">
                         Username
                       </h3>
-                      <p className="mt-1 text-sm text-gray-900">
+                      <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded">
                         {user.username}
                       </p>
                     </div>

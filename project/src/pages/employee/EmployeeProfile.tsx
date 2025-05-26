@@ -325,6 +325,15 @@ const EmployeeProfile: React.FC = () => {
             <div className="md:w-2/3">
               {editing ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Username
+                    </label>
+                    <div className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-500">
+                      {formData.username || user?.username}
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">Username cannot be changed by employees</p>
+                  </div>
                   <TextInput
                     label="First Name"
                     name="first_name"
@@ -358,6 +367,20 @@ const EmployeeProfile: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">
+                        Username
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-900 font-mono bg-gray-50 px-2 py-1 rounded">
+                        {user.username}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">
+                        Email
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-900">{user.email}</p>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500">
                         First Name
                       </h3>
                       <p className="mt-1 text-sm text-gray-900">
@@ -371,12 +394,6 @@ const EmployeeProfile: React.FC = () => {
                       <p className="mt-1 text-sm text-gray-900">
                         {user.last_name}
                       </p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500">
-                        Email
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-900">{user.email}</p>
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-gray-500">
