@@ -25,14 +25,17 @@ const Login: React.FC = () => {
     setErrorMessage("");
     setIsSubmitting(true);
 
-    // Stocker l'email utilisé pour la connexion
-    // Si c'est un email, le stocker directement
+    // Stocker l'identifiant utilisé pour la connexion
     if (username.includes('@')) {
+      // Si c'est un email, le stocker comme email
       localStorage.setItem('last_login_email', username);
+      localStorage.removeItem('last_login_username'); // Nettoyer l'ancien username
       console.log("Stored login email:", username);
     } else {
-      // Si c'est un nom d'utilisateur, ne pas le stocker pour la vérification de candidature
-      console.log("Username provided, not storing for pending application check");
+      // Si c'est un nom d'utilisateur, le stocker comme username
+      localStorage.setItem('last_login_username', username);
+      localStorage.removeItem('last_login_email'); // Nettoyer l'ancien email
+      console.log("Stored login username:", username);
     }
 
     try {

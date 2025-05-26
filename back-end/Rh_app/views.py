@@ -117,101 +117,92 @@ def login_view(request):
             return Response({'error': 'Username and password required'},
                           status=status.HTTP_400_BAD_REQUEST)
 
-        # Essayer d'abord d'authentifier avec l'email
+        # Essayer d'authentifier avec email ou username
         user = None
-        try:
-            # Chercher un utilisateur avec cet email
-            user_obj = User.objects.get(email=username)
-            user = authenticate(username=user_obj.username, password=password)
-        except User.DoesNotExist:
-            # Si aucun utilisateur n'est trouvé avec cet email, essayer avec le nom d'utilisateur
+
+        # Si l'identifiant contient @, c'est probablement un email
+        if '@' in username:
+            try:
+                # Chercher un utilisateur avec cet email
+                user_obj = User.objects.get(email=username)
+                user = authenticate(username=user_obj.username, password=password)
+                logger.info(f"Tentative d'authentification avec email: {username} -> username: {user_obj.username}")
+            except User.DoesNotExist:
+                logger.info(f"Aucun utilisateur trouvé avec l'email: {username}")
+                user = None
+        else:
+            # Essayer d'abord avec le nom d'utilisateur directement
             user = authenticate(username=username, password=password)
+            logger.info(f"Tentative d'authentification avec username: {username}")
+
+            # Si ça ne marche pas, vérifier si c'est un email sans @
+            if not user:
+                try:
+                    user_obj = User.objects.get(email=username)
+                    user = authenticate(username=user_obj.username, password=password)
+                    logger.info(f"Tentative d'authentification avec email sans @: {username} -> username: {user_obj.username}")
+                except User.DoesNotExist:
+                    logger.info(f"Aucun utilisateur trouvé avec l'email: {username}")
+                    pass
 
         if not user:
-            # Vérifier si c'est une candidature en attente
-            try:
-                # Vérifier d'abord avec l'email fourni
+            # Vérifier si c'est une candidature en attente ou rejetée
+            logger.info(f"Authentification échouée pour: {username}, vérification des candidatures")
+
+            application = None
+
+            # Méthode 1: Vérifier directement avec l'identifiant fourni (email)
+            if '@' in username:
                 application = JobApplication.objects.filter(
                     email=username,
-                    status='pending'
+                    status__in=['pending', 'rejected']
                 ).first()
-
                 if application:
-                    logger.info(f"Candidature en attente trouvée pour l'email: {username}")
+                    logger.info(f"Candidature trouvée par email: {username}, statut: {application.status}")
+
+            # Méthode 2: Si pas trouvé et pas d'@, vérifier si c'est un username dans les candidatures
+            if not application and '@' not in username:
+                application = JobApplication.objects.filter(
+                    username=username,
+                    status__in=['pending', 'rejected']
+                ).first()
+                if application:
+                    logger.info(f"Candidature trouvée par username: {username}, statut: {application.status}")
+
+            # Méthode 3: Si toujours pas trouvé, chercher un utilisateur avec ce username et vérifier ses candidatures
+            if not application and '@' not in username:
+                try:
+                    user_with_username = User.objects.filter(username=username).first()
+                    if user_with_username:
+                        application = JobApplication.objects.filter(
+                            email=user_with_username.email,
+                            status__in=['pending', 'rejected']
+                        ).first()
+                        if application:
+                            logger.info(f"Candidature trouvée via utilisateur {username} -> email {user_with_username.email}, statut: {application.status}")
+                except Exception as e:
+                    logger.error(f"Erreur lors de la recherche d'utilisateur par username: {str(e)}")
+
+            # Si une candidature est trouvée, retourner le statut approprié
+            if application:
+                if application.status == 'pending':
                     response_data = {
                         "detail": "Votre candidature est en attente d'approbation.",
                         "status": "pending",
                         "application_id": application.id
                     }
-                    logger.info(f"Envoi de la réponse 403 avec données: {response_data}")
-                    return Response(
-                        response_data,
-                        status=status.HTTP_403_FORBIDDEN
-                    )
+                    logger.info(f"Retour candidature en attente: {response_data}")
+                    return Response(response_data, status=status.HTTP_403_FORBIDDEN)
+                elif application.status == 'rejected':
+                    response_data = {
+                        "detail": "Votre candidature a été rejetée.",
+                        "status": "rejected"
+                    }
+                    logger.info(f"Retour candidature rejetée: {response_data}")
+                    return Response(response_data, status=status.HTTP_403_FORBIDDEN)
 
-                # Vérifier si c'est une candidature rejetée
-                application = JobApplication.objects.filter(
-                    email=username,
-                    status='rejected'
-                ).first()
-
-                if application:
-                    logger.info(f"Candidature rejetée trouvée pour l'email: {username}")
-                    return Response(
-                        {
-                            "detail": "Votre candidature a été rejetée.",
-                            "status": "rejected"
-                        },
-                        status=status.HTTP_403_FORBIDDEN
-                    )
-
-                # Si aucune candidature n'est trouvée avec l'email, vérifier si c'est un nom d'utilisateur
-                # et chercher une candidature avec l'email associé
-                try:
-                    # Vérifier si un utilisateur existe avec ce nom d'utilisateur
-                    user_with_username = User.objects.filter(username=username).first()
-                    if user_with_username:
-                        # Chercher une candidature avec l'email de cet utilisateur
-                        application = JobApplication.objects.filter(
-                            email=user_with_username.email,
-                            status='pending'
-                        ).first()
-
-                        if application:
-                            logger.info(f"Candidature en attente trouvée pour l'utilisateur: {username} avec email: {user_with_username.email}")
-                            return Response(
-                                {
-                                    "detail": "Votre candidature est en attente d'approbation.",
-                                    "status": "pending",
-                                    "application_id": application.id
-                                },
-                                status=status.HTTP_403_FORBIDDEN
-                            )
-
-                        # Vérifier si c'est une candidature rejetée
-                        application = JobApplication.objects.filter(
-                            email=user_with_username.email,
-                            status='rejected'
-                        ).first()
-
-                        if application:
-                            logger.info(f"Candidature rejetée trouvée pour l'utilisateur: {username} avec email: {user_with_username.email}")
-                            return Response(
-                                {
-                                    "detail": "Votre candidature a été rejetée.",
-                                    "status": "rejected"
-                                },
-                                status=status.HTTP_403_FORBIDDEN
-                            )
-                except Exception as e:
-                    logger.error(f"Erreur lors de la vérification de candidature par nom d'utilisateur: {str(e)}")
-                    pass
-            except Exception as e:
-                logger.error(f"Erreur lors de la vérification de candidature: {str(e)}")
-                pass
-
-            return Response({'error': 'Invalid credentials'},
-                          status=status.HTTP_401_UNAUTHORIZED)
+            logger.info(f"Aucune candidature trouvée pour: {username}")
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
         # Vérifier si l'utilisateur est approuvé
         if not user.approved:
@@ -616,13 +607,13 @@ def get_user_info(request):
 def check_pending_application(request):
     """
     Endpoint public pour vérifier si une candidature est en attente
-    Peut être appelé avec un email
+    Peut être appelé avec un email ou un nom d'utilisateur
     """
     identifier = request.query_params.get('identifier')
     if not identifier:
-        return Response({'error': 'Email parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Identifier parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    logger.info(f"Vérification de candidature en attente pour l'email: {identifier}")
+    logger.info(f"Vérification de candidature en attente pour l'identifiant: {identifier}")
 
     # Chercher une candidature en attente avec cet email
     application = JobApplication.objects.filter(
@@ -631,15 +622,48 @@ def check_pending_application(request):
     ).first()
 
     if not application:
-        logger.info(f"Aucune candidature en attente trouvée pour l'email: {identifier}")
+        logger.info(f"Aucune candidature en attente trouvée directement pour l'email: {identifier}")
+
+        # Vérifier si c'est un nom d'utilisateur et chercher l'utilisateur correspondant
+        try:
+            user = User.objects.filter(username=identifier).first()
+            if user:
+                logger.info(f"Utilisateur trouvé avec le nom d'utilisateur: {identifier}, email: {user.email}")
+                # Chercher une candidature avec l'email de cet utilisateur
+                application = JobApplication.objects.filter(
+                    email=user.email,
+                    status='pending'
+                ).first()
+
+                if application:
+                    logger.info(f"Candidature en attente trouvée pour l'utilisateur: {identifier} avec email: {user.email}")
+                else:
+                    logger.info(f"Aucune candidature en attente trouvée pour l'utilisateur: {identifier} avec email: {user.email}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la recherche d'utilisateur par nom d'utilisateur: {str(e)}")
+
+        # Vérifier aussi si le username est stocké directement dans la candidature
+        if not application:
+            application = JobApplication.objects.filter(
+                username=identifier,
+                status='pending'
+            ).first()
+
+            if application:
+                logger.info(f"Candidature en attente trouvée avec le username: {identifier}")
+
+    if not application:
+        logger.info(f"Aucune candidature en attente trouvée pour l'identifiant: {identifier}")
         return Response({'status': 'not_found'}, status=status.HTTP_404_NOT_FOUND)
 
-    logger.info(f"Candidature en attente trouvée pour l'email: {identifier}, ID: {application.id}")
+    logger.info(f"Candidature en attente trouvée pour l'identifiant: {identifier}, ID: {application.id}")
     return Response({
         'status': 'pending',
         'application_id': application.id,
         'first_name': application.first_name,
         'last_name': application.last_name,
+        'username': application.username,
+        'email': application.email,
         'position': application.position,
         'application_type': application.application_type,
         'created_at': application.created_at
@@ -1866,15 +1890,30 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
 
         # Créer un compte utilisateur pour la candidature approuvée
         try:
-            # Générer un nom d'utilisateur unique basé sur le prénom et le nom
-            username_base = f"{application.first_name.lower()}.{application.last_name.lower()}"
-            username = username_base
-            counter = 1
-
-            # Vérifier si le nom d'utilisateur existe déjà et en générer un nouveau si nécessaire
-            while User.objects.filter(username=username).exists():
-                username = f"{username_base}{counter}"
-                counter += 1
+            # Utiliser le username de la candidature s'il existe, sinon en générer un
+            if application.username and application.username.strip():
+                username = application.username.strip()
+                # Vérifier si ce username est déjà pris
+                if User.objects.filter(username=username).exists():
+                    # Si pris, générer un nouveau username
+                    username_base = f"{application.first_name.lower()}.{application.last_name.lower()}"
+                    username = username_base
+                    counter = 1
+                    while User.objects.filter(username=username).exists():
+                        username = f"{username_base}{counter}"
+                        counter += 1
+                    logger.info(f"Username {application.username} déjà pris, nouveau username généré: {username}")
+                else:
+                    logger.info(f"Utilisation du username de la candidature: {username}")
+            else:
+                # Générer un nom d'utilisateur unique basé sur le prénom et le nom
+                username_base = f"{application.first_name.lower()}.{application.last_name.lower()}"
+                username = username_base
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{username_base}{counter}"
+                    counter += 1
+                logger.info(f"Génération d'un nouveau username: {username}")
 
             # Utiliser le mot de passe défini par le candidat lors de la candidature
             # Si le mot de passe n'est pas défini, générer un mot de passe temporaire
@@ -1904,9 +1943,12 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
             user.approved = True
             user.save()
 
-            # Lier l'utilisateur à la candidature
+            # Mettre à jour la candidature avec le username final et lier l'utilisateur
+            application.username = username
             application.user = user
             application.save()
+
+            logger.info(f"Utilisateur créé avec succès: username={username}, email={application.email}")
 
             # Envoyer un email au candidat avec ses informations de connexion
             from .utils import send_email_notification
@@ -1917,7 +1959,11 @@ class JobApplicationViewSet(viewsets.ModelViewSet):
                 f"Votre compte a été créé avec les informations suivantes :\n"
                 f"Nom d'utilisateur : {username}\n"
                 f"Email : {application.email}\n\n"
-                f"Vous pouvez maintenant vous connecter avec votre email et le mot de passe que vous avez défini lors de votre candidature.\n\n"
+                f"Vous pouvez maintenant vous connecter avec :\n"
+                f"- Votre nom d'utilisateur : {username}\n"
+                f"- Ou votre email : {application.email}\n"
+                f"- Et le mot de passe que vous avez défini lors de votre candidature\n\n"
+                f"Les deux méthodes de connexion (username ou email) fonctionnent avec le même mot de passe.\n\n"
                 f"Connectez-vous au système pour commencer à utiliser votre compte.\n\n"
                 f"Cordialement,\n"
                 f"L'équipe RH"
