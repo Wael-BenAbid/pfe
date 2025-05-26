@@ -35,17 +35,17 @@ const PendingApproval: React.FC = () => {
       console.log("PendingApproval: Application ID from location state:", applicationId);
 
       if (!applicationId) {
-        // Si pas d'ID spécifique, essayer de récupérer l'application en attente par email
-        console.log("No application ID provided, trying to find pending application by email");
+        // Si pas d'ID spécifique, essayer de récupérer l'application en attente par email ou username
+        console.log("No application ID provided, trying to find pending application by identifier");
 
-        // Récupérer l'email depuis le localStorage
-        const storedEmail = localStorage.getItem('last_login_email');
+        // Récupérer l'identifiant depuis le localStorage (peut être email ou username)
+        const storedIdentifier = localStorage.getItem('last_login_email') || localStorage.getItem('last_login_username');
 
-        if (storedEmail) {
+        if (storedIdentifier) {
           try {
-            console.log(`Trying to find pending application for email: ${storedEmail}`);
+            console.log(`Trying to find pending application for identifier: ${storedIdentifier}`);
             // Utiliser l'endpoint public pour vérifier les candidatures en attente
-            const response = await fetch(`${API_BASE_URL}/public/check-pending-application/?identifier=${encodeURIComponent(storedEmail)}`, {
+            const response = await fetch(`${API_BASE_URL}/public/check-pending-application/?identifier=${encodeURIComponent(storedIdentifier)}`, {
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
