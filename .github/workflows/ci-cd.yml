@@ -282,6 +282,10 @@ jobs:
 
           cd ..
 
+      - name: Generate timestamp tag
+        id: timestamp
+        run: echo "tag=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+
       - name: Build and push Frontend
         uses: docker/build-push-action@v5
         with:
@@ -293,7 +297,7 @@ jobs:
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:v$(date +'%Y%m%d-%H%M%S')
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:v${{ steps.timestamp.outputs.tag }}
 
       - name: Build and push Backend
         uses: docker/build-push-action@v5
@@ -306,7 +310,7 @@ jobs:
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
-            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:v$(date +'%Y%m%d-%H%M%S')
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:v${{ steps.timestamp.outputs.tag }}
           build-args: |
             SECRET_KEY=${{ secrets.SECRET_KEY || 'django-insecure-default-key-for-testing' }}
             EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}
@@ -675,7 +679,7 @@ jobs:
 
   sync-docker-k8s:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.sync_docker_k8s == true
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.sync_docker_k8s == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -693,7 +697,7 @@ jobs:
         run: echo "tag=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Build and push Frontend
-        if: github.event.inputs.update_frontend == true
+        if: github.event.inputs.update_frontend == 'true'
         uses: docker/build-push-action@v5
         with:
           context: ./project
@@ -704,7 +708,7 @@ jobs:
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ steps.timestamp.outputs.tag }}
 
       - name: Build and push Backend
-        if: github.event.inputs.update_backend == true
+        if: github.event.inputs.update_backend == 'true'
         uses: docker/build-push-action@v5
         with:
           context: ./back-end
