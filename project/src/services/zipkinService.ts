@@ -24,21 +24,22 @@ interface ZipkinSpan {
   }>;
 }
 
-// Configuration des URLs Zipkin selon l'environnement
+// Configuration des URLs Zipkin depuis les variables d'environnement
 const getZipkinUrl = (): string => {
-  const hostname = window.location.hostname;
-
-  // Détection automatique de l'environnement
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    // Environnement local
-    return 'http://localhost:9411';
-  } else if (hostname.includes('rh-system.local')) {
-    // Environnement Kubernetes
-    return 'https://zipkin.rh-system.local';
-  } else {
-    // Environnement Docker ou autre
-    return 'http://zipkin:9411';
+  // Utiliser les variables d'environnement injectées au runtime
+  if (typeof window !== 'undefined' && (window as any).ENV) {
+    const zipkinUrl = (window as any).ENV.VITE_ZIPKIN_URL;
+    if (zipkinUrl) {
+      // Si c'est un chemin relatif, construire l'URL complète
+      if (zipkinUrl.startsWith('/')) {
+        return `${window.location.origin}${zipkinUrl}`;
+      }
+      return zipkinUrl;
+    }
   }
+
+  // Fallback vers localhost si pas de configuration
+  return 'http://localhost:9411';
 };
 
 const SERVICE_NAME = 'rh-frontend';
