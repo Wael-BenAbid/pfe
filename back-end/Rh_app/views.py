@@ -703,6 +703,16 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.get_object()
         # Permettre aux utilisateurs de mettre à jour leur propre profil
         if request.user.is_superuser or request.user.user_type == 'admin' or request.user.id == user.id:
+            # Vérifier si un utilisateur non-admin essaie de modifier son username
+            if (request.user.id == user.id and
+                request.user.user_type in ['employee', 'intern'] and
+                'username' in request.data):
+                # Empêcher la modification du username pour les employés et stagiaires
+                data = request.data.copy()
+                data.pop('username', None)
+                request._full_data = data
+                logger.info(f"Username modification blocked for {request.user.user_type}: {request.user.username}")
+
             return super().update(request, *args, **kwargs)
         return Response({'detail': 'Not authorized'}, status=403)
 
