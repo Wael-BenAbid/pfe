@@ -38,16 +38,28 @@ const getZipkinUrl = (): string => {
     }
   }
 
-  // Fallback vers localhost si pas de configuration
-  return 'http://localhost:9411';
+  // Fallback : détecter si on est en Docker ou en local
+  // En Docker, utiliser le proxy nginx, en local utiliser localhost:9411
+  if (window.location.port === '5175' || window.location.port === '80') {
+    // Docker (port 5175 ou 80)
+    return '/zipkin';
+  } else {
+    // Local (port 5173 ou autre)
+    return 'http://localhost:9411';
+  }
 };
 
 const SERVICE_NAME = 'rh-frontend';
 const ZIPKIN_URL = getZipkinUrl();
 
-// Générateur d'IDs uniques
+// Générateur d'IDs uniques (16 caractères hex pour Zipkin)
 const generateId = (): string => {
-  return Math.random().toString(16).substr(2, 16);
+  const chars = '0123456789abcdef';
+  let result = '';
+  for (let i = 0; i < 16; i++) {
+    result += chars[Math.floor(Math.random() * 16)];
+  }
+  return result;
 };
 
 // Classe pour gérer les spans
