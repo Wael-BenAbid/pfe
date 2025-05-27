@@ -2,7 +2,7 @@
 const getZipkinConfig = () => {
   // Par défaut, activer Zipkin
   let enabled = true;
-  let url = 'https://zipkin.rh-system.local/zipkin';
+  let url = '/zipkin'; // Utiliser le proxy par défaut
 
   // Essayer d'abord les variables d'environnement Vite (build time)
   if (import.meta.env.VITE_ZIPKIN_ENABLED !== undefined) {
@@ -23,15 +23,31 @@ const getZipkinConfig = () => {
     }
   }
 
+  // Détecter l'environnement pour le fallback
+  if (!url || url === '/zipkin') {
+    if (window.location.port === '5175' || window.location.port === '80') {
+      // Docker (port 5175 ou 80)
+      url = '/zipkin';
+    } else {
+      // Local (port 5173 ou autre)
+      url = 'http://localhost:9411';
+    }
+  }
+
   console.log('🔍 Configuration Zipkin:', { enabled, url });
   return { enabled, url };
 };
 
 const { enabled: zipkinEnabled, url: zipkinUrl } = getZipkinConfig();
 
-// Génération d'ID aléatoires pour les traces
+// Génération d'ID aléatoires pour les traces (16 caractères hex)
 const generateRandomId = () => {
-  return Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+  const chars = '0123456789abcdef';
+  let result = '';
+  for (let i = 0; i < 16; i++) {
+    result += chars[Math.floor(Math.random() * 16)];
+  }
+  return result;
 };
 
 // Contexte de trace actuel
@@ -43,8 +59,8 @@ const sendSpan = async (span: any) => {
   if (!zipkinEnabled) return;
 
   try {
-    // Construire l'URL complète (sans /api car supprimé du système)
-    const fullUrl = `${zipkinUrl}/v2/spans`;
+    // Construire l'URL complète avec /api/v2/spans
+    const fullUrl = `${zipkinUrl}/api/v2/spans`;
 
     console.log(`Envoi de trace à Zipkin: ${fullUrl}`);
     console.log('Span:', JSON.stringify(span));

@@ -9,7 +9,7 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-development}
       - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://backend:8000}
-      - VITE_ZIPKIN_URL=${VITE_ZIPKIN_URL:-http://localhost:9411}
+      - VITE_ZIPKIN_URL=${VITE_ZIPKIN_URL:-/zipkin}
       - VITE_ZIPKIN_ENABLED=${VITE_ZIPKIN_ENABLED:-true}
     depends_on:
       - backend
