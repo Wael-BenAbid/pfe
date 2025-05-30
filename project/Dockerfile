@@ -42,9 +42,14 @@ RUN touch /usr/share/nginx/html/favicon.ico
 # Copy custom nginx configuration
 COPY default.conf /etc/nginx/conf.d/default.conf
 
-# Copy environment injection script
-COPY inject-env.sh /usr/local/bin/inject-env.sh
-RUN chmod +x /usr/local/bin/inject-env.sh
+# Create env.js file with default values
+RUN echo 'window.ENV = {\
+  VITE_API_BASE_URL: "http://backend:8000",\
+  VITE_ZIPKIN_URL: "/zipkin",\
+  VITE_ZIPKIN_ENABLED: "true",\
+  _TIMESTAMP: "'$(date +%s)'"\
+};\
+console.log("Variables environnement injectees:", window.ENV);' > /usr/share/nginx/html/env.js
 
 # Expose port
 EXPOSE 80
@@ -53,5 +58,5 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost/health.txt || exit 1
 
-# Start with environment injection
-CMD ["/bin/sh", "/usr/local/bin/inject-env.sh"]
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
