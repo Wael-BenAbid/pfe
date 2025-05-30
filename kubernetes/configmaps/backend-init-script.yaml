@@ -132,6 +132,10 @@ data:
             sed -i '/from .views import (/a\    from .views_message import MessageViewSet' /app/Rh_app/urls.py
             echo 'Updated urls.py to import MessageViewSet from views_message.py'
         fi
+
+        # Corriger l'enregistrement de MessageViewSet avec basename
+        sed -i "s/router.register(r'messages', MessageViewSet)/router.register(r'messages', MessageViewSet, basename='message')/g" /app/Rh_app/urls.py
+        echo 'Fixed MessageViewSet registration with basename'
     fi
 
     # Supprimer la classe MessageViewSet du fichier views.py

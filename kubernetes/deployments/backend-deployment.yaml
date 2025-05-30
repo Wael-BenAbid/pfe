@@ -27,8 +27,8 @@ spec:
     spec:
       containers:
       - name: rh-backend
-        image: waelbenabid/rh-backend:v2.2
-        imagePullPolicy: Always
+        image: waelbenabid/rh-backend:v2.5
+        imagePullPolicy: Never
         command: ["/bin/bash", "/scripts/init.sh"]
         ports:
         - containerPort: 8000
@@ -96,70 +96,41 @@ spec:
             secretKeyRef:
               name: rh-backend-secrets
               key: SENDGRID_API_KEY
-        # Variables d'environnement Zipkin
+        # Variables d'environnement Zipkin (ConfigMap séparé)
         - name: ZIPKIN_ENABLED
           valueFrom:
             configMapKeyRef:
-              name: rh-backend-config
+              name: zipkin-config
               key: ZIPKIN_ENABLED
         - name: ZIPKIN_SERVER_URL
           valueFrom:
             configMapKeyRef:
-              name: rh-backend-config
+              name: zipkin-config
               key: ZIPKIN_SERVER_URL
         - name: ZIPKIN_SERVICE_NAME
           valueFrom:
             configMapKeyRef:
-              name: rh-backend-config
+              name: zipkin-config
               key: ZIPKIN_SERVICE_NAME
         - name: ZIPKIN_SAMPLE_RATE
           valueFrom:
             configMapKeyRef:
-              name: rh-backend-config
+              name: zipkin-config
               key: ZIPKIN_SAMPLE_RATE
         volumeMounts:
         - name: init-script
           mountPath: /scripts
-        - name: admin-config
-          mountPath: /app/SystemeRH_v2/admin_settings.py
-          subPath: admin_settings.py
-        - name: urls-config
-          mountPath: /app/SystemeRH_v2/urls.py
-          subPath: urls.py
         - name: media-storage
           mountPath: /app/media_v2
         - name: static-storage
           mountPath: /app/static
-        - name: message-view-fix
-          mountPath: /app/message_view_fix
-        - name: prometheus-metrics-view
-          mountPath: /app/Rh_app/prometheus_metrics_view.py
-          subPath: prometheus_metrics_view.py
-        - name: prometheus-metrics
-          mountPath: /app/Rh_app/prometheus_metrics.py
-          subPath: prometheus_metrics.py
       volumes:
       - name: init-script
         configMap:
           name: backend-init-script
           defaultMode: 0755
-      - name: admin-config
-        configMap:
-          name: django-admin-config
-      - name: urls-config
-        configMap:
-          name: django-urls-config
       - name: media-storage
         persistentVolumeClaim:
           claimName: media-pvc
       - name: static-storage
         emptyDir: {}
-      - name: message-view-fix
-        configMap:
-          name: message-view-fix
-      - name: prometheus-metrics-view
-        configMap:
-          name: prometheus-metrics-view
-      - name: prometheus-metrics
-        configMap:
-          name: prometheus-metrics

@@ -40,7 +40,11 @@
     "zod": "^3.24.4",
     "events": "^3.3.0",
     "util": "^0.12.5",
-    "buffer": "^6.0.3"
+    "buffer": "^6.0.3",
+    "zipkin": "^0.22.0",
+    "zipkin-instrumentation-axios": "^0.1.0",
+    "zipkin-instrumentation-fetch": "^0.22.0",
+    "zipkin-transport-http": "^0.22.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
