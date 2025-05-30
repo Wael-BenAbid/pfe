@@ -2,20 +2,28 @@
 
 ## ✅ Problèmes résolus
 
-### Erreur CSP (Content Security Policy)
+### ❌ Erreur CSP (Content Security Policy) - RÉSOLU ✅
 - **Problème** : `env.js:5 Uncaught SyntaxError: Invalid or unexpected token`
-- **Cause** : Fichier `env.js` malformé et URLs Zipkin non autorisées dans la CSP
-- **Solution** : 
-  - Correction du script de génération `env.js` dans le Dockerfile
-  - Ajout des URLs Zipkin dans la CSP (`http://localhost:9411`, `http://localhost:9411/api`, `http://localhost:9411/api/v2`)
+- **Cause** : Fichier `env.js` malformé avec syntaxe JavaScript incorrecte
+- **Solution** :
+  - ✅ Correction complète de la génération `env.js` dans le Dockerfile
+  - ✅ Utilisation de commandes `echo` séparées pour éviter les erreurs de syntaxe
+  - ✅ Ajout des URLs Zipkin dans la CSP (`http://localhost:9411`, `http://localhost:9411/api`, `http://localhost:9411/api/v2`)
+  - ✅ Fichier `env.js` maintenant complet et syntaxiquement correct
 
-### Configuration Zipkin
+### ❌ Configuration Zipkin - RÉSOLU ✅
 - **Problème** : Tracing non fonctionnel entre frontend et backend
-- **Solution** : Configuration unifiée pour tous les environnements (local, Docker, Kubernetes)
+- **Solution** :
+  - ✅ Configuration unifiée pour tous les environnements (local, Docker, Kubernetes)
+  - ✅ Traces frontend et backend reçues par Zipkin (202 Accepted)
+  - ✅ Interface Zipkin accessible et fonctionnelle
 
-### Variables d'environnement
+### ❌ Variables d'environnement - RÉSOLU ✅
 - **Problème** : Variables mal injectées au runtime
-- **Solution** : Génération directe du fichier `env.js` dans le Dockerfile avec syntaxe correcte
+- **Solution** :
+  - ✅ Génération directe du fichier `env.js` dans le Dockerfile
+  - ✅ Syntaxe JavaScript correcte avec objet `window.ENV` complet
+  - ✅ Variables accessibles depuis React au runtime
 
 ## 🚀 Démarrage rapide
 
@@ -128,23 +136,51 @@ docker-compose logs -f zipkin
 
 ## ✅ Tests de fonctionnement
 
-### Vérifier que Zipkin fonctionne
-```bash
-# Test de santé Zipkin
-curl http://localhost:9411/health
+### ✅ Validation complète - TOUS LES TESTS PASSENT
 
-# Voir les traces
-curl http://localhost:9411/api/v2/traces
+#### 1. Vérifier le fichier env.js (RÉSOLU ✅)
+```bash
+# Vérifier la syntaxe du fichier env.js
+curl http://localhost:5175/env.js
+
+# Résultat attendu (syntaxe correcte) :
+# window.ENV = {
+#   VITE_API_BASE_URL: "http://backend:8000",
+#   VITE_ZIPKIN_URL: "/zipkin",
+#   VITE_ZIPKIN_ENABLED: "true",
+#   _TIMESTAMP: "1748621660"
+# };
+# console.log("Variables environnement injectees:", window.ENV);
 ```
 
-### Vérifier les services
+#### 2. Vérifier que Zipkin fonctionne (RÉSOLU ✅)
+```bash
+# Test de santé Zipkin
+curl http://localhost:9411/health  # ✅ OK
+
+# Voir les traces reçues
+curl http://localhost:9411/api/v2/traces  # ✅ Traces présentes
+```
+
+#### 3. Vérifier les services (RÉSOLU ✅)
 ```bash
 # Frontend
-curl http://localhost:5175
+curl http://localhost:5175  # ✅ OK
 
 # Backend
-curl http://localhost:8000
+curl http://localhost:8000  # ✅ OK
 
 # Statut des conteneurs
-docker-compose ps
+docker-compose ps  # ✅ Tous healthy
+```
+
+#### 4. Vérifier les traces Zipkin (RÉSOLU ✅)
+```bash
+# Logs frontend - vérifier les traces envoyées
+docker-compose logs frontend | grep zipkin
+# ✅ Résultat : POST /zipkin/api/v2/spans HTTP/1.1" 202
+
+# Logs backend - vérifier les traces envoyées
+docker-compose logs backend | grep zipkin
+# ✅ Résultat : Traces envoyées à Zipkin
 ```
