@@ -70,12 +70,12 @@ spec:
             port:
               number: 8000
 
-      # Zipkin proxy route for frontend
+      # Zipkin route for frontend
       - path: /zipkin(/|$)(.*)
         pathType: ImplementationSpecific
         backend:
           service:
-            name: zipkin-proxy
+            name: zipkin
             port:
               number: 9411
 
