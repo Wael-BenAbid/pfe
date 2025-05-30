@@ -27,8 +27,8 @@ spec:
     spec:
       containers:
       - name: rh-backend
-        image: waelbenabid/rh-backend:v2.5
-        imagePullPolicy: Never
+        image: waelbenabid/rh-backend:v2.4
+        imagePullPolicy: Always
         command: ["/bin/bash", "/scripts/init.sh"]
         ports:
         - containerPort: 8000
@@ -117,6 +117,17 @@ spec:
             configMapKeyRef:
               name: rh-backend-config
               key: ZIPKIN_SAMPLE_RATE
+        # Variables d'environnement Email
+        - name: EMAIL_BACKEND
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: EMAIL_BACKEND
+        - name: DEFAULT_FROM_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: DEFAULT_FROM_EMAIL
         volumeMounts:
         - name: init-script
           mountPath: /scripts
