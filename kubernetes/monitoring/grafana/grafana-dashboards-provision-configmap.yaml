@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-dashboards-provision
-  namespace: monitoring
+  namespace: rh-system
 data:
   dashboards.yaml: |
     apiVersion: 1
