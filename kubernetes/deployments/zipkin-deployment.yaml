@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipkin
+  namespace: rh-system
+  labels:
+    app: zipkin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zipkin
+  template:
+    metadata:
+      labels:
+        app: zipkin
+    spec:
+      containers:
+      - name: zipkin
+        image: openzipkin/zipkin:latest
+        ports:
+        - containerPort: 9411
+          name: http
+        env:
+        - name: STORAGE_TYPE
+          value: "mem"  # Utiliser la mémoire pour le stockage (pour la simplicité)
+        - name: JAVA_OPTS
+          value: "-Xms512m -Xmx512m"
+        - name: ZIPKIN_UI_CORS_ALLOWED_ORIGINS
+          value: "*"
+        - name: ZIPKIN_UI_CORS_ALLOWED_METHODS
+          value: "GET,POST,PUT,DELETE,OPTIONS"
+        - name: ZIPKIN_UI_CORS_ALLOWED_HEADERS
+          value: "Origin,X-Requested-With,Content-Type,Accept,Authorization"
+
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "512Mi"
+          limits:
+            cpu: "500m"
+            memory: "1Gi"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9411
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9411
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+
+

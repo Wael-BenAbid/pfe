@@ -16,7 +16,7 @@ data:
 
   # Configuration Zipkin
   ZIPKIN_ENABLED: "True"
-  ZIPKIN_SERVER_URL: "http://zipkin.monitoring.svc.cluster.local:9411"
+  ZIPKIN_SERVER_URL: "http://zipkin:9411"
   ZIPKIN_SERVICE_NAME: "rh-backend"
   ZIPKIN_SAMPLE_RATE: "100.0"
 

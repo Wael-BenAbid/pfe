@@ -17,9 +17,8 @@ minikube addons enable ingress
 minikube addons enable metrics-server
 
 echo.
-echo 3. Création des namespaces...
+echo 3. Création du namespace...
 kubectl create namespace rh-system --dry-run=client -o yaml | kubectl apply -f -
-kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
 
 echo.
 echo 4. Création des secrets...
@@ -70,13 +69,13 @@ echo 12. Déploiement du frontend...
 kubectl apply -f kubernetes/deployments/frontend-deployment.yaml
 
 echo.
-echo 13. Déploiement de Zipkin (monitoring)...
-kubectl apply -f kubernetes/monitoring/zipkin/zipkin-deployment.yaml
+echo 13. Déploiement de Zipkin...
+kubectl apply -f kubernetes/deployments/zipkin-deployment.yaml
 
 echo.
 echo 14. Attente que tous les services soient prêts...
 kubectl wait --for=condition=ready pod -l app=rh-frontend -n rh-system --timeout=300s
-kubectl wait --for=condition=ready pod -l app=zipkin -n monitoring --timeout=300s
+kubectl wait --for=condition=ready pod -l app=zipkin -n rh-system --timeout=300s
 
 echo.
 echo 15. Déploiement de l'Ingress...
@@ -103,7 +102,6 @@ echo 2. Démarrez le tunnel : minikube tunnel
 echo.
 echo Vérification des pods :
 kubectl get pods -n rh-system
-kubectl get pods -n monitoring
 echo.
 echo Appuyez sur une touche pour fermer...
 pause > nul
