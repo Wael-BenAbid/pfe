@@ -43,13 +43,13 @@ RUN touch /usr/share/nginx/html/favicon.ico
 COPY default.conf /etc/nginx/conf.d/default.conf
 
 # Create env.js file with default values
-RUN echo 'window.ENV = {\
-  VITE_API_BASE_URL: "http://backend:8000",\
-  VITE_ZIPKIN_URL: "/zipkin",\
-  VITE_ZIPKIN_ENABLED: "true",\
-  _TIMESTAMP: "'$(date +%s)'"\
-};\
-console.log("Variables environnement injectees:", window.ENV);' > /usr/share/nginx/html/env.js
+RUN echo 'window.ENV = {' > /usr/share/nginx/html/env.js && \
+    echo '  VITE_API_BASE_URL: "http://backend:8000",' >> /usr/share/nginx/html/env.js && \
+    echo '  VITE_ZIPKIN_URL: "/zipkin",' >> /usr/share/nginx/html/env.js && \
+    echo '  VITE_ZIPKIN_ENABLED: "true",' >> /usr/share/nginx/html/env.js && \
+    echo "  _TIMESTAMP: \"$(date +%s)\"" >> /usr/share/nginx/html/env.js && \
+    echo '};' >> /usr/share/nginx/html/env.js && \
+    echo 'console.log("Variables environnement injectees:", window.ENV);' >> /usr/share/nginx/html/env.js
 
 # Expose port
 EXPOSE 80
