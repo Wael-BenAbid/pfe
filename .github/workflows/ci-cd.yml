@@ -37,7 +37,7 @@ on:
 env:
   DOCKER_HUB_USERNAME: waelbenabid
   FRONTEND_IMAGE: rh-frontend
-  BACKEND_IMAGE: rh-backend
+  BACKEND_IMAGE: rh-system-backend
   KUBERNETES_NAMESPACE: rh-system
 
 jobs:
