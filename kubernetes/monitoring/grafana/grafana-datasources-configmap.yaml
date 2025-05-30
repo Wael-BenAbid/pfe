@@ -2,19 +2,19 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-datasources
-  namespace: monitoring
+  namespace: rh-system
 data:
   datasources.yaml: |
     apiVersion: 1
     datasources:
     - name: Prometheus
       type: prometheus
-      url: http://prometheus.monitoring.svc.cluster.local:9090
+      url: http://prometheus.rh-system.svc.cluster.local:9090
       access: proxy
       isDefault: true
       editable: true
     - name: Zipkin
       type: zipkin
-      url: http://zipkin.monitoring.svc.cluster.local:9411
+      url: http://zipkin.rh-system.svc.cluster.local:9411
       access: proxy
       editable: true

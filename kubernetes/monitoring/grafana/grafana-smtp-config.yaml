@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-smtp-config
-  namespace: monitoring
+  namespace: rh-system
 data:
   grafana.ini: |
     [smtp]

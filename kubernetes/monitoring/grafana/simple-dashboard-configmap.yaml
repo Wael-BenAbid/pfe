@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: simple-rh-dashboard
-  namespace: monitoring
+  namespace: rh-system
   labels:
     grafana_dashboard: "1"
 data:
