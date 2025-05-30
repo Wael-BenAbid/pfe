@@ -75,7 +75,7 @@ spec:
         pathType: ImplementationSpecific
         backend:
           service:
-            name: zipkin
+            name: zipkin-proxy
             port:
               number: 9411
 

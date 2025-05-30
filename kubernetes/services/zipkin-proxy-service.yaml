@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin-proxy
+  namespace: rh-system
+  labels:
+    app: zipkin-proxy
+spec:
+  type: ExternalName
+  externalName: zipkin.monitoring.svc.cluster.local
+  ports:
+  - port: 9411
+    targetPort: 9411
+    name: http
