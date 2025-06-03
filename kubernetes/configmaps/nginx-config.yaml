@@ -38,20 +38,21 @@ data:
             log_not_found off;
         }
 
+        # Configuration pour les fichiers JavaScript (priorité haute)
+        location ~* \.(js|mjs)$ {
+            root /usr/share/nginx/html;
+            add_header Content-Type application/javascript;
+            add_header X-Content-Type-Options nosniff;
+            expires 30d;
+            access_log off;
+        }
+
         # Configuration pour les fichiers assets
         location /assets/ {
             root /usr/share/nginx/html;
             expires 30d;
             add_header Cache-Control "public, max-age=2592000";
-            try_files $uri $uri/ =404;
-
-            # Configuration pour tous les fichiers JavaScript dans assets
-            location ~* /assets/.*\.(js|mjs)$ {
-                add_header Content-Type application/javascript;
-                add_header X-Content-Type-Options nosniff;
-                expires 30d;
-                access_log off;
-            }
+            try_files $uri =404;
         }
 
         # Route directe pour l'interface d'administration Django
@@ -179,25 +180,19 @@ data:
         location / {
             root /usr/share/nginx/html;
             index index.html index.htm;
+
+            # Pour les fichiers statiques, les servir directement
+            location ~* \.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+                expires 30d;
+                add_header Cache-Control "public, max-age=2592000";
+                try_files $uri =404;
+            }
+
+            # Pour tout le reste, rediriger vers index.html (SPA)
             try_files $uri $uri/ /index.html;
 
-            # Ajouter l'en-tête Content-Security-Policy pour autoriser les scripts inline et les connexions API
-            add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:8000 https://localhost:8000 http://rh-system.local https://rh-system.local; font-src 'self' data:; connect-src 'self' http://localhost:8000 https://localhost:8000 http://rh-system.local https://rh-system.local https://zipkin.rh-system.local https://zipkin.rh-system.local/api https://zipkin.rh-system.local/api/v2 https://zipkin.rh-system.local/zipkin https://prometheus.rh-system.local wss: ws:;";
-
-            # Configuration des types MIME pour les fichiers JavaScript
-            location ~* \.(js|mjs)$ {
-                add_header Content-Type application/javascript;
-                add_header X-Content-Type-Options nosniff;
-                expires 30d;
-                access_log off;
-            }
-
-            # Configuration des types MIME pour les fichiers CSS
-            location ~* \.css$ {
-                add_header Content-Type text/css;
-                expires 30d;
-                access_log off;
-            }
+            # CSP plus permissif
+            add_header Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https: http:; font-src 'self' data: https: http:; style-src 'self' 'unsafe-inline' https: http:;";
         }
 
         error_page 500 502 503 504 /50x.html;
