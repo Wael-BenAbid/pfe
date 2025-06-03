@@ -7,8 +7,6 @@ metadata:
     nginx.ingress.kubernetes.io/use-regex: "true"
     # Taille maximale des requêtes
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
-    # Réécriture pour Zipkin
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
   name: rh-system-ingress
   namespace: rh-system
 spec:
@@ -26,8 +24,8 @@ spec:
     http:
       paths:
       # Frontend Admin Interface
-      - path: /admine(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /admine
+        pathType: Prefix
         backend:
           service:
             name: rh-frontend
@@ -35,8 +33,8 @@ spec:
               number: 80
 
       # Backend Admin Interface
-      - path: /admin(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /admin
+        pathType: Prefix
         backend:
           service:
             name: rh-backend
@@ -44,7 +42,16 @@ spec:
               number: 8000
 
       # Backend API endpoints
-      - path: /(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth|messages|public)(/|$)(.*)
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: rh-backend
+            port:
+              number: 8000
+
+      # Backend API endpoints (legacy)
+      - path: /(users|leaves|missions|work-hours|internships|job-applications|user-sessions|meetings|notifications|system-activities|token|auth|messages|public)
         pathType: ImplementationSpecific
         backend:
           service:
@@ -53,8 +60,8 @@ spec:
               number: 8000
 
       # Media files
-      - path: /media(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /media
+        pathType: Prefix
         backend:
           service:
             name: rh-backend
@@ -62,8 +69,8 @@ spec:
               number: 8000
 
       # Static files
-      - path: /static(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /static
+        pathType: Prefix
         backend:
           service:
             name: rh-backend
@@ -71,13 +78,22 @@ spec:
               number: 8000
 
       # Zipkin route for frontend
-      - path: /zipkin(/|$)(.*)
-        pathType: ImplementationSpecific
+      - path: /zipkin
+        pathType: Prefix
         backend:
           service:
             name: zipkin
             port:
               number: 9411
+
+      # Frontend assets (IMPORTANT: Must be before the default route)
+      - path: /assets
+        pathType: Prefix
+        backend:
+          service:
+            name: rh-frontend
+            port:
+              number: 80
 
       # Frontend default route
       - path: /

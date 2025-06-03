@@ -26,11 +26,19 @@ interface ZipkinSpan {
 
 // Configuration des URLs Zipkin depuis les variables d'environnement
 const getZipkinUrl = (): string => {
-  // Utiliser les variables d'environnement injectées au runtime
+  // 1. Priorité : Variables d'environnement Vite (build time et runtime)
+  if (import.meta.env.VITE_ZIPKIN_URL) {
+    const zipkinUrl = import.meta.env.VITE_ZIPKIN_URL;
+    if (zipkinUrl.startsWith('/')) {
+      return `${window.location.origin}${zipkinUrl}`;
+    }
+    return zipkinUrl;
+  }
+
+  // 2. Fallback : Variables d'environnement injectées au runtime (window.ENV)
   if (typeof window !== 'undefined' && (window as any).ENV) {
     const zipkinUrl = (window as any).ENV.VITE_ZIPKIN_URL;
     if (zipkinUrl) {
-      // Si c'est un chemin relatif, construire l'URL complète
       if (zipkinUrl.startsWith('/')) {
         return `${window.location.origin}${zipkinUrl}`;
       }
@@ -38,14 +46,16 @@ const getZipkinUrl = (): string => {
     }
   }
 
-  // Fallback : détecter si on est en Docker ou en local
-  // En Docker, utiliser le proxy nginx, en local utiliser localhost:9411
-  if (window.location.port === '5175' || window.location.port === '80') {
-    // Docker (port 5175 ou 80)
+  // 3. Fallback final : détecter l'environnement
+  if (window.location.hostname === 'rh-system.local') {
+    // Kubernetes : utiliser l'URL Zipkin dédiée
+    return 'https://zipkin.rh-system.local';
+  } else if (window.location.port === '5175' || window.location.port === '80' || window.location.hostname === 'localhost') {
+    // Docker ou Local : utiliser le proxy nginx
     return '/zipkin';
   } else {
-    // Local (port 5173 ou autre)
-    return 'http://localhost:9411';
+    // Fallback : utiliser le proxy nginx
+    return '/zipkin';
   }
 };
 
