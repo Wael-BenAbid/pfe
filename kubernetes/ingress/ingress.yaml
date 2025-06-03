@@ -77,15 +77,6 @@ spec:
             port:
               number: 8000
 
-      # Zipkin route for frontend
-      - path: /zipkin
-        pathType: Prefix
-        backend:
-          service:
-            name: zipkin
-            port:
-              number: 9411
-
       # Frontend assets (IMPORTANT: Must be before the default route)
       - path: /assets
         pathType: Prefix
