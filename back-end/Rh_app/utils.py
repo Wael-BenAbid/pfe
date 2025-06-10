@@ -1,18 +1,13 @@
 from django.conf import settings
+from django.core.mail import send_mail, EmailMessage
 import logging
-import sys
-import os
-
-# Ajouter le chemin du projet pour pouvoir importer sendgrid_simple
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sendgrid_simple import send_simple_email as send_email
 
 logger = logging.getLogger(__name__)
 
 def send_email_notification(subject, message, recipient_list, email_type='other', reference_id=None, force_send=False):
     """
-    Fonction utilitaire pour envoyer des emails de notification via SendGrid
-    (La limitation du nombre d'emails a été supprimée)
+    Fonction utilitaire pour envoyer des emails de notification via Django Email System
+    Support Gmail SMTP et autres backends configurés
 
     Args:
         subject (str): Sujet de l'email
@@ -31,10 +26,9 @@ def send_email_notification(subject, message, recipient_list, email_type='other'
         print("ERREUR: Liste des destinataires vide")
         return False
 
-    # Vérifier si la clé API SendGrid est configurée
-    if not settings.SENDGRID_API_KEY:
-        logger.warning("Clé API SendGrid non configurée, utilisation du backend de console")
-        print("AVERTISSEMENT: Clé API SendGrid non configurée, utilisation du backend de console")
+    # Log de la configuration email
+    logger.info(f"Configuration email: Backend={settings.EMAIL_BACKEND}, Provider={getattr(settings, 'EMAIL_PROVIDER', 'Non défini')}")
+    print(f"Configuration email: Backend={settings.EMAIL_BACKEND}, Provider={getattr(settings, 'EMAIL_PROVIDER', 'Non défini')}")
 
     # Ajouter un en-tête et un pied de page au message
     formatted_message = f"""
@@ -148,54 +142,54 @@ Ce message est généré automatiquement, merci de ne pas y répondre.
 </html>
 """
 
-    # Vérifier la limite d'emails par jour pour chaque destinataire
+    # Envoyer l'email via Django Email System
     from .models import User, EmailLog
 
-    success = True
-    for recipient_email in recipient_list:
+    try:
+        # Envoyer l'email simple (texte)
+        result = send_mail(
+            subject=subject,
+            message=formatted_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipient_list,
+            fail_silently=False,
+        )
+
+        # Envoyer aussi la version HTML si possible
         try:
-            # Récupérer l'utilisateur correspondant à l'email
-            user = User.objects.get(email=recipient_email)
-
-            # Envoyer l'email via l'API SendGrid directement
-            result = send_email(
-                to_email=recipient_email,
+            email = EmailMessage(
                 subject=subject,
-                message=formatted_message,
-                from_email=settings.DEFAULT_FROM_EMAIL
+                body=html_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=recipient_list,
             )
+            email.content_subtype = "html"
+            email.send()
+            logger.info(f"Email HTML envoyé avec succès à {recipient_list}")
+        except Exception as html_error:
+            logger.warning(f"Échec envoi HTML, email texte envoyé: {html_error}")
 
-            if result:
-                # Enregistrer l'envoi de l'email pour le suivi
+        # Enregistrer l'envoi de l'email pour le suivi
+        for recipient_email in recipient_list:
+            try:
+                user = User.objects.get(email=recipient_email)
                 EmailLog.objects.create(
                     user=user,
                     email_type=email_type,
                     reference_id=reference_id
                 )
-                logger.info(f"Email envoyé avec succès à {recipient_email}")
-            else:
-                logger.error(f"Échec de l'envoi d'email à {recipient_email}")
-                success = False
-        except User.DoesNotExist:
-            # Si l'utilisateur n'existe pas, envoyer quand même l'email
-            # (cas des candidats qui n'ont pas encore de compte)
-            result = send_email(
-                to_email=recipient_email,
-                subject=subject,
-                message=formatted_message,
-                from_email=settings.DEFAULT_FROM_EMAIL
-            )
-            if not result:
-                logger.error(f"Échec de l'envoi d'email à {recipient_email} (utilisateur inexistant)")
-                success = False
-            else:
-                logger.info(f"Email envoyé avec succès à {recipient_email} (utilisateur inexistant)")
-        except Exception as e:
-            logger.error(f"Erreur lors de l'envoi d'email à {recipient_email}: {str(e)}")
-            print(f"ERREUR: Envoi d'email à {recipient_email}: {str(e)}")
-            success = False
+            except User.DoesNotExist:
+                # Utilisateur n'existe pas, mais email envoyé quand même
+                logger.info(f"Email envoyé à {recipient_email} (utilisateur inexistant)")
 
-    return success
+        logger.info(f"Email envoyé avec succès à {len(recipient_list)} destinataire(s)")
+        print(f"Email envoyé avec succès à {len(recipient_list)} destinataire(s)")
+        return True
+
+    except Exception as e:
+        logger.error(f"Erreur lors de l'envoi d'email: {str(e)}")
+        print(f"ERREUR: Envoi d'email: {str(e)}")
+        return False
 
 def get_admin_emails():
     """

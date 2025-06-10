@@ -1,0 +1,223 @@
+# ========================================
+# GUIDE : CORRIGER LES IMAGES DANS MINIKUBE
+# ========================================
+
+# Ce guide explique comment corriger et mettre à jour les images Docker dans Minikube
+
+# ========================================
+# 1. IMAGES ACTUELLES DANS MINIKUBE
+# ========================================
+
+# Backend  : waelbenabid/rh-system-backend:gmail-smtp ✅ (Correct - Gmail SMTP)
+# Frontend : waelbenabid/rh-frontend:latest ✅ (Correct)
+# Postgres : postgres:15-alpine ✅ (Correct)
+# Zipkin   : openzipkin/zipkin:latest ✅ (Correct)
+# Grafana  : grafana/grafana:9.5.2 ✅ (Correct)
+# Prometheus : prom/prometheus:v2.45.0 ✅ (Correct)
+
+# ========================================
+# 2. STRUCTURE DES DOSSIERS KUBERNETES
+# ========================================
+
+# Les fichiers de déploiement Kubernetes sont dans :
+# kubernetes/
+# ├── configmaps/
+# │   └── rh-backend-config.yaml
+# ├── deployments/
+# │   ├── rh-backend-deployment.yaml    ← Image backend ici
+# │   ├── rh-frontend-deployment.yaml   ← Image frontend ici
+# │   ├── postgres-deployment.yaml      ← Image postgres ici
+# │   ├── zipkin-deployment.yaml        ← Image zipkin ici
+# │   ├── grafana-deployment.yaml       ← Image grafana ici
+# │   └── prometheus-deployment.yaml    ← Image prometheus ici
+# ├── services/
+# ├── ingress/
+# └── volumes/
+
+# ========================================
+# 3. COMMENT CHANGER UNE IMAGE
+# ========================================
+
+# Méthode 1 : Via kubectl (Temporaire)
+kubectl set image deployment/rh-backend rh-backend=waelbenabid/rh-system-backend:nouvelle-version -n rh-system
+
+# Méthode 2 : Modifier le fichier YAML (Permanent)
+# Éditer : kubernetes/deployments/rh-backend-deployment.yaml
+# Changer la ligne :
+#   image: waelbenabid/rh-system-backend:gmail-smtp
+# En :
+#   image: waelbenabid/rh-system-backend:nouvelle-version
+
+# Puis appliquer :
+kubectl apply -f kubernetes/deployments/rh-backend-deployment.yaml
+
+# ========================================
+# 4. IMAGES À CORRIGER (SI NÉCESSAIRE)
+# ========================================
+
+# Si vous voulez utiliser des images différentes :
+
+# BACKEND - Nouvelle image avec corrections :
+# 1. Construire l'image localement :
+cd back-end
+docker build -t waelbenabid/rh-system-backend:v3.0 .
+
+# 2. Pousser vers Docker Hub :
+docker push waelbenabid/rh-system-backend:v3.0
+
+# 3. Mettre à jour dans Minikube :
+kubectl set image deployment/rh-backend rh-backend=waelbenabid/rh-system-backend:v3.0 -n rh-system
+
+# FRONTEND - Nouvelle image avec corrections :
+# 1. Construire l'image localement :
+cd front-end
+docker build -t waelbenabid/rh-frontend:v3.0 .
+
+# 2. Pousser vers Docker Hub :
+docker push waelbenabid/rh-frontend:v3.0
+
+# 3. Mettre à jour dans Minikube :
+kubectl set image deployment/rh-frontend rh-frontend=waelbenabid/rh-frontend:v3.0 -n rh-system
+
+# ========================================
+# 5. FICHIERS À MODIFIER POUR IMAGES PERMANENTES
+# ========================================
+
+# BACKEND : kubernetes/deployments/rh-backend-deployment.yaml
+# Ligne à modifier (environ ligne 20) :
+#   image: waelbenabid/rh-system-backend:gmail-smtp
+
+# FRONTEND : kubernetes/deployments/rh-frontend-deployment.yaml
+# Ligne à modifier (environ ligne 20) :
+#   image: waelbenabid/rh-frontend:latest
+
+# POSTGRES : kubernetes/deployments/postgres-deployment.yaml
+# Ligne à modifier (environ ligne 20) :
+#   image: postgres:15-alpine
+
+# ========================================
+# 6. COMMANDES DE VÉRIFICATION
+# ========================================
+
+# Vérifier les images actuelles :
+kubectl get deployments -n rh-system -o wide
+
+# Vérifier le statut du rollout :
+kubectl rollout status deployment/rh-backend -n rh-system
+
+# Vérifier les pods :
+kubectl get pods -n rh-system
+
+# Voir les logs d'un pod :
+kubectl logs [NOM_DU_POD] -n rh-system
+
+# ========================================
+# 7. ROLLBACK EN CAS DE PROBLÈME
+# ========================================
+
+# Revenir à la version précédente :
+kubectl rollout undo deployment/rh-backend -n rh-system
+
+# Voir l'historique des déploiements :
+kubectl rollout history deployment/rh-backend -n rh-system
+
+# ========================================
+# 8. EXEMPLE COMPLET DE MISE À JOUR
+# ========================================
+
+# Scénario : Mettre à jour le backend avec une nouvelle image
+
+# Étape 1 : Construire la nouvelle image
+cd back-end
+docker build -t waelbenabid/rh-system-backend:v3.0-gmail-smtp .
+
+# Étape 2 : Pousser vers Docker Hub
+docker push waelbenabid/rh-system-backend:v3.0-gmail-smtp
+
+# Étape 3 : Mettre à jour dans Minikube
+kubectl set image deployment/rh-backend rh-backend=waelbenabid/rh-system-backend:v3.0-gmail-smtp -n rh-system
+
+# Étape 4 : Vérifier le déploiement
+kubectl rollout status deployment/rh-backend -n rh-system
+
+# Étape 5 : Tester l'application
+curl -H "Host: rh-system.local" http://127.0.0.1/admin/
+
+# ========================================
+# 9. IMAGES RECOMMANDÉES ACTUELLES
+# ========================================
+
+# ✅ BACKEND : waelbenabid/rh-system-backend:gmail-smtp
+#    - Contient toutes les corrections Gmail SMTP
+#    - Testé et fonctionnel
+#    - Recommandé pour production
+
+# ✅ FRONTEND : waelbenabid/rh-frontend:latest
+#    - Interface utilisateur complète
+#    - Compatible avec le backend Gmail SMTP
+
+# ✅ POSTGRES : postgres:15-alpine
+#    - Version stable et légère
+#    - Compatible avec Django
+
+# ========================================
+# 10. DÉPANNAGE COURANT
+# ========================================
+
+# Problème : Image non trouvée
+# Solution : Vérifier que l'image existe sur Docker Hub
+docker pull waelbenabid/rh-system-backend:gmail-smtp
+
+# Problème : Pod en erreur ImagePullBackOff
+# Solution : Vérifier les credentials Docker Hub ou utiliser une image publique
+
+# Problème : Pod en CrashLoopBackOff
+# Solution : Vérifier les logs du pod
+kubectl logs [NOM_DU_POD] -n rh-system
+
+# ========================================
+# 11. COMMANDES RAPIDES
+# ========================================
+
+# Redémarrer tous les déploiements :
+kubectl rollout restart deployment -n rh-system
+
+# Forcer la re-création des pods :
+kubectl delete pods --all -n rh-system
+
+# Vérifier l'état de tous les services :
+kubectl get all -n rh-system
+
+# ========================================
+# 12. CORRECTIONS APPLIQUÉES - FOOTER ET CONTACT
+# ========================================
+
+# ✅ CORRECTIONS EFFECTUÉES LE 10/06/2025 :
+
+# 1. INFORMATIONS DE CONTACT MISES À JOUR :
+#    - Adresse : Topnet Agence Centre Urbain Nord • Rez-de-chaussée du siège Topnet Centre Urbain Nord,1080
+#    - Téléphone : +216 71 111 000
+#    - Email : support@topnet.tn
+#    - Site web : https://www.topnet.tn
+
+# 2. IMAGES DU FOOTER CORRIGÉES :
+#    - Logo Topnet : /assets/topnet.png ✅
+#    - Logo RH Management : /assets/logo2.png ✅ (changé de logo.png vers logo2.png)
+
+# 3. FICHIERS MODIFIÉS :
+#    - project/src/components/ui/Footer.tsx
+#    - project/src/pages/Home.tsx
+
+# 4. NOUVELLE IMAGE FRONTEND DÉPLOYÉE :
+#    - Image : waelbenabid/rh-frontend:v2.0-topnet
+#    - Déployée dans Minikube avec succès
+#    - Pod : rh-frontend-7868bf75-nvp6d
+
+# 5. VÉRIFICATION :
+#    - Images présentes dans /usr/share/nginx/html/assets/
+#    - Interface web accessible : http://127.0.0.1
+#    - Footer mis à jour avec les bonnes informations Topnet
+
+# ========================================
+# FIN DU GUIDE
+# ========================================

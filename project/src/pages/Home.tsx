@@ -9,10 +9,10 @@ import AnimatedBackground from "../components/ui/AnimatedBackground";
 const Home: React.FC = () => {
   // Company information for the footer
   const companyInfo = {
-    address: "Rue Asdrubal, Montplaisir, Tunis, Tunisie",
-    phone: "+216 71 123 456",
-    email: "contact@tunisietelecom.tn",
-    website: "www.tunisietelecom.tn"
+    address: "Topnet Agence Centre Urbain Nord • Rez-de-chaussée du siège Topnet Centre Urbain Nord,1080",
+    phone: "+216 71 111 000",
+    email: "support@topnet.tn",
+    website: "https://www.topnet.tn"
   };
 
   return (

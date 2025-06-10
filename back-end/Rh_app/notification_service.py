@@ -64,7 +64,7 @@ class NotificationService:
                 recipients.append(mission.superviseur.email)
                 
             # Ajouter les administrateurs
-            admins = User.objects.filter(role='admin')
+            admins = User.objects.filter(user_type='admin')
             for admin in admins:
                 recipients.append(admin.email)
                 
@@ -138,8 +138,8 @@ class NotificationService:
             
         # Destinataires : administrateurs et superviseurs
         recipients = []
-        admins = User.objects.filter(role='admin')
-        supervisors = User.objects.filter(role='employe', is_supervisor=True)
+        admins = User.objects.filter(user_type='admin')
+        supervisors = User.objects.filter(user_type='employee')  # Tous les employés pour simplifier
         
         for admin in admins:
             recipients.append(admin.email)
