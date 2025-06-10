@@ -1,5 +1,7 @@
 import React from 'react';
 import { Mail, Phone, MapPin, Globe } from 'lucide-react';
+import topnetLogo from '../../assets/images/topnet.png';
+import rhLogo from '../../assets/images/logo2.png';
 
 interface FooterProps {
   address?: string;
@@ -9,10 +11,10 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({
-  address = 'Rue Asdrubal, Montplaisir, Tunis, Tunisie',
-  phone = '+216 71 123 456',
-  email = 'contact@tunisietelecom.tn',
-  website = 'www.tunisietelecom.tn'
+  address = 'Topnet Agence Centre Urbain Nord • Rez-de-chaussée du siège Topnet Centre Urbain Nord,1080',
+  phone = '+216 71 111 000',
+  email = 'support@topnet.tn',
+  website = 'https://www.topnet.tn'
 }) => {
   return (
     <footer className="bg-gray-900 text-white">
@@ -53,22 +55,22 @@ const Footer: React.FC<FooterProps> = ({
 
           {/* Partner Logos */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Our Partners</h3>
+            <h3 className="text-lg font-semibold">Nos Partenaires</h3>
             <div className="flex flex-wrap gap-4 items-center justify-center">
-              {/* Tunisie Telecom Logo */}
+              {/* Topnet Logo */}
               <div className="bg-white rounded-lg p-2 w-20 h-20 flex items-center justify-center">
                 <img
-                  src="/assets/topnet.png"
-                  alt="Tunisie Telecom"
+                  src={topnetLogo}
+                  alt="Topnet"
                   className="max-w-full max-h-full object-contain"
                 />
               </div>
 
-              {/* RH MANGMENT Logo */}
+              {/* RH Management Logo */}
               <div className="bg-white rounded-lg p-2 w-20 h-20 flex items-center justify-center">
                 <img
-                  src="/assets/logo.png"
-                  alt="RH MANGMENT"
+                  src={rhLogo}
+                  alt="RH Management"
                   className="max-w-full max-h-full object-contain"
                 />
               </div>
@@ -77,7 +79,7 @@ const Footer: React.FC<FooterProps> = ({
         </div>
 
         <div className="mt-8 pt-6 border-t border-gray-800 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Tunisie Telecom HR. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Topnet HR Management. All rights reserved.</p>
         </div>
       </div>
     </footer>

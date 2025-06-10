@@ -44,13 +44,22 @@ services:
       - DATABASE_PASSWORD=${DATABASE_PASSWORD:-12345}
       - DATABASE_HOST=${DATABASE_HOST:-db}
       - DATABASE_PORT=${DATABASE_PORT:-5432}
-      - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
+      # Configuration Email - Gmail SMTP
+      - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
+      - EMAIL_PROVIDER=${EMAIL_PROVIDER:-gmail}
+      - EMAIL_HOST=${EMAIL_HOST:-smtp.gmail.com}
+      - EMAIL_PORT=${EMAIL_PORT:-587}
+      - EMAIL_USE_TLS=${EMAIL_USE_TLS:-True}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-RH System <waelbenabid1@gmail.com>}
+      # Configuration Zipkin
       - ZIPKIN_ENABLED=${ZIPKIN_ENABLED:-True}
       - ZIPKIN_SERVER_URL=${ZIPKIN_SERVER_URL:-http://zipkin:9411}
       - ZIPKIN_SERVICE_NAME=${ZIPKIN_SERVICE_NAME:-rh-backend}
       - ZIPKIN_SAMPLE_RATE=${ZIPKIN_SAMPLE_RATE:-100.0}
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-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}
-      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-RH System <waelbenabid1@gmail.com>}
+      # Ancienne configuration SendGrid (optionnelle)
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5175}
       # Les informations sensibles comme DATABASE_PASSWORD, SECRET_KEY et SENDGRID_API_KEY
       # doivent être définies dans le fichier .env, pas ici

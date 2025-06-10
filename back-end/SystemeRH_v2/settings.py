@@ -204,21 +204,35 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# Email Configuration - SendGrid SMTP
+# Email Configuration - Support Gmail SMTP et SendGrid
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
+EMAIL_PROVIDER = os.getenv('EMAIL_PROVIDER', 'gmail')  # 'gmail' ou 'sendgrid'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'RH System <waelbenabid1@gmail.com>')
 
-# Configuration SMTP pour SendGrid
-if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend' and SENDGRID_API_KEY:
-    EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.sendgrid.net')
-    EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
-    EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
-    EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'apikey')
-    EMAIL_HOST_PASSWORD = SENDGRID_API_KEY
+# Configuration SMTP
+if EMAIL_BACKEND == 'django.core.mail.backends.smtp.EmailBackend':
+    if EMAIL_PROVIDER == 'gmail':
+        # Configuration Gmail SMTP
+        EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+        EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+        EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
+        EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')  # Votre email Gmail
+        EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Mot de passe d'application
+    elif EMAIL_PROVIDER == 'sendgrid':
+        # Configuration SendGrid SMTP (OBSOLÈTE - Utiliser Gmail SMTP)
+        # Cette configuration est conservée pour compatibilité mais non recommandée
+        EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.sendgrid.net')
+        EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+        EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 't')
+        EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'apikey')
+        EMAIL_HOST_PASSWORD = os.getenv('SENDGRID_API_KEY', '')
+    else:
+        # Fallback vers console backend
+        EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+        EMAIL_CONSOLE_STDOUT = True
+        EMAIL_CONSOLE_STDERR = False
 else:
-    # Fallback vers console backend si SendGrid n'est pas configuré
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    # Console backend pour développement
     EMAIL_CONSOLE_STDOUT = True
     EMAIL_CONSOLE_STDERR = False
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')

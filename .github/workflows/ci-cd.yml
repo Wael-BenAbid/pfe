@@ -131,9 +131,9 @@ jobs:
           echo "DATABASE_PASSWORD=postgres_test_password" >> .env
           echo "DATABASE_HOST=localhost" >> .env
           echo "DATABASE_PORT=5432" >> .env
-          echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}" >> .env
+          echo "EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@gmail.com' }}" >> .env
           echo "EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}" >> .env
-          echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}" >> .env
+          echo "EMAIL_PROVIDER=gmail" >> .env
         working-directory: ./back-end
 
       - name: Run Tests
@@ -296,7 +296,7 @@ jobs:
           cache-to: type=gha,mode=max
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
-            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:v2.2-topnet-images
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:v${{ steps.timestamp.outputs.tag }}
 
       - name: Build and push Backend
@@ -309,13 +309,13 @@ jobs:
           cache-to: type=gha,mode=max
           tags: |
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
-            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+            ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:gmail-smtp
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:v${{ steps.timestamp.outputs.tag }}
           build-args: |
             SECRET_KEY=${{ secrets.SECRET_KEY || 'django-insecure-default-key-for-testing' }}
-            EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}
+            EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@gmail.com' }}
             EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}
-            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}
+            EMAIL_PROVIDER=gmail
             ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME || 'admin' }}
             ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL || 'admin@example.com' }}
             ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD || 'admin_password' }}
@@ -373,9 +373,8 @@ jobs:
         run: |
           # Définir des valeurs par défaut pour les secrets
           SECRET_KEY="${{ secrets.SECRET_KEY || 'django-insecure-default-key-for-testing' }}"
-          EMAIL_HOST_USER="${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}"
+          EMAIL_HOST_USER="${{ secrets.EMAIL_HOST_USER || 'test@gmail.com' }}"
           EMAIL_HOST_PASSWORD="${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}"
-          SENDGRID_API_KEY="${{ secrets.SENDGRID_API_KEY || 'dummy-sendgrid-api-key' }}"
           DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD || 'postgres_password' }}"
 
           # Créer les secrets Kubernetes
@@ -390,7 +389,7 @@ jobs:
             --from-literal=DATABASE_PASSWORD="$DATABASE_PASSWORD" \
             --from-literal=EMAIL_HOST_USER="$EMAIL_HOST_USER" \
             --from-literal=EMAIL_HOST_PASSWORD="$EMAIL_HOST_PASSWORD" \
-            --from-literal=SENDGRID_API_KEY="$SENDGRID_API_KEY" \
+            --from-literal=EMAIL_PROVIDER="gmail" \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy ConfigMaps
@@ -420,22 +419,22 @@ jobs:
 
       - name: Deploy Backend
         run: |
-          if [ -f "kubernetes/deployments/backend-deployment.yaml" ] && [ -f "kubernetes/services/backend-service.yaml" ]; then
+          if [ -f "kubernetes/deployments/rh-backend-deployment.yaml" ] && [ -f "kubernetes/services/rh-backend-service.yaml" ]; then
             # Update image tag in the deployment file
-            sed -i "s|image: .*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/backend-deployment.yaml
-            kubectl apply -f kubernetes/deployments/backend-deployment.yaml || echo "Backend deployment failed but continuing"
-            kubectl apply -f kubernetes/services/backend-service.yaml || echo "Backend service failed but continuing"
+            sed -i "s|image: .*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:gmail-smtp|g" kubernetes/deployments/rh-backend-deployment.yaml
+            kubectl apply -f kubernetes/deployments/rh-backend-deployment.yaml || echo "Backend deployment failed but continuing"
+            kubectl apply -f kubernetes/services/rh-backend-service.yaml || echo "Backend service failed but continuing"
           else
             echo "Backend deployment or service files not found, skipping"
           fi
 
       - name: Deploy Frontend
         run: |
-          if [ -f "kubernetes/deployments/frontend-deployment.yaml" ] && [ -f "kubernetes/services/frontend-service.yaml" ]; then
+          if [ -f "kubernetes/deployments/rh-frontend-deployment.yaml" ] && [ -f "kubernetes/services/rh-frontend-service.yaml" ]; then
             # Update image tag in the deployment file
-            sed -i "s|image: .*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}|g" kubernetes/deployments/frontend-deployment.yaml
-            kubectl apply -f kubernetes/deployments/frontend-deployment.yaml || echo "Frontend deployment failed but continuing"
-            kubectl apply -f kubernetes/services/frontend-service.yaml || echo "Frontend service failed but continuing"
+            sed -i "s|image: .*|image: ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:v2.2-topnet-images|g" kubernetes/deployments/rh-frontend-deployment.yaml
+            kubectl apply -f kubernetes/deployments/rh-frontend-deployment.yaml || echo "Frontend deployment failed but continuing"
+            kubectl apply -f kubernetes/services/rh-frontend-service.yaml || echo "Frontend service failed but continuing"
           else
             echo "Frontend deployment or service files not found, skipping"
           fi
@@ -719,9 +718,9 @@ jobs:
             ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:${{ steps.timestamp.outputs.tag }}
           build-args: |
             SECRET_KEY=${{ secrets.SECRET_KEY || 'django-insecure-default-key-for-testing' }}
-            EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@example.com' }}
+            EMAIL_HOST_USER=${{ secrets.EMAIL_HOST_USER || 'test@gmail.com' }}
             EMAIL_HOST_PASSWORD=${{ secrets.EMAIL_HOST_PASSWORD || 'password' }}
-            SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY || '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' }}
+            EMAIL_PROVIDER=gmail
 
       - name: Sync completed
         run: |

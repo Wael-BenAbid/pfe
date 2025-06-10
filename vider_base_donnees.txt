@@ -1,0 +1,137 @@
+# ========================================
+# GUIDE COMPLET : VIDER LA BASE DE DONNÉES
+# ========================================
+
+# Ce fichier contient toutes les commandes pour vider complètement la base de données
+# dans tous les environnements (Local, Docker, Minikube)
+
+# ========================================
+# 1. ENVIRONNEMENT DOCKER COMPOSE
+# ========================================
+
+# Étape 1 : Arrêter tous les conteneurs
+docker-compose down
+
+# Étape 2 : Lister les volumes Docker
+docker volume ls
+
+# Étape 3 : Supprimer le volume de la base de données PostgreSQL
+docker volume rm pfe_postgres_data
+
+# Étape 4 : (Optionnel) Supprimer les volumes media et static
+docker volume rm pfe_backend_media pfe_backend_static
+
+# Étape 5 : Redémarrer avec une base vide
+docker-compose up -d
+
+# ========================================
+# 2. ENVIRONNEMENT MINIKUBE (KUBERNETES)
+# ========================================
+
+# Étape 1 : Vérifier les pods PostgreSQL
+kubectl get pods -n rh-system | findstr postgres
+
+# Étape 2 : Supprimer le pod PostgreSQL (il se recréera automatiquement)
+kubectl delete pod [NOM_DU_POD_POSTGRES] -n rh-system
+# Exemple : kubectl delete pod postgres-db-5dd44b4664-gxbp2 -n rh-system
+
+# Étape 3 : Lister les PVC (Persistent Volume Claims)
+kubectl get pvc -n rh-system
+
+# Étape 4 : Supprimer le PVC PostgreSQL
+kubectl delete pvc postgres-pvc -n rh-system
+
+# Étape 5 : Lister les PV (Persistent Volumes)
+kubectl get pv | findstr postgres
+
+# Étape 6 : Supprimer le PV PostgreSQL
+kubectl delete pv postgres-pv-new
+
+# Étape 7 : Redéployer PostgreSQL (il recréera automatiquement les volumes)
+kubectl apply -f kubernetes/postgres/
+
+# ========================================
+# 3. ENVIRONNEMENT LOCAL (DÉVELOPPEMENT)
+# ========================================
+
+# Si vous utilisez une base PostgreSQL locale :
+
+# Étape 1 : Se connecter à PostgreSQL
+psql -U postgres -h localhost
+
+# Étape 2 : Supprimer la base de données
+DROP DATABASE IF EXISTS rh_system_db;
+
+# Étape 3 : Recréer la base de données vide
+CREATE DATABASE rh_system_db;
+
+# Étape 4 : Quitter PostgreSQL
+\q
+
+# Étape 5 : Appliquer les migrations Django
+cd back-end
+python manage.py migrate
+
+# ========================================
+# 4. VÉRIFICATION APRÈS SUPPRESSION
+# ========================================
+
+# Pour Docker Compose :
+docker-compose exec backend python manage.py shell
+# Dans le shell Django :
+from Rh_app.models import User
+print(f"Nombre d'utilisateurs : {User.objects.count()}")
+exit()
+
+# Pour Minikube :
+kubectl exec -it [POD_BACKEND] -n rh-system -- python manage.py shell
+# Dans le shell Django :
+from Rh_app.models import User
+print(f"Nombre d'utilisateurs : {User.objects.count()}")
+exit()
+
+# ========================================
+# 5. COMMANDES DE RÉCUPÉRATION (SI PROBLÈME)
+# ========================================
+
+# Si vous voulez restaurer une sauvegarde :
+
+# Docker Compose :
+docker-compose exec db pg_restore -U postgres -d rh_system_db /backup/backup.sql
+
+# Minikube :
+kubectl exec -it [POD_POSTGRES] -n rh-system -- pg_restore -U postgres -d rh_system_db /backup/backup.sql
+
+# ========================================
+# 6. NOTES IMPORTANTES
+# ========================================
+
+# ⚠️  ATTENTION : Ces commandes suppriment DÉFINITIVEMENT toutes les données !
+# ✅  Assurez-vous d'avoir une sauvegarde si nécessaire
+# 🔄  Après suppression, les migrations Django recréeront la structure
+# 👤  Un superuser sera automatiquement créé au redémarrage
+# 📧  Les tests Gmail SMTP fonctionneront avec la base vide
+
+# ========================================
+# 7. ORDRE D'EXÉCUTION RECOMMANDÉ
+# ========================================
+
+# 1. Arrêter les services
+# 2. Supprimer les volumes/PVC
+# 3. Redémarrer les services
+# 4. Vérifier que la base est vide
+# 5. Tester les fonctionnalités
+
+# ========================================
+# 8. COMMANDES RAPIDES (COPIER-COLLER)
+# ========================================
+
+# DOCKER COMPOSE - VIDER COMPLÈTEMENT :
+# docker-compose down && docker volume rm pfe_postgres_data && docker-compose up -d
+
+# MINIKUBE - VIDER COMPLÈTEMENT :
+# kubectl delete pvc postgres-pvc -n rh-system && kubectl delete pv postgres-pv-new
+
+# ========================================
+# FIN DU GUIDE
+# ========================================

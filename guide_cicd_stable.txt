@@ -1,0 +1,177 @@
+# ========================================
+# GUIDE CI/CD STABILISÉ - SYSTÈME RH
+# ========================================
+
+# Ce fichier documente les corrections apportées au CI/CD pour la stabilité
+
+# ========================================
+# 1. CORRECTIONS APPLIQUÉES
+# ========================================
+
+# ✅ SÉCURITÉ :
+# - Suppression de la clé SendGrid exposée
+# - Configuration Gmail SMTP sécurisée
+# - Secrets Kubernetes mis à jour
+
+# ✅ IMAGES STABLES :
+# - Frontend : waelbenabid/rh-frontend:v2.2-topnet-images
+# - Backend : waelbenabid/rh-system-backend:gmail-smtp
+# - Tags stables au lieu de SHA dynamiques
+
+# ✅ CONFIGURATION GMAIL :
+# - EMAIL_PROVIDER=gmail dans tous les environnements
+# - Suppression des références SendGrid
+# - Configuration cohérente
+
+# ✅ NOMS DE FICHIERS CORRECTS :
+# - rh-backend-deployment.yaml (au lieu de backend-deployment.yaml)
+# - rh-frontend-deployment.yaml (au lieu de frontend-deployment.yaml)
+# - rh-backend-service.yaml et rh-frontend-service.yaml
+
+# ========================================
+# 2. SECRETS GITHUB REQUIS
+# ========================================
+
+# Pour que le CI/CD fonctionne, configurez ces secrets dans GitHub :
+
+# DOCKER_HUB_ACCESS_TOKEN : Token d'accès Docker Hub
+# SECRET_KEY : Clé secrète Django
+# EMAIL_HOST_USER : Adresse Gmail (ex: votre-email@gmail.com)
+# EMAIL_HOST_PASSWORD : Mot de passe d'application Gmail
+# DATABASE_PASSWORD : Mot de passe PostgreSQL
+# ADMIN_USERNAME : Nom d'utilisateur admin
+# ADMIN_EMAIL : Email admin
+# ADMIN_PASSWORD : Mot de passe admin
+# ADMIN_FIRSTNAME : Prénom admin
+# ADMIN_LASTNAME : Nom admin
+
+# ========================================
+# 3. WORKFLOW CI/CD
+# ========================================
+
+# DÉCLENCHEURS :
+# - Push sur main
+# - Pull Request vers main
+# - Déclenchement manuel (workflow_dispatch)
+
+# JOBS PRINCIPAUX :
+# 1. test-frontend : Tests et build frontend
+# 2. test-backend : Tests backend avec PostgreSQL
+# 3. security-scan : Scan de sécurité avec Trivy
+# 4. build-push : Construction et push des images Docker
+# 5. deploy-kubernetes : Déploiement sur Minikube
+# 6. deploy-* : Déploiements spécialisés (monitoring, logging, etc.)
+
+# ========================================
+# 4. IMAGES DOCKER STABLES
+# ========================================
+
+# FRONTEND :
+# - Image : waelbenabid/rh-frontend:v2.2-topnet-images
+# - Contient : Interface corrigée avec logos Topnet
+# - Status : Stable et testé
+
+# BACKEND :
+# - Image : waelbenabid/rh-system-backend:gmail-smtp
+# - Contient : Configuration Gmail SMTP complète
+# - Status : Stable et testé
+
+# ========================================
+# 5. DÉPLOIEMENT KUBERNETES
+# ========================================
+
+# NAMESPACE : rh-system
+
+# SECRETS CRÉÉS :
+# - postgres-secrets : Mot de passe PostgreSQL
+# - rh-backend-secrets : Configuration backend (Gmail, Django, etc.)
+
+# DÉPLOIEMENTS :
+# - PostgreSQL : Base de données
+# - Backend : API Django avec Gmail SMTP
+# - Frontend : Interface React avec logos Topnet
+# - Monitoring : Prometheus, Grafana, Zipkin
+
+# ========================================
+# 6. COMMANDES MANUELLES
+# ========================================
+
+# DÉCLENCHEMENT MANUEL :
+# - Aller dans Actions > CI/CD Pipeline
+# - Cliquer "Run workflow"
+# - Choisir les options :
+#   * sync_docker_k8s : false (sauf si besoin de sync)
+#   * update_frontend : true
+#   * update_backend : true
+
+# VÉRIFICATION POST-DÉPLOIEMENT :
+# kubectl get pods -n rh-system
+# kubectl get services -n rh-system
+# kubectl get ingress -n rh-system
+
+# ========================================
+# 7. MONITORING ET LOGS
+# ========================================
+
+# ACCÈS AUX LOGS :
+# kubectl logs -f deployment/rh-backend -n rh-system
+# kubectl logs -f deployment/rh-frontend -n rh-system
+
+# MONITORING :
+# - Prometheus : Métriques système
+# - Grafana : Dashboards visuels
+# - Zipkin : Tracing des requêtes
+
+# ========================================
+# 8. DÉPANNAGE
+# ========================================
+
+# PROBLÈME : Build frontend échoue
+# SOLUTION : Vérifier que les images sont dans project/src/assets/images/
+
+# PROBLÈME : Backend ne démarre pas
+# SOLUTION : Vérifier les secrets Gmail dans GitHub
+
+# PROBLÈME : Déploiement Kubernetes échoue
+# SOLUTION : Vérifier que Minikube est démarré et les fichiers YAML existent
+
+# PROBLÈME : Images Docker non trouvées
+# SOLUTION : Vérifier DOCKER_HUB_ACCESS_TOKEN dans les secrets
+
+# ========================================
+# 9. STRUCTURE ATTENDUE
+# ========================================
+
+# DOSSIERS REQUIS :
+# kubernetes/
+# ├── deployments/
+# │   ├── rh-backend-deployment.yaml
+# │   ├── rh-frontend-deployment.yaml
+# │   └── postgres-deployment.yaml
+# ├── services/
+# │   ├── rh-backend-service.yaml
+# │   ├── rh-frontend-service.yaml
+# │   └── postgres-service.yaml
+# ├── configmaps/
+# ├── ingress/
+# └── monitoring/
+
+# ========================================
+# 10. VALIDATION FINALE
+# ========================================
+
+# AVANT DE POUSSER SUR MAIN :
+# 1. Vérifier que tous les secrets GitHub sont configurés
+# 2. Tester localement avec Docker Compose
+# 3. Vérifier que les fichiers Kubernetes existent
+# 4. S'assurer que les images sont stables
+
+# APRÈS DÉPLOIEMENT :
+# 1. Vérifier que tous les pods sont Running
+# 2. Tester l'interface web
+# 3. Vérifier les logs pour les erreurs
+# 4. Tester les fonctionnalités email
+
+# ========================================
+# FIN DU GUIDE
+# ========================================
