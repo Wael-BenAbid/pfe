@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
       - name: rh-backend
-        image: waelbenabid/rh-system-backend:latest
+        image: waelbenabid/rh-system-backend:gmail-smtp
         imagePullPolicy: Always
         command: ["/bin/bash", "/scripts/init.sh"]
         ports:
@@ -91,11 +91,11 @@ spec:
             secretKeyRef:
               name: rh-backend-secrets
               key: EMAIL_HOST_PASSWORD
-        - name: SENDGRID_API_KEY
+        - name: EMAIL_PROVIDER
           valueFrom:
             secretKeyRef:
               name: rh-backend-secrets
-              key: SENDGRID_API_KEY
+              key: EMAIL_PROVIDER
         # Variables d'environnement Zipkin
         - name: ZIPKIN_ENABLED
           valueFrom:
@@ -117,12 +117,27 @@ spec:
             configMapKeyRef:
               name: rh-backend-config
               key: ZIPKIN_SAMPLE_RATE
-        # Variables d'environnement Email
+        # Variables d'environnement Email - Gmail SMTP
         - name: EMAIL_BACKEND
           valueFrom:
             configMapKeyRef:
               name: rh-backend-config
               key: EMAIL_BACKEND
+        - name: EMAIL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: EMAIL_HOST
+        - name: EMAIL_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: EMAIL_PORT
+        - name: EMAIL_USE_TLS
+          valueFrom:
+            configMapKeyRef:
+              name: rh-backend-config
+              key: EMAIL_USE_TLS
         - name: DEFAULT_FROM_EMAIL
           valueFrom:
             configMapKeyRef:
