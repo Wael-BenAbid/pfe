@@ -58,10 +58,8 @@ services:
       - ZIPKIN_SERVER_URL=${ZIPKIN_SERVER_URL:-http://zipkin:9411}
       - ZIPKIN_SERVICE_NAME=${ZIPKIN_SERVICE_NAME:-rh-backend}
       - ZIPKIN_SAMPLE_RATE=${ZIPKIN_SAMPLE_RATE:-100.0}
-      # Ancienne configuration SendGrid (optionnelle)
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5175}
-      # Les informations sensibles comme DATABASE_PASSWORD, SECRET_KEY et SENDGRID_API_KEY
+      # Les informations sensibles comme DATABASE_PASSWORD et SECRET_KEY
       # doivent être définies dans le fichier .env, pas ici
     volumes:
       - ./back-end:/app
