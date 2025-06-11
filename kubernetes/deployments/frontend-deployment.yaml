@@ -24,8 +24,8 @@ spec:
     spec:
       containers:
       - name: rh-frontend
-        image: waelbenabid/rh-frontend:v2.2-topnet-images
-        imagePullPolicy: Always
+        image: waelbenabid/rh-frontend:working-build
+        imagePullPolicy: Never
         ports:
         - containerPort: 80
           name: http
