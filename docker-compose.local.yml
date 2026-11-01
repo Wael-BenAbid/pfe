@@ -50,7 +50,7 @@ services:
       - ZIPKIN_SERVER_URL=http://zipkin:9411
       - ZIPKIN_SERVICE_NAME=rh-backend-local
       - ZIPKIN_SAMPLE_RATE=100.0
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-***SUPPRIME***}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
       - DEFAULT_FROM_EMAIL=RH System <waelbenabid1@gmail.com>
       - FRONTEND_URL=http://localhost:5173
     volumes:

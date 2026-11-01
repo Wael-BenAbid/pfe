@@ -21,7 +21,7 @@ Le projet est configuré pour utiliser une base de données PostgreSQL locale au
    ```sql
    CREATE DATABASE rh_v2;
    ```
-3. Assurez-vous que l'utilisateur `postgres` avec le mot de passe `12345` a les droits nécessaires sur la base de données `rh_v2`.
+3. Assurez-vous que l'utilisateur PostgreSQL défini dans votre fichier `.env` (`DATABASE_USER` / `DATABASE_PASSWORD`) a les droits nécessaires sur la base de données `rh_v2`.
 
 ### Variables d'environnement et informations sensibles
 
@@ -35,6 +35,9 @@ cp back-end/.env.template back-end/.env
 
 # Pour le frontend
 cp project/.env.template project/.env
+
+# Pour le déploiement en production (Docker Hub)
+cp .env.production.example .env.production
 ```
 
 2. Modifiez les fichiers `.env` avec vos propres valeurs :
@@ -196,11 +199,9 @@ L'application sera accessible à :
 - Interface d'administration Django : http://localhost:8000/admin/
 - Zipkin (si activé) : http://localhost:9411/
 
-### Informations d'identification par défaut
+### Compte administrateur
 
-- Admin : wael / changez-moi
-- Employé : user2 / changez-moi
-- Stagiaire : user3 / changez-moi
+Le compte administrateur est créé au démarrage à partir des variables `ADMIN_USERNAME`, `ADMIN_EMAIL` et `ADMIN_PASSWORD` de votre fichier `.env`. Choisissez un mot de passe fort et ne le publiez jamais dans le dépôt.
 
 ### Sans Docker (développement local)
 
@@ -377,7 +378,7 @@ chmod +x install-monitoring.sh
 
 Une fois déployé, vous pouvez accéder aux interfaces :
 - Prometheus : http://prometheus.rh-system.local
-- Grafana : http://grafana.rh-system.local (identifiants par défaut : admin/admin)
+- Grafana : http://grafana.rh-system.local (changez les identifiants par défaut de Grafana dès la première connexion)
 
 Des dashboards préconfigurés sont disponibles pour surveiller :
 - L'état général du cluster
@@ -454,7 +455,7 @@ Ces scripts téléchargent automatiquement les dernières images depuis Docker H
 ## Sécurité
 
 - Les informations sensibles sont stockées dans des variables d'environnement
-- Le fichier `.env` est exclu du dépôt Git
+- Les fichiers `.env` sont exclus du dépôt Git (seuls les modèles `.example` / `.template` sont versionnés)
 - Les mots de passe sont hachés avant d'être stockés dans la base de données
 - Les connexions sont sécurisées par JWT
 
@@ -465,7 +466,7 @@ Ces scripts téléchargent automatiquement les dernières images depuis Docker H
 1. **Impossible de se connecter à la base de données**
    - Vérifiez que PostgreSQL est en cours d'exécution sur le port 5433
    - Vérifiez que la base de données `rh_v2` existe
-   - Vérifiez que l'utilisateur `postgres` a les droits nécessaires
+   - Vérifiez que l'utilisateur défini dans votre `.env` a les droits nécessaires
 
 2. **Problèmes avec Docker**
    - Vérifiez que Docker Desktop est en cours d'exécution
